@@ -1,0 +1,20 @@
+# AI requirements
+python-dotenv
+pydantic
+PyMuPDF
+llama-index
+sentence-transformers
+chromadb
+sqlalchemy
+psycopg2-binary
+numpy
+pandas
+ 
+
+#api
+fastapi
+uvicorn
+
+pytest
+black
+flake8
