@@ -9,6 +9,7 @@ sqlalchemy
 psycopg2-binary
 numpy
 pandas
+ 
 
 #api
 fastapi
