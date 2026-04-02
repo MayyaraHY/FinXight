@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
-from datetime import datetime
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey,func, DateTime
 
 from app.db.cnx import Base
 
@@ -17,4 +16,4 @@ class Account(Base):
     label = Column(String, nullable=True)
     value = Column(Numeric, nullable=True)
 
-    created_at = Column(String, default=lambda: datetime.utcnow().isoformat())
+    created_at = Column(DateTime, server_default=func.now())
