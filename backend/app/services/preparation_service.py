@@ -77,12 +77,28 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df = df.loc[:, df.columns.str.strip() != '']
     logger.info(f"Removed empty columns. Remaining: {df.columns.tolist()}")
     
-    # Step 3: Normalize data values in all columns to lowercase and remove accents
+    # Step 3: Normalize data values in TEXT columns only (skip numeric columns)
+    # Numeric columns need to preserve signs, decimal points, and spaces (French format: 1 000,00)
     for col in df.columns:
         if df[col].dtype == 'object':  # Only process string columns
-            df[col] = df[col].apply(
-                lambda x: normalize_string(str(x)) if pd.notna(x) else x
-            )
+            # Check if column contains mostly numeric data
+            # Numeric columns: debit, credit, solde, montant, amount, balance, etc.
+            # These must NOT be normalized (negative signs must be preserved)
+            numeric_indicators = ['debit', 'credit', 'solde', 'montant', 'amount', 'balance', 'valeur', 'value']
+            is_likely_numeric = any(indicator in col.lower() for indicator in numeric_indicators)
+            
+            if not is_likely_numeric:
+                # This is a text column - normalize it
+                df[col] = df[col].apply(
+                    lambda x: normalize_string(str(x)) if pd.notna(x) else x
+                )
+                logger.debug(f"Normalized text column: '{col}'")
+            else:
+                # This is a numeric column - only clean whitespace, preserve signs and values
+                df[col] = df[col].apply(
+                    lambda x: str(x).strip() if pd.notna(x) else x
+                )
+                logger.debug(f"Preserved numeric column: '{col}' (no normalization)")
     
     logger.info("DataFrame preparation complete")
     return df
