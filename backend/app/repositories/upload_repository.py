@@ -1,4 +1,5 @@
 from app.models.upload import Upload
+from app.models.account import Account
 
 def create_upload(db, filename: str, file_path: str):
     upload = Upload(

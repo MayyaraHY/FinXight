@@ -14,8 +14,7 @@ class Upload(Base):
 
     accounts = relationship(
     "Account",
-    backref="upload",
+    back_populates="upload",
     cascade="all, delete",
     passive_deletes=True
 )
-    

@@ -2,7 +2,16 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 
 from app.db.cnx import SessionLocal
-from app.services.upload_service import *
+from app.services.upload_service import (
+    upload_document,
+    parse_csv_file,
+    add_and_parse_document,
+    get_upload_service,
+    get_all_uploads_service,
+    update_upload_service,
+    delete_upload_service,
+    delete_all_uploads_service
+)
 
 router = APIRouter()
 
@@ -15,10 +24,48 @@ def get_db():
         db.close()
 
 
-@router.post("/add_upload")
-def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    result = save_file_and_register(db, file)
+# ====== NEW ENDPOINTS (FLEXIBLE WORKFLOW) ======
+
+@router.post("/upload")
+def upload_file_only(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """
+    Upload a file to the server and register it in the database.
+    Returns upload_id for later parsing.
+    
+    Use this endpoint when you want to separate upload from parsing.
+    After uploading, use POST /parse/{upload_id} to parse the file.
+    """
+    result = upload_document(db, file)
     return result
+
+
+@router.post("/parse/{upload_id}")
+def parse_uploaded_file(upload_id: int, db: Session = Depends(get_db)):
+    """
+    Parse a previously uploaded CSV file.
+    
+    Use this endpoint to parse a file that was uploaded with POST /upload.
+    Requires the upload_id returned from the upload endpoint.
+    """
+    result = parse_csv_file(db, upload_id)
+    return result
+
+
+@router.post("/add_upload")
+def upload_and_parse_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """
+    Upload and parse a file in one operation.
+    
+    This is the combined workflow: saves file, registers it, and parses it immediately.
+    Returns detailed results including inserted accounts and detected columns.
+    
+    Use this endpoint for simple one-step uploads with immediate parsing.
+    """
+    result = add_and_parse_document(db, file)
+    return result
+
+
+# ====== EXISTING CRUD ENDPOINTS ======
 
 # 🔹 READ ONE
 @router.get("/upload/{upload_id}")

@@ -6,3 +6,6 @@ python-dotenv
 pandas
 python-multipart
 numpy
+chardet
+fuzzywuzzy
+sentence-transformers
