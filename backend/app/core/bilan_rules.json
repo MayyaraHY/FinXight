@@ -1,0 +1,121 @@
+{
+  "bilan_comptable_tunisien": {
+    "actifs": {
+      "actifs_non_courants": {
+        "actifs_immobilises": {
+          "immobilisations_incorporelles": {
+            "label": "Immobilisations incorporelles",
+            "comptes_valeurs_brutes": ["211", "212", "213", "214", "216", "218", "231", "237"],
+            "comptes_amortissements_provisions": ["281", "291", "2931", "2937"]
+          },
+          "immobilisations_corporelles": {
+            "label": "Immobilisations corporelles",
+            "comptes_valeurs_brutes": ["221", "222", "223", "224", "225", "232", "238", "24"],
+            "comptes_amortissements_provisions": ["282", "284", "292", "2932", "2938", "294"]
+          },
+          "immobilisations_financieres": {
+            "label": "Immobilisations financières",
+            "comptes_valeurs_brutes": ["251", "256", "257", "258", "259", "261", "262", "264", "265", "266","-269"],
+            "comptes_amortissements_provisions": ["295", "297"]
+          }
+        },
+        "autres_actifs_non_courants": {
+          "label": "Autres actifs non courants",
+          "comptes_valeurs_nettes": ["271", "272", "273", "275","278"]
+        }
+      },
+      "actifs_courants": {
+        "stocks": {
+          "label": "Stocks",
+          "comptes_valeurs_brutes": ["31", "32", "33", "34", "35", "37"],
+          "comptes_amortissements_provisions": ["39"]
+        },
+        "clients_et_comptes_rattaches": {
+          "label": "Clients et comptes rattachés",
+          "comptes_valeurs_brutes": ["411", "413", "416", "417", "418"],
+          "comptes_amortissements_provisions": ["491"]
+        },
+        "autres_actifs_courants": {
+          "label": "Autres actifs courants",
+          "comptes_valeurs_brutes": [
+            "409", "421", "(422 DR)", "(423 DR)", "426", "4287", "431", "(433 DR)", 
+            "4341", "4342", "(4349 DR)", "4366", "(4368 DR)", "4387", "(441 DR)", 
+            "(442 DR)", "446", "(448 DR)", "452", "455", "(457 DR)", "4587", "(46 DR)", "471"
+          ],
+          "comptes_amortissements_provisions": ["495", "496"]
+        },
+        "placements_et_autres_actifs_financiers": {
+          "label": "Placements et autres actifs financiers",
+          "comptes_valeurs_brutes": ["51", "52", "55"],
+          "comptes_amortissements_provisions": ["59"]
+        },
+        "liquidites_et_equivalents_de_liquidites": {
+          "label": "Liquidités et équivalents de liquidités",
+          "comptes_valeurs_brutes": ["(53 DR)", "54"]
+        }
+      }
+    },
+    "capitaux propres et passifs":{
+      "capitaux propres":{
+        "capital_social": {
+          "label": "Capital social",
+          "comptes_affectation": ["101", "-109"]
+        },
+        "reserves": {
+          "label": "Réserves",
+          "comptes_affectation": ["111", "112", "117", "118", "-119"]
+        },
+        "autres_capitaux_propres": {
+          "label": "Autres capitaux propres",
+          "comptes_affectation": ["141", "142", "143", "144", "-145"]
+        },
+        "resultat_reportes": {
+          "label": "Résultat  reposrtés",
+          "comptes_affectation": ["121", "128"],
+          "note":"le solde peut etre DR ou CR"
+        },
+        "resultat_de_l_exercice": {
+          "label": "Résultat de l'exercice",
+          "comptes_affectation": ["131", "135"],
+          "note":"le DR si 135 ou CR si 131"
+        }
+        
+      },
+      "passifs":{
+        "passifs non courant": {
+          "emprunt":{
+            "label": "Emprunts",
+            "comptes_affectation": ["161", "162", "163", "164", "165", "166", "167", "168"]
+          },
+          "autres_passifs_non_courants":{
+            "label": "Autres passifs non courants",
+            "comptes_affectation": ["18"],
+            "note":"net des entreprises"
+          },
+          "provisions":{
+            "label": "Provisions",
+            "comptes_affectation": ["15"]
+          }
+        },
+        "passifs courant":{
+          "fournisseurs_et_comptes_rattaches":{
+            "label": "Fournisseurs et comptes rattachés",
+            "comptes_affectation": ["401", "403", "404", "405", "408"]
+          },
+          "autres_passifs_courants":{
+            "label": "Autres passifs courants",
+            "comptes_affectation": ["419", "422 CR", "423 CR", "425", "427", "4282", "4286", "432",
+            "433 CR", 
+            "4343", "4349 CR", "435", "4365", "4367", "4368 CR", "437", "4382", "4386",
+            "441 CR", "442 CR", "447", "448 CR", "453", "454", "457 CR", "4586",
+            "46 CR", "472", "48"]
+          },
+          "conours_bancaires_et_autres_passif_financier":{
+            "label": "concours bancaires et autres passifs financiers",
+            "comptes_affectation": ["501", "505", "506", "507", "508","532 CR", "537 CR"]
+           }
+        }
+      }
+    }
+  }
+}

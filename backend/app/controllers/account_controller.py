@@ -2,13 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.db.cnx import SessionLocal
 from app.services.account_service import (
-    create_account,
     get_account_by_id,
     get_account_by_code,
     get_accounts_by_upload,
     get_all_accounts,
     get_accounts_count,
     search_accounts,
+    get_accounts_by_code_prefix,
+    get_accounts_count_by_code_prefix,
     update_account,
     delete_account,
     delete_accounts_by_upload,
@@ -125,7 +126,39 @@ def search_accounts_endpoint(
     }
 
 
-# ===== UPDATE =====
+@router.get("/by_code_prefix/")
+def get_accounts_by_prefix(
+    prefix: str = Query(..., min_length=1, description="Account code prefix (e.g., '1', '23', '401')"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
+):
+    """
+    Get accounts by account code prefix.
+    
+    Examples:
+    - /accounts/by_code_prefix/?prefix=1          (all accounts starting with "1")
+    - /accounts/by_code_prefix/?prefix=23         (all accounts starting with "23")
+    - /accounts/by_code_prefix/?prefix=401&limit=50  (all accounts starting with "401", max 50)
+    """
+    if not prefix or len(prefix) < 1:
+        raise HTTPException(status_code=400, detail="Prefix must be at least 1 character")
+    
+    accounts = get_accounts_by_code_prefix(db, prefix, skip, limit)
+    total = get_accounts_count_by_code_prefix(db, prefix)
+    
+    return {
+        "status": "success",
+        "prefix": prefix,
+        "total_count": total,
+        "returned": len(accounts),
+        "skip": skip,
+        "limit": limit,
+        "data": [account_to_dict(acc) for acc in accounts],
+    }
+
+
+# ===== UPDATE ====="
 @router.put("/{account_id}")
 def update_account_endpoint(
     account_id: int,

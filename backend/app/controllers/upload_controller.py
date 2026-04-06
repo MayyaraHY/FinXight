@@ -13,7 +13,8 @@ from app.services.upload_service import (
     delete_all_uploads_service
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/upload", tags=["Upload"])
+#router = APIRouter()
 
 # DB dependency
 def get_db():
@@ -26,7 +27,7 @@ def get_db():
 
 # ====== NEW ENDPOINTS (FLEXIBLE WORKFLOW) ======
 
-@router.post("/upload")
+@router.post("/add")
 def upload_file_only(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """
     Upload a file to the server and register it in the database.

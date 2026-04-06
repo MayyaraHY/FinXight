@@ -73,6 +73,17 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df.columns = normalized_columns
     logger.info(f"Normalized column names: {dict(zip(original_columns, normalized_columns))}")
     
+    #replace naan with 0 
+    numeric_indicators = [
+    'debit', 'credit', 'solde', 'montant',
+    'amount', 'balance', 'valeur', 'value'
+    ]
+    for col in df.columns:
+        if any(ind in col.lower() for ind in numeric_indicators):
+            df[col] = df[col].fillna(0)
+
+
+
     # Step 2: Remove empty columns
     df = df.loc[:, df.columns.str.strip() != '']
     logger.info(f"Removed empty columns. Remaining: {df.columns.tolist()}")
@@ -121,7 +132,8 @@ def prepare_dataframe_from_stream(file_stream, encoding: str, delimiter: str) ->
     # Read CSV
     df = pd.read_csv(file_stream, encoding=encoding, delimiter=delimiter)
     logger.info(f"Raw DataFrame shape: {df.shape}, columns: {df.columns.tolist()}")
-    
+    logger.info(f"DF HEAD:\n{df.head()}")
+    logger.info(f"DF COLUMNS: {df.columns.tolist()}")
     # Prepare (normalize)
     df = prepare_dataframe(df)
     logger.info(f"Prepared DataFrame shape: {df.shape}, columns: {df.columns.tolist()}")

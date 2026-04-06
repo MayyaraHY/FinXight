@@ -81,6 +81,31 @@ def search_accounts(db: Session, keyword: str, skip: int = 0, limit: int = 100):
         .all()
 
 
+def get_accounts_by_code_prefix(db: Session, prefix: str, skip: int = 0, limit: int = 100):
+    """
+    Get accounts by account code prefix (e.g., prefix="1" matches "100", "101", "12", etc.)
+    
+    Args:
+        db: Database session
+        prefix: Account code prefix (e.g., "1", "23", "401")
+        skip: Pagination offset
+        limit: Pagination limit
+        
+    Returns:
+        List of matching accounts
+    """
+    return db.query(Account)\
+        .filter(Account.account_code.startswith(prefix))\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
+
+
+def get_accounts_count_by_code_prefix(db: Session, prefix: str):
+    """Count total accounts matching a code prefix"""
+    return db.query(Account).filter(Account.account_code.startswith(prefix)).count()
+
+
 # ===== UPDATE =====
 def update_account(db: Session, account_id: int, account_data: dict):
     """

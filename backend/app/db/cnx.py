@@ -8,6 +8,13 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-# Import all models AFTER Base is created to register them with the ORM
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 from app.models.upload import Upload
 from app.models.account import Account
+from app.models.bilan import Bilan
