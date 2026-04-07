@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ComponentCard from "@/components/common/ComponentCard";
 import Button from "@/components/ui/button/Button";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
@@ -12,6 +13,7 @@ import { useUploads } from "../hooks/useUploads";
 import { getPreviewCSV } from "@/services/UploadService";
 
 export default function UploadDashboard() {
+  const router = useRouter();
   const {
     uploads,
     upload,
@@ -224,37 +226,49 @@ export default function UploadDashboard() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex flex-col gap-2 mt-auto">
+                  <div className="flex gap-2 mt-auto">
                     <Button
                       size="sm"
-                      variant="primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/uploads/${u.id}/accounts`);
+                      }}
+                      disabled={parsingId === u.id}
+                      className="flex-1 bg-brand-500 hover:bg-brand-600 text-white border-none"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
+                      </svg>
+                    </Button>
+                    <Button
+                      size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         parse(u.id);
                       }}
                       disabled={parsingId === u.id}
-                      className="w-full"
+                      className="flex-1 bg-warning-500 hover:bg-warning-600 text-white border-none"
                     >
                       {parsingId === u.id ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                          <span>Parsing...</span>
-                        </div>
+                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
                       ) : (
-                        "Parse"
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
                       )}
                     </Button>
                     <Button
                       size="sm"
-                      variant="outline"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteClick(u.id, u.filename);
                       }}
                       disabled={parsingId === u.id}
-                      className="w-full"
+                      className="flex-1 bg-error-500 hover:bg-error-600 text-white border-none"
                     >
-                      Delete
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-9l-1 1H5v2h14V4z" />
+                      </svg>
                     </Button>
                   </div>
 
@@ -276,10 +290,10 @@ export default function UploadDashboard() {
       <Modal
         isOpen={preview.isOpen}
         onClose={() => setPreview({ isOpen: false, data: null, loading: false, error: null })}
-        className="max-w-4xl"
+        className="max-w-2xl"
         showBackdrop={true}
       >
-        <div className="p-6">
+        <div className="p-6 pt-8">
           {preview.loading && (
             <div className="flex justify-center py-8">
               <div className="text-center">
