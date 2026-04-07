@@ -157,6 +157,38 @@ def get_accounts_by_prefix(
         "data": [account_to_dict(acc) for acc in accounts],
     }
 
+@router.get("/by_upload/{upload_id}")
+def get_accounts_by_upload_id(
+    upload_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(1000, ge=1, le=10000),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all accounts for a specific upload.
+    
+    Path: /accounts/by_upload/{upload_id}
+    
+    Query Parameters:
+    - skip: Pagination offset (default: 0)
+    - limit: Max results (default: 1000, max: 10000)
+    
+    Examples:
+    - /accounts/by_upload/1                (all accounts for upload 1)
+    - /accounts/by_upload/1?skip=50&limit=100  (accounts for upload 1, offset 50, max 100)
+    """
+    accounts = get_accounts_by_upload(db, upload_id, skip, limit)
+    total = get_accounts_count(db, upload_id)
+    
+    return {
+        "status": "success",
+        "upload_id": upload_id,
+        "total_count": total,
+        "returned": len(accounts),
+        "skip": skip,
+        "limit": limit,
+        "data": [account_to_dict(acc) for acc in accounts],
+    }
 
 # ===== UPDATE ====="
 @router.put("/{account_id}")

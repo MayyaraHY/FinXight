@@ -4,6 +4,7 @@ from app.core.config import settings
 import logging
 import os
 from app.repositories.account_repository import save_accounts
+from app.utils.helpers import detect_encoding, detect_delimiter, read_csv
 
 
 logger = logging.getLogger(__name__)
@@ -157,6 +158,69 @@ def save_file_and_register(db, file):
     Kept for backward compatibility.
     """
     return add_and_parse_document(db, file)
+
+
+def preview_csv_file(db, upload_id: int, rows: int = 20):
+    """
+    Get a preview of a CSV file without full parsing.
+    Returns column headers, first N rows, and total row count.
+    
+    Args:
+        db: Database session
+        upload_id: ID of the uploaded file to preview
+        rows: Number of rows to return (default 20)
+        
+    Returns:
+        Dict with headers, preview_data, and total_rows
+    """
+    try:
+        # Get upload metadata
+        upload = get_upload_by_id(db, upload_id)
+        if not upload:
+            raise ValueError(f"Upload with ID {upload_id} not found")
+
+        logger.info(f"Previewing upload {upload_id}: {upload.filename}")
+
+        # Detect encoding and delimiter
+        with open(upload.file_path, "rb") as f:
+            encoding = detect_encoding(f)
+            delimiter = detect_delimiter(f)
+
+        # Read CSV file
+        with open(upload.file_path, "rb") as f:
+            df = read_csv(f, encoding, delimiter)
+
+        # Get headers (first row)
+        headers = df.iloc[0].tolist() if len(df) > 0 else []
+
+        # Get preview rows (skip first row if it's headers)
+        preview_df = df.iloc[1:rows + 1]
+        preview_data = preview_df.values.tolist()
+
+        # Get total row count (excluding header)
+        total_rows = len(df) - 1 if len(df) > 1 else 0
+
+        logger.info(
+            f"Preview for upload {upload_id}: {len(preview_data)} preview rows, "
+            f"{total_rows} total rows"
+        )
+
+        return {
+            "status": "success",
+            "upload_id": upload_id,
+            "filename": upload.filename,
+            "headers": headers,
+            "preview_data": preview_data,
+            "preview_row_count": len(preview_data),
+            "total_rows": total_rows,
+            "encoding": encoding,
+            "delimiter": delimiter
+        }
+
+    except Exception as e:
+        logger.error(f"Preview failed for upload {upload_id}: {str(e)}", exc_info=True)
+        raise
+
 
 # 🔹 READ ONE
 def get_upload_service(db, upload_id: int):

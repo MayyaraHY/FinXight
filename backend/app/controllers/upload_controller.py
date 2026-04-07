@@ -10,7 +10,8 @@ from app.services.upload_service import (
     get_all_uploads_service,
     update_upload_service,
     delete_upload_service,
-    delete_all_uploads_service
+    delete_all_uploads_service,
+    preview_csv_file
 )
 
 router = APIRouter(prefix="/upload", tags=["Upload"])
@@ -49,6 +50,13 @@ def parse_uploaded_file(upload_id: int, db: Session = Depends(get_db)):
     Requires the upload_id returned from the upload endpoint.
     """
     result = parse_csv_file(db, upload_id)
+    return result
+
+
+@router.get("/preview/{upload_id}")
+def preview_file(upload_id: int, rows: int = 20, db: Session = Depends(get_db)):
+
+    result = preview_csv_file(db, upload_id, rows)
     return result
 
 

@@ -1,0 +1,53 @@
+.upload-container {
+  padding: 24px;
+  transition: 0.3s;
+}
+
+.dark .upload-container {
+  background: #0f172a;
+  color: white;
+}
+
+.dropzone {
+  border: 2px dashed #3b82f6;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.dark .table td {
+  border-color: #334155;
+}
+
+.btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-red {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-green {
+  background: #22c55e;
+  color: white;
+}
+
+.btn-blue {
+  background: #3b82f6;
+  color: white;
+}

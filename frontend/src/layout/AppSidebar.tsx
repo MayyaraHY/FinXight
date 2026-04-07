@@ -8,6 +8,7 @@ import {
   BoxCubeIcon,
   CalenderIcon,
   ChevronDownIcon,
+  FileIcon,
   GridIcon,
   HorizontaLDots,
   ListIcon,
@@ -31,6 +32,11 @@ const navItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Dashboard",
     subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+  },
+  {
+    icon: <FileIcon />,
+    name: "My documents",
+    path: "/uploads",
   },
   {
     icon: <CalenderIcon />,
@@ -310,25 +316,33 @@ const AppSidebar: React.FC = () => {
       >
         <Link href="/">
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
+            <div className="flex items-center gap-2">
               <Image
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
+                src="/images/logo/applogo.png"
+                alt="Logo Icon"
+                width={40}
                 height={40}
               />
-              <Image
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
+              <>
+                <Image
+                  className="dark:hidden"
+                  src="/images/logo/textlogo.png"
+                  alt="Logo Text"
+                  width={150}
+                  height={50}
+                />
+                <Image
+                  className="hidden dark:block"
+                  src="/images/logo/textlogo.png"
+                  alt="Logo Text"
+                  width={150}
+                  height={50}
+                />
+              </>
+            </div>
           ) : (
             <Image
-              src="/images/logo/logo-icon.svg"
+              src="/images/logo/applogo.png"
               alt="Logo"
               width={32}
               height={32}

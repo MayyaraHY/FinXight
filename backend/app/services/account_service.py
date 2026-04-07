@@ -36,7 +36,7 @@ def get_account_by_code(db: Session, account_code: str):
     return db.query(Account).filter(Account.account_code == account_code).first()
 
 
-def get_accounts_by_upload(db: Session, upload_id: int, skip: int = 0, limit: int = 100):
+def get_accounts_by_upload(db: Session, upload_id: int, skip: int = 0, limit: int = 1000):
     """Get all accounts for a specific upload"""
     return db.query(Account)\
         .filter(Account.upload_id == upload_id)\
