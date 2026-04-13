@@ -20,6 +20,8 @@ export function useUploads() {
   const fetchUploads = async () => {
     try {
       const data = await getUploads();
+      console.log("🔍 Backend upload response:", data);
+      console.log("📦 First upload sample:", data[0]);
       setUploads(data);
       setError(null);
     } catch (err) {
@@ -62,16 +64,16 @@ export function useUploads() {
     return () => controller.abort();
   }, []);
 
-  const upload = async (file: File) => {
+  const upload = async (file: File, displayName?: string) => {
     setLoading(true);
-    await uploadFile(file);
+    await uploadFile(file, displayName);
     await fetchUploads();
     setLoading(false);
   };
 
-  const uploadParse = async (file: File) => {
+  const uploadParse = async (file: File, displayName?: string) => {
     setLoading(true);
-    await uploadAndParse(file);
+    await uploadAndParse(file, displayName);
     await fetchUploads();
     setLoading(false);
   };

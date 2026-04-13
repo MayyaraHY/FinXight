@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, UploadFile, File, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.db.cnx import SessionLocal
@@ -29,7 +29,11 @@ def get_db():
 # ====== NEW ENDPOINTS (FLEXIBLE WORKFLOW) ======
 
 @router.post("/add")
-def upload_file_only(file: UploadFile = File(...), db: Session = Depends(get_db)):
+def upload_file_only(
+    file: UploadFile = File(...),
+    display_filename: str = Query(None, description="Custom name to display for this file. Defaults to original filename."),
+    db: Session = Depends(get_db)
+):
     """
     Upload a file to the server and register it in the database.
     Returns upload_id for later parsing.
@@ -37,7 +41,7 @@ def upload_file_only(file: UploadFile = File(...), db: Session = Depends(get_db)
     Use this endpoint when you want to separate upload from parsing.
     After uploading, use POST /parse/{upload_id} to parse the file.
     """
-    result = upload_document(db, file)
+    result = upload_document(db, file, display_filename)
     return result
 
 
@@ -61,16 +65,18 @@ def preview_file(upload_id: int, rows: int = 20, db: Session = Depends(get_db)):
 
 
 @router.post("/add_upload")
-def upload_and_parse_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
+def upload_and_parse_file(
+    file: UploadFile = File(...),
+    display_filename: str = Query(None, description="Custom name to display for this file. Defaults to original filename."),
+    db: Session = Depends(get_db)
+):
     """
     Upload and parse a file in one operation.
     
     This is the combined workflow: saves file, registers it, and parses it immediately.
     Returns detailed results including inserted accounts and detected columns.
-    
-    Use this endpoint for simple one-step uploads with immediate parsing.
     """
-    result = add_and_parse_document(db, file)
+    result = add_and_parse_document(db, file, display_filename)
     return result
 
 
@@ -90,8 +96,12 @@ def get_uploads(db: Session = Depends(get_db)):
 
 # 🔹 UPDATE
 @router.put("/update_upload/{upload_id}")
-def update_upload(upload_id: int, filename: str, db: Session = Depends(get_db)):
-    return update_upload_service(db, upload_id, filename)
+def update_upload(
+    upload_id: int,
+    display_filename: str = Query(..., description="New display name for the file."),
+    db: Session = Depends(get_db)
+):
+    return update_upload_service(db, upload_id, display_filename)
 
 
 # 🔹 DELETE ONE

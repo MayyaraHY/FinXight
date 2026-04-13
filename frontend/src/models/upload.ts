@@ -4,6 +4,7 @@ export type Upload = {
   id: number;
 
   filename: string;
+  display_filename?: string;
   file_path: string;
   status: string;
 

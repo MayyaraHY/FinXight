@@ -54,7 +54,8 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     Prepare a DataFrame for processing by:
     1. Normalizing column names (lowercase, remove accents, remove special chars)
     2. Removing empty columns
-    3. Normalizing data values in each column (lowercase, remove accents)
+    3. Normalizing data values in each column (lowercase, remove accents for text)
+    4. Converting empty/NaN values to 0 for numeric columns
     
     Args:
         df: Input DataFrame
@@ -73,43 +74,45 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df.columns = normalized_columns
     logger.info(f"Normalized column names: {dict(zip(original_columns, normalized_columns))}")
     
-    #replace naan with 0 
-    numeric_indicators = [
-    'debit', 'credit', 'solde', 'montant',
-    'amount', 'balance', 'valeur', 'value'
-    ]
-    for col in df.columns:
-        if any(ind in col.lower() for ind in numeric_indicators):
-            df[col] = df[col].fillna(0)
-
-
-
     # Step 2: Remove empty columns
     df = df.loc[:, df.columns.str.strip() != '']
     logger.info(f"Removed empty columns. Remaining: {df.columns.tolist()}")
     
-    # Step 3: Normalize data values in TEXT columns only (skip numeric columns)
-    # Numeric columns need to preserve signs, decimal points, and spaces (French format: 1 000,00)
+    # IMPROVEMENT 1: Define numeric indicators more comprehensively
+    # These columns should have NaN → 0 conversion
+    numeric_indicators = [
+        'debit', 'credit', 'solde', 'montant', 'amount', 'balance', 
+        'valeur', 'value', 'prix', 'price', 'quantite', 'quantity',
+        'total', 'subtotal', 'fee', 'frais', 'interest', 'interet',
+        'tax', 'taxe', 'tva', 'rate', 'taux', 'percent', 'pourcentage'
+    ]
+    
+    # Step 3: Normalize data values and handle NaN → 0 for numeric columns
     for col in df.columns:
-        if df[col].dtype == 'object':  # Only process string columns
-            # Check if column contains mostly numeric data
-            # Numeric columns: debit, credit, solde, montant, amount, balance, etc.
-            # These must NOT be normalized (negative signs must be preserved)
-            numeric_indicators = ['debit', 'credit', 'solde', 'montant', 'amount', 'balance', 'valeur', 'value']
-            is_likely_numeric = any(indicator in col.lower() for indicator in numeric_indicators)
+        if df[col].dtype == 'object':  # Only process string/mixed columns
+            # Determine if this is a numeric column
+            is_numeric_col = any(indicator in col.lower() for indicator in numeric_indicators)
             
-            if not is_likely_numeric:
-                # This is a text column - normalize it
+            if is_numeric_col:
+                # NUMERIC COLUMN: Preserve signs/decimals, but convert empty→0
+                # First, replace NaN with 0 for numeric columns
+                df[col] = df[col].fillna(0)
+                
+                # Then clean whitespace while preserving numeric content
                 df[col] = df[col].apply(
-                    lambda x: normalize_string(str(x)) if pd.notna(x) else x
+                    lambda x: str(x).strip() if pd.notna(x) and str(x).strip() else 0
+                )
+                logger.debug(f"Numeric column '{col}': NaN converted to 0, whitespace cleaned")
+            else:
+                # TEXT COLUMN: Normalize text, preserve NaN for text fields
+                df[col] = df[col].apply(
+                    lambda x: normalize_string(str(x)) if pd.notna(x) and str(x).strip() else x
                 )
                 logger.debug(f"Normalized text column: '{col}'")
-            else:
-                # This is a numeric column - only clean whitespace, preserve signs and values
-                df[col] = df[col].apply(
-                    lambda x: str(x).strip() if pd.notna(x) else x
-                )
-                logger.debug(f"Preserved numeric column: '{col}' (no normalization)")
+        elif df[col].dtype in ['float64', 'int64']:  # Already numeric
+            # Convert NaN to 0 for numeric columns
+            df[col] = df[col].fillna(0)
+            logger.debug(f"Numeric dtype column '{col}': NaN converted to 0")
     
     logger.info("DataFrame preparation complete")
     return df
@@ -134,6 +137,7 @@ def prepare_dataframe_from_stream(file_stream, encoding: str, delimiter: str) ->
     logger.info(f"Raw DataFrame shape: {df.shape}, columns: {df.columns.tolist()}")
     logger.info(f"DF HEAD:\n{df.head()}")
     logger.info(f"DF COLUMNS: {df.columns.tolist()}")
+    
     # Prepare (normalize)
     df = prepare_dataframe(df)
     logger.info(f"Prepared DataFrame shape: {df.shape}, columns: {df.columns.tolist()}")

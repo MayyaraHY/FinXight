@@ -1,11 +1,16 @@
 const API_URL = "http://127.0.0.1:8000/upload";
 import { Upload } from "@/models/Upload";
 
-export async function uploadFile(file: File) {
+export async function uploadFile(file: File, displayName?: string) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${API_URL}/add`, {
+  let url = `${API_URL}/add`;
+  if (displayName) {
+    url += `?display_filename=${encodeURIComponent(displayName)}`;
+  }
+
+  const res = await fetch(url, {
     method: "POST",
     body: formData,
   });
@@ -15,11 +20,16 @@ export async function uploadFile(file: File) {
   return res.json() as Promise<Upload>;
 }
 
-export async function uploadAndParse(file: File) {
+export async function uploadAndParse(file: File, displayName?: string) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${API_URL}/add_upload`, {
+  let url = `${API_URL}/add_upload`;
+  if (displayName) {
+    url += `?display_filename=${encodeURIComponent(displayName)}`;
+  }
+
+  const res = await fetch(url, {
     method: "POST",
     body: formData,
   });

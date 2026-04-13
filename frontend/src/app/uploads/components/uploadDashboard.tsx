@@ -51,6 +51,12 @@ export default function UploadDashboard() {
     error: null,
   });
 
+  const [displayNameInput, setDisplayNameInput] = useState<{ isOpen: boolean; file: File | null; displayName: string }>({
+    isOpen: false,
+    file: null,
+    displayName: "",
+  });
+
   // Validate file type - only CSV and Excel files allowed
   const isValidFileType = (file: File): boolean => {
     const validTypes = [
@@ -83,9 +89,21 @@ export default function UploadDashboard() {
       return;
     }
 
-    // File is valid, proceed with upload
+    // File is valid, show display name input
     setFileError({ isOpen: false, message: "" });
-    upload(file);
+    setDisplayNameInput({ isOpen: true, file, displayName: "" });
+  };
+
+  const handleConfirmUpload = async () => {
+    if (displayNameInput.file) {
+      const displayName = displayNameInput.displayName.trim() || undefined;
+      await upload(displayNameInput.file, displayName);
+      setDisplayNameInput({ isOpen: false, file: null, displayName: "" });
+    }
+  };
+
+  const handleCancelUpload = () => {
+    setDisplayNameInput({ isOpen: false, file: null, displayName: "" });
   };
 
   const getBadgeColor = (status: string) => {
@@ -159,6 +177,64 @@ export default function UploadDashboard() {
           </div>
         )}
 
+        {/* Display Name Modal */}
+        <Modal
+          isOpen={displayNameInput.isOpen}
+          onClose={handleCancelUpload}
+          className="max-w-md"
+          showBackdrop={true}
+        >
+          <div className="p-6 pt-8">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Upload File
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  <span className="font-medium">Original filename:</span> {displayNameInput.file?.name}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Display Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={displayNameInput.displayName}
+                  onChange={(e) =>
+                    setDisplayNameInput({
+                      ...displayNameInput,
+                      displayName: e.target.value,
+                    })
+                  }
+                  placeholder="Leave empty to use original filename"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  This is how the file will be displayed in the system. The original filename is always used for file I/O.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleCancelUpload}
+                  className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmUpload}
+                  className="flex-1 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition"
+                >
+                  Upload
+                </button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+
         {/* Dropzone */}
             <label className="flex flex-col items-center justify-center w-full p-10 border-2 border-dashed rounded-xl cursor-pointer hover:border-brand-500 transition">
               <span className="text-gray-600 dark:text-gray-400">
@@ -208,9 +284,14 @@ export default function UploadDashboard() {
                     {/* File Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 dark:text-white truncate text-sm" title={u.filename}>
-                          {u.filename}
+                        <h3 className="font-semibold text-gray-900 dark:text-white truncate text-sm" title={u.display_filename || u.filename}>
+                          {u.display_filename || u.filename}
                         </h3>
+                        {u.display_filename && (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 truncate" title={u.filename}>
+                            ({u.filename})
+                          </p>
+                        )}
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {new Date(u.created_at).toLocaleDateString()}
                         </p>

@@ -9,6 +9,7 @@ class Upload(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
     file_path = Column(String, nullable=False)
+    display_filename = Column(String, nullable=True)  # Custom display name (optional, defaults to filename)
     status = Column(String, default="uploaded")
     created_at = Column(DateTime, default=datetime.utcnow)
 

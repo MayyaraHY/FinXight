@@ -1,10 +1,11 @@
 from app.models.upload import Upload
 from app.models.account import Account
 
-def create_upload(db, filename: str, file_path: str):
+def create_upload(db, filename: str, file_path: str, display_filename: str = None):
     upload = Upload(
         filename=filename,
         file_path=file_path,
+        display_filename=display_filename,  # Optional custom display name
         status="uploaded"
     )
 
@@ -25,14 +26,14 @@ def get_all_uploads(db):
 
 
 # 🔹 UPDATE
-def update_upload(db, upload_id: int, filename: str = None):
+def update_upload(db, upload_id: int, display_filename: str = None):
     upload = get_upload_by_id(db, upload_id)
 
     if not upload:
         return None
 
-    if filename:
-        upload.filename = filename
+    if display_filename:
+        upload.display_filename = display_filename
 
     db.commit()
     db.refresh(upload)

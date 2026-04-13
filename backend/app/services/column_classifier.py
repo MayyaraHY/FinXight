@@ -29,9 +29,8 @@ def normalize_string(text):
     text = text.lower()
 
     # Remove degree symbols and corrupted characters (° and ∞ just removed, not converted)
-    # N° should become n, not no
-    text = text.replace('°', '').replace('º', '')  # Remove degree symbols entirely
-    text = text.replace('∞', '')  # Remove corrupted infinity symbol
+    text = text.replace('°', '').replace('º', '')
+    text = text.replace('∞', '')
 
     # Replace any remaining non-alphanumeric characters (except spaces) with space
     text = re.sub(r'[^a-z0-9\s]', ' ', text)
@@ -45,14 +44,15 @@ def normalize_string(text):
 
 # Legacy COLUMN_MAPPING for backwards compatibility
 COLUMN_MAPPING = {
-    "account_code": ["compte","Compte" "code", "n°", "N°", "numero", "num", "n"],
+    "account_code": ["compte", "Compte", "code", "n°", "N°", "numero", "num", "n"],
     "label": ["intitulé", "libellé", "Libellé écriture", "description", "nom"],
     "debit": ["débit", "debit"],
     "credit": ["crédit", "credit"],
     "solde_debit": ["solde débiteur", "solde deb", "solde debit"],
     "solde_credit": ["solde créditeur", "solde cdt", "solde credit"],
-    "solde_final": ["solde", "solde final","Solde Final", "value", "montant"],
+    "solde_final": ["solde", "solde final", "Solde Final", "value", "montant"],
 }
+
 
 def classify_columns(columns):
     """
@@ -67,11 +67,17 @@ def classify_columns_smart(
     columns, df: pd.DataFrame = None
 ) -> Tuple[Dict[str, str], Dict[str, float]]:
     """
-    Intelligent hybrid NLP column classification combining:
-    - Semantic embeddings (50% weight) - understands meaning
-    - Fuzzy matching (30% weight) - handles typos and variations
-    - Content analysis (20% weight) - examines actual data patterns
-
+    IMPROVED: Intelligent hybrid NLP column classification combining:
+    - Semantic embeddings (60% weight) ← INCREASED from 50%, now dominant
+    - Fuzzy matching (20% weight) ← DECREASED from 30%
+    - Content analysis (20% weight) ← SAME
+    
+    Key improvements:
+    - Semantic matching now primary signal for meaning understanding
+    - Lower threshold for accepting matches (25 instead of 30)
+    - Better tolerance for variations and synonyms
+    - French accounting terminology optimization
+    
     Returns tuple of (mapping dict, confidence_scores dict)
     """
     from app.services.semantic_classifier import (
@@ -106,18 +112,19 @@ def classify_columns_smart(
             if key in used_keys:
                 continue
 
-            # 1. SEMANTIC SCORE (50 points max)
-            semantic_score = semantic_matcher.get_semantic_similarity(col_normalized, config["description"])
-            semantic_score = (semantic_score / 100.0) * 50  # Normalize to 0-50
+            # 1. SEMANTIC SCORE (60 points max) - IMPROVED & PRIMARY
+            # Uses contextual NLP understanding with synonyms
+            semantic_score = semantic_matcher.compute_contextual_score(col_normalized, config)
+            semantic_score = (semantic_score / 100.0) * 60  # Normalize to 0-60
 
-            # 2. FUZZY SCORE (30 points max)
+            # 2. FUZZY SCORE (20 points max) - REDUCED for better semantic dominance
             fuzzy_score = 0
             for norm_keyword in normalized_keywords[key]:
                 keyword_match = fuzz.ratio(col_normalized, norm_keyword)
                 fuzzy_score = max(fuzzy_score, keyword_match)
-            fuzzy_score = (fuzzy_score / 100.0) * 30  # Normalize to 0-30
+            fuzzy_score = (fuzzy_score / 100.0) * 20  # Normalize to 0-20
 
-            # 3. CONTENT SCORE (20 points max)
+            # 3. CONTENT SCORE (20 points max) - SAME
             content_score = 0.0
             if df is not None:
                 analysis = analyze_column_content(df, col)
@@ -140,10 +147,10 @@ def classify_columns_smart(
                 f"  Candidate '{key}': semantic={semantic_score:.1f} + fuzzy={fuzzy_score:.1f} + content={content_score:.1f} = {hybrid_score:.1f}"
             )
 
-        # Only map if score is high enough
-        # After preparation service, normalized names match keywords perfectly
-        # Fuzzy match alone (30 pts) is sufficient for strong matches
-        if best_match and best_score >= 30:
+        # IMPROVED: Lower threshold from 30 to 25 for better tolerance
+        # Semantic score alone (60 pts max) can now match at 25/100 → 0.42 semantic
+        # This is about 42% semantic match + any fuzzy/content = threshold met
+        if best_match and best_score >= 25:
             mapping[col] = best_match
             confidence = min(100.0, (best_score / 100.0) * 100)  # Normalize to percentage
             confidence_scores[col] = confidence
@@ -160,14 +167,14 @@ def classify_columns_smart(
 
             if best_match and best_score > 0:
                 logger.warning(
-                    f"✗ Column '{col}' partially matched '{best_match}' (score: {best_score:.1f}/100, below 30 threshold)"
+                    f"✗ Column '{col}' partially matched '{best_match}' (score: {best_score:.1f}/100, below 25 threshold)"
                 )
             else:
                 logger.warning(f"✗ Unknown column detected: '{col}'")
 
     # Post-classification validation using content analysis
     if df is not None:
-        logger.info("Validating and boosting confidence scores using content analysis...")
+        logger.info("Validating and boosting confidence scores using enhanced content analysis...")
         confidence_scores = validate_and_boost_mapping(mapping, df, confidence_scores)
 
     logger.info(f"Final column mapping: {mapping}")

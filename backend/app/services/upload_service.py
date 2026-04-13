@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
 
-def upload_document(db, file):
+def upload_document(db, file, display_filename: str = None):
     """
     Upload a document: save file to disk and register in upload table.
     Returns the upload ID and metadata, ready for parsing.
@@ -20,9 +20,10 @@ def upload_document(db, file):
     Args:
         db: Database session
         file: FastAPI UploadFile object
+        display_filename: Optional custom filename to display (defaults to file.filename)
         
     Returns:
-        Dict with upload_id, filename, and file_path
+        Dict with upload_id, filename, display_filename, and file_path
     """
     file_path = None
     try:
@@ -38,7 +39,8 @@ def upload_document(db, file):
         upload = create_upload(
             db=db,
             filename=file.filename,
-            file_path=file_path
+            file_path=file_path,
+            display_filename=display_filename
         )
 
         logger.info(f"Upload registered with ID: {upload.id}")
@@ -47,6 +49,7 @@ def upload_document(db, file):
             "status": "success",
             "upload_id": upload.id,
             "filename": upload.filename,
+            "display_filename": upload.display_filename or upload.filename,
             "file_path": upload.file_path,
             "message": "File uploaded successfully. Use /parse/{upload_id} to parse it."
         }
@@ -111,6 +114,7 @@ def parse_csv_file(db, upload_id: int):
             "status": "success",
             "upload_id": upload_id,
             "filename": upload.filename,
+            "display_filename": upload.display_filename or upload.filename,
             "accounts_inserted": parse_result["inserted"],
             "detected_columns": parse_result["detected_columns"],
             "encoding": parse_result["encoding"],
@@ -124,7 +128,7 @@ def parse_csv_file(db, upload_id: int):
         raise
 
 
-def add_and_parse_document(db, file):
+def add_and_parse_document(db, file, display_filename: str = None):
     """
     Combined operation: upload document and parse it in one call.
     Equivalent to the old save_file_and_register() function.
@@ -132,13 +136,14 @@ def add_and_parse_document(db, file):
     Args:
         db: Database session
         file: FastAPI UploadFile object
+        display_filename: Optional custom filename to display (defaults to file.filename)
         
     Returns:
         Dict with upload_id, filename, and parsing results
     """
     try:
         # Step 1: Upload document
-        upload_result = upload_document(db, file)
+        upload_result = upload_document(db, file, display_filename)
         upload_id = upload_result["upload_id"]
 
         # Step 2: Parse CSV
@@ -236,8 +241,8 @@ def get_all_uploads_service(db):
 
 
 # 🔹 UPDATE
-def update_upload_service(db, upload_id: int, filename: str):
-    upload = update_upload(db, upload_id, filename)
+def update_upload_service(db, upload_id: int, display_filename: str):
+    upload = update_upload(db, upload_id, display_filename)
 
     if not upload:
         return {"error": "Upload not found"}

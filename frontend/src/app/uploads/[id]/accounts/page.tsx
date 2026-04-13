@@ -3,18 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 
-import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import ComponentCard from "@/components/common/ComponentCard";
 import Alert from "@/components/ui/alert/Alert";
 
 import { getAccountsByUpload } from "@/services/accountService";
+import { getUpload } from "@/services/UploadService";
 import { Account } from "@/models/account";
+import { Upload } from "@/models/Upload";
 
 export default function UploadDetailsPage() {
   const params = useParams();
   const uploadId = Number(params.id);
 
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [upload, setUpload] = useState<Upload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,20 +26,24 @@ export default function UploadDetailsPage() {
 
   // ===== FETCH =====
   useEffect(() => {
-    const fetchAccounts = async () => {
+    const fetchData = async () => {
       try {
-        const res = await getAccountsByUpload(uploadId);
-        setAccounts(res.data || []);
+        const [uploadRes, accountsRes] = await Promise.all([
+          getUpload(uploadId),
+          getAccountsByUpload(uploadId),
+        ]);
+        setUpload(uploadRes);
+        setAccounts(accountsRes.data || []);
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Failed to load accounts";
+          err instanceof Error ? err.message : "Failed to load data";
         setError(message);
       } finally {
         setLoading(false);
       }
     };
 
-    if (uploadId) fetchAccounts();
+    if (uploadId) fetchData();
   }, [uploadId]);
 
   // ===== FILTERED DATA =====
@@ -70,9 +76,7 @@ export default function UploadDetailsPage() {
 
   return (
     <div>
-      <PageBreadcrumb pageTitle={`Upload ${uploadId} Details`} />
-
-      <ComponentCard title="Accounts">
+      <ComponentCard title={`Accounts - ${upload?.display_filename || upload?.filename || "Loading..."}`}>
 
         {/* 🔄 Loading */}
         {loading && (
