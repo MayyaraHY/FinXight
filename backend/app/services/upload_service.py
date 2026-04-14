@@ -20,10 +20,9 @@ def upload_document(db, file, display_filename: str = None):
     Args:
         db: Database session
         file: FastAPI UploadFile object
-        display_filename: Optional custom filename to display (defaults to file.filename)
         
     Returns:
-        Dict with upload_id, filename, display_filename, and file_path
+        Dict with upload_id, filename, and file_path
     """
     file_path = None
     try:
@@ -114,7 +113,6 @@ def parse_csv_file(db, upload_id: int):
             "status": "success",
             "upload_id": upload_id,
             "filename": upload.filename,
-            "display_filename": upload.display_filename or upload.filename,
             "accounts_inserted": parse_result["inserted"],
             "detected_columns": parse_result["detected_columns"],
             "encoding": parse_result["encoding"],
@@ -128,7 +126,7 @@ def parse_csv_file(db, upload_id: int):
         raise
 
 
-def add_and_parse_document(db, file, display_filename: str = None):
+def add_and_parse_document(db, file):
     """
     Combined operation: upload document and parse it in one call.
     Equivalent to the old save_file_and_register() function.
@@ -136,14 +134,13 @@ def add_and_parse_document(db, file, display_filename: str = None):
     Args:
         db: Database session
         file: FastAPI UploadFile object
-        display_filename: Optional custom filename to display (defaults to file.filename)
         
     Returns:
         Dict with upload_id, filename, and parsing results
     """
     try:
         # Step 1: Upload document
-        upload_result = upload_document(db, file, display_filename)
+        upload_result = upload_document(db, file)
         upload_id = upload_result["upload_id"]
 
         # Step 2: Parse CSV
@@ -157,12 +154,12 @@ def add_and_parse_document(db, file, display_filename: str = None):
 
 
 # Legacy alias for backward compatibility
-def save_file_and_register(db, file):
+def save_file_and_register(db, file, display_filename: str = None):
     """
     Legacy function - use add_and_parse_document() instead.
     Kept for backward compatibility.
     """
-    return add_and_parse_document(db, file)
+    return add_and_parse_document(db, file, display_filename=display_filename)
 
 
 def preview_csv_file(db, upload_id: int, rows: int = 20):
@@ -227,6 +224,115 @@ def preview_csv_file(db, upload_id: int, rows: int = 20):
         raise
 
 
+def preview_mapped_columns(db, upload_id: int, rows: int = 10):
+    """
+    Preview the FINAL MAPPED COLUMNS after classification.
+    Shows how many columns will be extracted and their standardized names.
+    This runs the full classification pipeline WITHOUT saving to database.
+    
+    Perfect for showing in CMS before user confirms the import.
+    
+    Args:
+        db: Database session
+        upload_id: ID of the uploaded file
+        rows: Number of preview rows to return (default 10)
+        
+    Returns:
+        Dict with:
+        - extracted_columns: List of mapped column names (e.g., ["account_code", "label", "debit"])
+        - column_count: Number of extracted columns
+        - column_mapping: Dict showing original -> mapped names
+        - confidence_scores: Dict with confidence % for each mapping
+        - preview_data: Sample data with standardized column names
+        - preview_row_count: Number of preview rows
+        - warning_columns: List of columns with low confidence (<50%)
+    """
+    try:
+        # Get upload metadata
+        upload = get_upload_by_id(db, upload_id)
+        if not upload:
+            raise ValueError(f"Upload with ID {upload_id} not found")
+
+        logger.info(f"Previewing mapped columns for upload {upload_id}: {upload.filename}")
+
+        # Open file and run classification pipeline (without saving)
+        with open(upload.file_path, "rb") as f:
+            # Run the full parse_csv pipeline which includes:
+            # - Encoding/delimiter detection
+            # - Header detection
+            # - DataFrame preparation (normalization)
+            # - Column classification with confidence scores
+            # - Data extraction
+            # - Validation
+            validated_data = parse_csv(f, upload_id)
+
+        # Extract final column names from validated data
+        if validated_data:
+            extracted_columns = list(validated_data[0].keys())
+        else:
+            extracted_columns = []
+
+        # Get column mapping and confidence scores from parsing
+        # We need to re-run just the classification part to capture these
+        with open(upload.file_path, "rb") as f:
+            from app.services.header_detector import detect_header
+            from app.services.column_classifier import classify_columns_smart
+            from app.services.preparation_service import prepare_dataframe
+            from app.utils.helpers import detect_encoding as util_detect_encoding
+            from app.utils.helpers import detect_delimiter as util_detect_delimiter
+            from app.utils.helpers import read_csv as util_read_csv
+
+            # Step 1: Detect encoding and delimiter
+            encoding = util_detect_encoding(f)
+            delimiter = util_detect_delimiter(f)
+
+            # Step 2: Read CSV
+            df = util_read_csv(f, encoding, delimiter)
+
+            # Step 3: Detect header
+            header = detect_header(df)
+            df.columns = header
+
+            # Step 4: Prepare (normalize)
+            df = prepare_dataframe(df)
+
+            # Step 5: Classify columns
+            column_mapping, confidence_scores = classify_columns_smart(df.columns, df)
+
+        # Identify low-confidence mappings
+        warning_columns = [
+            (col, confidence) 
+            for col, confidence in confidence_scores.items() 
+            if confidence < 50 and column_mapping.get(col) != "unknown"
+        ]
+
+        # Get preview rows
+        preview_data = validated_data[:rows] if validated_data else []
+
+        logger.info(
+            f"Mapped columns for upload {upload_id}: {extracted_columns} "
+            f"({len(extracted_columns)} columns, {len(preview_data)} preview rows)"
+        )
+
+        return {
+            "status": "success",
+            "upload_id": upload_id,
+            "filename": upload.filename,
+            "extracted_columns": extracted_columns,
+            "column_count": len(extracted_columns),
+            "column_mapping": column_mapping,  # original -> mapped
+            "confidence_scores": confidence_scores,  # col -> % confidence
+            "preview_data": preview_data,
+            "preview_row_count": len(preview_data),
+            "warning_columns": warning_columns,  # Low confidence mappings
+            "message": f"Found {len(extracted_columns)} columns ready to import"
+        }
+
+    except Exception as e:
+        logger.error(f"Mapped column preview failed for upload {upload_id}: {str(e)}", exc_info=True)
+        raise
+
+
 # 🔹 READ ONE
 def get_upload_service(db, upload_id: int):
     upload = get_upload_by_id(db, upload_id)
@@ -241,8 +347,8 @@ def get_all_uploads_service(db):
 
 
 # 🔹 UPDATE
-def update_upload_service(db, upload_id: int, display_filename: str):
-    upload = update_upload(db, upload_id, display_filename)
+def update_upload_service(db, upload_id: int, filename: str):
+    upload = update_upload(db, upload_id, filename)
 
     if not upload:
         return {"error": "Upload not found"}

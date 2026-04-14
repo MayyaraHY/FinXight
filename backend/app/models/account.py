@@ -18,8 +18,16 @@ class Account(Base):
     # Financial columns (all optional but preserved if present)
     debit = Column(Numeric(20, 2), nullable=True)
     credit = Column(Numeric(20, 2), nullable=True)
-    solde_debit = Column(Numeric(20, 2), nullable=True)
-    solde_credit = Column(Numeric(20, 2), nullable=True)
+    
+    # Period balances
+    solde_debit = Column(Numeric(20, 2), nullable=True)      # Solde pér Dbt
+    solde_credit = Column(Numeric(20, 2), nullable=True)     # Solde pér Cdt
+    
+    # Final balances (FIXED: Added these two columns!)
+    solde_final_debit = Column(Numeric(20, 2), nullable=True)   # Solde fin Dbt
+    solde_final_credit = Column(Numeric(20, 2), nullable=True)  # Solde fin Cdt
+    
+    # Legacy column (for backward compatibility, but mostly unused now)
     solde_final = Column(Numeric(20, 2), nullable=True)
 
     # Optional opening balances

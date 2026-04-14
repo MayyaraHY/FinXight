@@ -42,6 +42,8 @@ def account_to_dict(account):
         "solde_debit": float(account.solde_debit) if account.solde_debit is not None else None,
         "solde_credit": float(account.solde_credit) if account.solde_credit is not None else None,
         "solde_final": float(account.solde_final) if account.solde_final is not None else None,
+        "solde_final_debit": float(account.solde_final_debit) if account.solde_final_debit is not None else None,
+        "solde_final_credit": float(account.solde_final_credit) if account.solde_final_credit is not None else None,
         "opening_debit": float(account.opening_debit) if account.opening_debit is not None else None,
         "opening_credit": float(account.opening_credit) if account.opening_credit is not None else None,
         "created_at": account.created_at.isoformat() if account.created_at else None,
@@ -200,6 +202,8 @@ def update_account_endpoint(
     solde_debit: float = None,
     solde_credit: float = None,
     solde_final: float = None,
+    solde_final_debit: float = None,
+    solde_final_credit: float = None,
     opening_debit: float = None,
     opening_credit: float = None,
     db: Session = Depends(get_db),
@@ -220,6 +224,10 @@ def update_account_endpoint(
         update_data["solde_credit"] = solde_credit
     if solde_final is not None:
         update_data["solde_final"] = solde_final
+    if solde_final_debit is not None:
+        update_data["solde_final_debit"] = solde_final_debit
+    if solde_final_credit is not None:
+        update_data["solde_final_credit"] = solde_final_credit
     if opening_debit is not None:
         update_data["opening_debit"] = opening_debit
     if opening_credit is not None:

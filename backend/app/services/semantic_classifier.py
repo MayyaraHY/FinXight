@@ -1,10 +1,6 @@
 """
-Enhanced Semantic NLP-based column classification for intelligent CSV column mapping.
-Improvements:
-- Higher semantic matching tolerance (adaptive thresholds)
-- Better NLP-based meaning understanding using contextual embeddings
-- Multi-faceted scoring with emphasis on semantic understanding
-- Improved handling of French accounting terminology
+Semantic NLP-based column classification for intelligent CSV column mapping.
+Combines semantic embeddings, fuzzy matching, and content analysis.
 """
 
 import logging
@@ -16,50 +12,50 @@ logger = logging.getLogger(__name__)
 
 # Try importing sentence-transformers; gracefully disable semantic matching if unavailable
 try:
-    from sentence_transformers import SentenceTransformer, util
+    from sentence_transformers import SentenceTransformer
     SEMANTIC_AVAILABLE = True
 except ImportError:
     SEMANTIC_AVAILABLE = False
     logger.warning("sentence-transformers not installed. Semantic matching disabled. Using fuzzy-only fallback.")
 
-# Enriched column mapping with comprehensive semantic descriptions
-# Enhanced with broader context for better NLP matching
+# Enriched column mapping with semantic descriptions
+# FIXED: Added solde_final_debit and solde_final_credit as separate entries
 ENRICHED_COLUMN_MAPPING = {
     "account_code": {
-        "keywords": ["compte", "code", "n°", "N°", "numero", "num", "n", "account", "acc", "reference", "ref"],
-        "description": "account code account number numerical identifier reference code accounting code account reference customer number client code",
+        "keywords": ["compte", "code", "n°", "numero", "num", "n", "account", "acc"],
+        "description": "numerical identifier reference code account number accounting",
         "expected_content": {"type": "numeric_or_short_text", "avg_length": 8, "numeric_ratio": 0.7},
-        "synonyms": ["compte bancaire", "numero compte", "reference client", "identifiant"],
     },
     "label": {
-        "keywords": ["intitulé", "libellé", "Libellé écriture", "description", "nom", "name", "label", "designation", "descriptif", "desc"],
-        "description": "text description transaction description account designation account name account title account label account descriptive text designation name",
+        "keywords": ["intitulé", "libellé", "libelle ecriture", "description", "nom", "name", "label", "designation"],
+        "description": "text description designation name account title account label",
         "expected_content": {"type": "text", "avg_length": 30, "numeric_ratio": 0.0},
-        "synonyms": ["description transaction", "nom compte", "designation ecriture", "libelle ecriture"],
     },
     "debit": {
-        "keywords": ["débit", "debit", "db", "dr", "debit amount"],
-        "description": "debit amount debit monetary value debit column accounting transactions debit side amount debited debit posting",
+        "keywords": ["débit", "debit", "db"],
+        "description": "debit amount monetary value debit column transactions",
         "expected_content": {"type": "numeric", "avg_length": 10, "numeric_ratio": 0.8, "decimal_ratio": 0.5},
-        "synonyms": ["montant debit", "debit operation", "operation debit"],
     },
     "credit": {
-        "keywords": ["crédit", "credit", "cr", "credit amount"],
-        "description": "credit amount credit monetary value credit column accounting transactions credit side amount credited credit posting",
+        "keywords": ["crédit", "credit", "cr"],
+        "description": "credit amount monetary value credit column transactions",
         "expected_content": {"type": "numeric", "avg_length": 10, "numeric_ratio": 0.8, "decimal_ratio": 0.5},
-        "synonyms": ["montant credit", "credit operation", "operation credit"],
     },
     "solde_debit": {
-        "keywords": ["solde débiteur", "solde deb", "solde debit", "balance debit", "solde db"],
-        "description": "balance debit total debit accounting account balance debit side cumulative debit debit balance running balance",
+        "keywords": [
+            "solde débiteur", "solde debiteur", "solde deb", "solde debit",  # Period balance
+            "solde pér dbt", "solde periode debit", "balance debit", "periode debit"
+        ],
+        "description": "balance debit total debit accounting account balance debit side period balance",
         "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.8, "decimal_ratio": 0.6},
-        "synonyms": ["solde debiteur", "balance debiteur", "solde cumulatif debit"],
     },
     "solde_credit": {
-        "keywords": ["solde créditeur", "solde cdt", "solde credit", "balance credit", "solde cr"],
-        "description": "balance credit total credit accounting account balance credit side cumulative credit credit balance running balance",
+        "keywords": [
+            "solde créditeur", "solde crediteur", "solde cdt", "solde credit",  # Period balance
+            "solde pér cdt", "solde periode credit", "balance credit", "periode credit"
+        ],
+        "description": "balance credit total credit accounting account balance credit side period balance",
         "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.8, "decimal_ratio": 0.6},
-        "synonyms": ["solde crediteur", "balance crediteur", "solde cumulatif credit"],
     },
     "solde_final": {
         "keywords": ["solde", "solde final", "value", "montant", "total", "final", "amount", "balance", "solde final", "balance final"],
@@ -67,23 +63,36 @@ ENRICHED_COLUMN_MAPPING = {
         "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.85, "decimal_ratio": 0.7},
         "synonyms": ["solde total", "balance totale", "montant final", "solde arrête"],
     },
+    "solde_final_debit": {
+        "keywords": [
+            "solde fin dbt", "solde final debit", "solde fin debit", "final debit",
+            "solde final dbt", "solde final debiteur", "final balance debit"
+        ],
+        "description": "final balance debit side total debit accounting final account balance debit",
+        "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.85, "decimal_ratio": 0.7},
+    },
+    "solde_final_credit": {
+        "keywords": [
+            "solde fin cdt", "solde final credit", "solde fin credit", "final credit",
+            "solde final cdt", "solde final crediteur", "final balance credit"
+        ],
+        "description": "final balance credit side total credit accounting final account balance credit",
+        "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.85, "decimal_ratio": 0.7},
+    },
 }
 
 
-class EnhancedSemanticMatcher:
+class SemanticMatcher:
     """
-    Enhanced semantic matching using sentence transformers with:
-    - Higher tolerance for semantic matching
-    - Multi-model ensemble for better accuracy
-    - Contextual understanding of accounting terminology
-    - Adaptive scoring thresholds
+    Semantic matching using sentence transformers.
+    Lazy loads model on first use and caches embeddings.
+    Gracefully falls back to None if model unavailable.
     """
 
     def __init__(self):
         self.model = None
         self.embedding_cache = {}
-        self.model_name = "sentence-transformers/all-MiniLM-L6-v2"  # Efficient model
-        self.similarity_cache = {}
+        self.model_name = "sentence-transformers/all-MiniLM-L6-v2"
 
     def _ensure_model_loaded(self):
         """Lazy load semantic model on first use."""
@@ -119,17 +128,9 @@ class EnhancedSemanticMatcher:
 
     def get_semantic_similarity(self, text1: str, text2: str) -> float:
         """
-        IMPROVED: Compute semantic similarity with context awareness.
-        Returns 0-100 score.
-        - Now considers synonyms and related terms
-        - Uses cosine similarity which is more robust
-        - Returns score on 0-100 scale for consistency
+        Compute cosine similarity between two texts (0-1).
+        Returns 0.0 if semantic matching unavailable.
         """
-        # Check cache first
-        cache_key = f"{text1}||{text2}"
-        if cache_key in self.similarity_cache:
-            return self.similarity_cache[cache_key]
-
         emb1 = self.get_embedding(text1)
         emb2 = self.get_embedding(text2)
 
@@ -137,52 +138,18 @@ class EnhancedSemanticMatcher:
             return 0.0
 
         try:
-            # Use cosine similarity (more stable than dot product for normalized embeddings)
-            similarity = util.pytorch_cos_sim(emb1, emb2).item() if SEMANTIC_AVAILABLE else 0.0
-            if similarity is None or np.isnan(similarity):
-                similarity = 0.0
-            
-            # Scale to 0-100
-            score = max(0.0, min(100.0, similarity * 100))
-            self.similarity_cache[cache_key] = score
-            return score
+            # Cosine similarity
+            similarity = np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
+            # Scale to 0-100 for consistency with fuzzy matching
+            return max(0.0, min(100.0, similarity * 100))
         except Exception as e:
             logger.warning(f"Semantic similarity computation failed: {e}")
             return 0.0
-
-    def compute_contextual_score(self, column_name: str, field_config: Dict) -> float:
-        """
-        IMPROVED: Compute semantic score with multiple context layers:
-        1. Direct match with field description
-        2. Match with synonyms
-        3. Keyword context matching
-        Returns enhanced score (0-100)
-        """
-        col_normalized = column_name.lower()
-        
-        # Primary: Match against field description
-        primary_score = self.get_semantic_similarity(col_normalized, field_config["description"])
-        
-        # Secondary: Match against synonyms (if available)
-        secondary_scores = []
-        if "synonyms" in field_config:
-            for synonym in field_config["synonyms"]:
-                score = self.get_semantic_similarity(col_normalized, synonym)
-                secondary_scores.append(score)
-        
-        # Combine scores with weighting
-        # Primary match: 60%, Best synonym match: 40%
-        final_score = primary_score * 0.6
-        if secondary_scores:
-            final_score += max(secondary_scores) * 0.4
-        
-        return max(0.0, min(100.0, final_score))
 
 
 def analyze_column_content(df: pd.DataFrame, column_name: str) -> Dict:
     """
     Analyze column content to determine type and patterns.
-    Enhanced for better detection of numeric vs text columns.
     
     Returns dict with:
     - numeric_ratio: percentage of values that look numeric
@@ -257,23 +224,21 @@ def analyze_column_content(df: pd.DataFrame, column_name: str) -> Dict:
 
 def compute_content_score(column_analysis: Dict, field_expectations: Dict) -> float:
     """
-    IMPROVED: Compute content match score (0-25 points) with better tolerance.
-    More flexible in accepting matches while still being discriminative.
+    Compute content match score (0-20 points) by comparing column analysis with field expectations.
     """
     score = 0.0
 
-    # More lenient numeric/text matching
-    if field_expectations.get("type") == "numeric" and column_analysis["numeric_ratio"] > 0.6:
-        score += 20  # Increased from 15
-    elif field_expectations.get("type") == "text" and column_analysis["text_ratio"] > 0.7:
-        score += 20
+    if field_expectations.get("type") == "numeric" and column_analysis["numeric_ratio"] > 0.7:
+        score += 15
+    elif field_expectations.get("type") == "text" and column_analysis["text_ratio"] > 0.8:
+        score += 15
     elif field_expectations.get("type") == "numeric_or_short_text":
-        if column_analysis["numeric_ratio"] > 0.4 or column_analysis["avg_length"] < 12:
-            score += 18  # Increased from 12
+        if column_analysis["numeric_ratio"] > 0.5 or column_analysis["avg_length"] < 10:
+            score += 12
 
     # Check decimal presence for monetary fields
-    if field_expectations.get("decimal_ratio", 0) > 0.3:
-        if column_analysis["decimal_ratio"] > 0.2:
+    if field_expectations.get("decimal_ratio", 0) > 0.4:
+        if column_analysis["decimal_ratio"] > 0.3:
             score += 3
 
     # Check for large numbers (indicator of monetary values)
@@ -284,7 +249,7 @@ def compute_content_score(column_analysis: Dict, field_expectations: Dict) -> fl
     if column_analysis["empty_ratio"] > 0.5:
         score -= 5
 
-    return max(0.0, min(25.0, score))
+    return max(0.0, min(20.0, score))
 
 
 def validate_and_boost_mapping(
@@ -292,7 +257,7 @@ def validate_and_boost_mapping(
 ) -> Dict[str, float]:
     """
     Post-classification validation and confidence boosting using content analysis.
-    IMPROVED: More aggressive confidence boosting for semantic matches.
+    Returns updated confidence scores.
     """
     updated_scores = confidence_scores.copy()
 
@@ -300,8 +265,8 @@ def validate_and_boost_mapping(
         if field_name == "unknown":
             continue
 
-        # More lenient threshold for boosting (was 85, now 70)
-        if updated_scores.get(column_name, 0) > 70:
+        # Skip if already high confidence from semantic+fuzzy
+        if updated_scores.get(column_name, 0) > 85:
             continue
 
         # Analyze column content
@@ -310,9 +275,9 @@ def validate_and_boost_mapping(
 
         content_score = compute_content_score(analysis, field_expectations)
 
-        # IMPROVED: More aggressive boost strategy
-        if content_score > 10:
-            boost = content_score * 0.4  # Increased from 0.25 (was up to 5, now up to 10)
+        # Boost confidence based on content match
+        if content_score > 12:
+            boost = content_score * 0.25  # 20-point content score → up to 5-point boost
             new_confidence = min(100.0, updated_scores.get(column_name, 0) + boost)
             logger.debug(
                 f"Boosting '{column_name}' → '{field_name}': "
@@ -321,8 +286,8 @@ def validate_and_boost_mapping(
             )
             updated_scores[column_name] = new_confidence
 
-        # Flag suspicious classifications
-        elif content_score < 3 and updated_scores.get(column_name, 0) < 60:
+        # Flag suspicious classifications (content doesn't match field type)
+        elif content_score < 5 and updated_scores.get(column_name, 0) < 75:
             logger.warning(
                 f"⚠ Suspicious classification: '{column_name}' → '{field_name}' "
                 f"(confidence={updated_scores.get(column_name, 0):.1f}%, content_score={content_score:.1f})"
@@ -335,9 +300,9 @@ def validate_and_boost_mapping(
 _semantic_matcher = None
 
 
-def get_semantic_matcher() -> EnhancedSemanticMatcher:
-    """Get or create global enhanced semantic matcher instance."""
+def get_semantic_matcher() -> SemanticMatcher:
+    """Get or create global semantic matcher instance."""
     global _semantic_matcher
     if _semantic_matcher is None:
-        _semantic_matcher = EnhancedSemanticMatcher()
+        _semantic_matcher = SemanticMatcher()
     return _semantic_matcher

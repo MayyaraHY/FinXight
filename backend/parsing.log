@@ -4502,3 +4502,1213 @@ INFO:root:Upload 83: Encoding=UTF-8-SIG, Delimiter=;, Columns={'n': 'account_cod
 INFO:app.services.upload_service:Upload 83: 98 accounts inserted. Detected columns: ['account_code', 'label', 'solde_final']
 INFO:app.services.upload_service:File saved: app/uploads\balance_fixed.csv
 INFO:app.services.upload_service:Upload registered with ID: 84
+INFO:app.services.upload_service:File saved: app/uploads\etats-financiers-Pulse-Consulting-Agency-2021 – Copie(BALANCE 2021).csv
+INFO:app.services.upload_service:Upload registered with ID: 85
+INFO:app.services.upload_service:File saved: app/uploads\F1773661755482_BAL(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 86
+INFO:app.services.upload_service:Starting to parse upload 86: F1773661755482_BAL(in).csv
+INFO:app.utils.helpers:Successfully decoded first line with latin1
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 9, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 10 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7', 'col_8', 'col_9']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Solde ant Dbt (réf)', 'Solde ant Cdt (réf)', 'Débit période (réf)', 'Crédit période (réf)', 'Solde pér Dbt (réf)', 'Solde pér Cdt (réf)', 'Solde fin Dbt (réf)', 'Solde fin Cdt (réf)']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Solde ant Dbt (réf)': 'solde ant dbt ref', 'Solde ant Cdt (réf)': 'solde ant cdt ref', 'Débit période (réf)': 'debit periode ref', 'Crédit période (réf)': 'credit periode ref', 'Solde pér Dbt (réf)': 'solde per dbt ref', 'Solde pér Cdt (réf)': 'solde per cdt ref', 'Solde fin Dbt (réf)': 'solde fin dbt ref', 'Solde fin Cdt (réf)': 'solde fin cdt ref'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant dbt ref' \u2192 normalized: 'solde ant dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant dbt ref' \u2192 'opening_debit' (confidence: 46.8%) [semantic=5.7, fuzzy=26.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant cdt ref' \u2192 normalized: 'solde ant cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant cdt ref' \u2192 'opening_credit' (confidence: 46.7%) [semantic=5.6, fuzzy=26.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit periode ref' \u2192 normalized: 'debit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit periode ref' \u2192 'solde_debit' (confidence: 69.9%) [semantic=32.8, fuzzy=17.1, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit periode ref' \u2192 normalized: 'credit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit periode ref' \u2192 'solde_credit' (confidence: 59.1%) [semantic=24.6, fuzzy=16.5, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt ref' \u2192 normalized: 'solde per dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt ref' \u2192 'solde_final' (confidence: 47.5%) [semantic=12.5, fuzzy=15.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt ref' \u2192 normalized: 'solde per cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt ref' \u2192 'solde_final_credit' (confidence: 40.0%) [semantic=4.9, fuzzy=20.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt ref' \u2192 normalized: 'solde fin dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 54.7%) [semantic=8.6, fuzzy=26.1, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt ref' \u2192 normalized: 'solde fin cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt ref' \u2192 'debit' (confidence: 31.2%) [semantic=5.4, fuzzy=10.8, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'solde_debit', 'credit periode ref': 'solde_credit', 'solde per dbt ref': 'solde_final', 'solde per cdt ref': 'solde_final_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'debit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('solde ant dbt ref', '50.5%'), ('solde ant cdt ref', '50.5%'), ('debit periode ref', '74.9%'), ('credit periode ref', '63.6%'), ('solde per dbt ref', '52.5%'), ('solde per cdt ref', '43.7%'), ('solde fin dbt ref', '59.7%'), ('solde fin cdt ref', '34.9%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'solde ant dbt ref' \u2192 'opening_debit' (confidence: 50.5%)
+INFO:app.services.csv_parsing_service:  'solde ant cdt ref' \u2192 'opening_credit' (confidence: 50.5%)
+INFO:app.services.csv_parsing_service:  'debit periode ref' \u2192 'solde_debit' (confidence: 74.9%)
+INFO:app.services.csv_parsing_service:  'credit periode ref' \u2192 'solde_credit' (confidence: 63.6%)
+INFO:app.services.csv_parsing_service:  'solde per dbt ref' \u2192 'solde_final' (confidence: 52.5%)
+INFO:app.services.csv_parsing_service:  'solde per cdt ref' \u2192 'solde_final_credit' (confidence: 43.7%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 59.7%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt ref' \u2192 'debit' (confidence: 34.9%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'opening_debit': ['solde ant dbt ref'], 'opening_credit': ['solde ant cdt ref'], 'solde_debit': ['debit periode ref'], 'solde_credit': ['credit periode ref'], 'solde_final': ['solde per dbt ref'], 'solde_final_credit': ['solde per cdt ref'], 'solde_final_debit': ['solde fin dbt ref'], 'debit': ['solde fin cdt ref']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'opening_debit', 'opening_credit', 'solde_debit', 'solde_credit', 'solde_final', 'solde_final_credit', 'solde_final_debit', 'debit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 10)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label  ...    solde_final_debit                debit
+0       Compte                        Intitulé  ...  Solde fin Dbt (réf)  Solde fin Cdt (réf)
+1     10100000                  CAPITAL SOCIAL  ...                    0             12400000
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE  ...                   10                    0
+3     16210000                EMPRUNT BANCAIRE  ...                    0             21100000
+4     16220000                 EMPRUNT LEASING  ...                    0           1298680,66
+
+[5 rows x 10 columns]
+INFO:app.services.data_extractor:Converted column 'debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final' to numeric
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label  ...    solde_final_debit        debit
+0       Compte                        Intitulé  ...  Solde fin Dbt (réf)          NaN
+1     10100000                  CAPITAL SOCIAL  ...                    0  12400000.00
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE  ...                   10         0.00
+3     16210000                EMPRUNT BANCAIRE  ...                    0  21100000.00
+4     16220000                 EMPRUNT LEASING  ...                    0   1298680.66
+
+[5 rows x 10 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+INFO:root:Upload 86: Encoding=ISO-8859-1, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'solde_debit', 'credit periode ref': 'solde_credit', 'solde per dbt ref': 'solde_final', 'solde per cdt ref': 'solde_final_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'debit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'solde ant dbt ref': 50.5%, 'solde ant cdt ref': 50.5%, 'debit periode ref': 74.9%, 'credit periode ref': 63.6%, 'solde per dbt ref': 52.5%, 'solde per cdt ref': 43.7%, 'solde fin dbt ref': 59.7%, 'solde fin cdt ref': 34.9%}
+INFO:app.services.upload_service:Upload 86: 165 accounts inserted. Detected columns: ['account_code', 'label', 'opening_debit', 'opening_credit', 'solde_debit', 'solde_credit', 'solde_final', 'solde_final_credit', 'solde_final_debit', 'debit']
+INFO:app.services.upload_service:File saved: app/uploads\F1773661755482_BAL(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 87
+INFO:app.services.upload_service:Starting to parse upload 87: F1773661755482_BAL(in).csv
+INFO:app.utils.helpers:Successfully decoded first line with latin1
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 9, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 10 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7', 'col_8', 'col_9']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Solde ant Dbt (réf)', 'Solde ant Cdt (réf)', 'Débit période (réf)', 'Crédit période (réf)', 'Solde pér Dbt (réf)', 'Solde pér Cdt (réf)', 'Solde fin Dbt (réf)', 'Solde fin Cdt (réf)']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Solde ant Dbt (réf)': 'solde ant dbt ref', 'Solde ant Cdt (réf)': 'solde ant cdt ref', 'Débit période (réf)': 'debit periode ref', 'Crédit période (réf)': 'credit periode ref', 'Solde pér Dbt (réf)': 'solde per dbt ref', 'Solde pér Cdt (réf)': 'solde per cdt ref', 'Solde fin Dbt (réf)': 'solde fin dbt ref', 'Solde fin Cdt (réf)': 'solde fin cdt ref'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant dbt ref' \u2192 normalized: 'solde ant dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant dbt ref' \u2192 'opening_debit' (confidence: 46.8%) [semantic=5.7, fuzzy=26.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant cdt ref' \u2192 normalized: 'solde ant cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant cdt ref' \u2192 'opening_credit' (confidence: 46.7%) [semantic=5.6, fuzzy=26.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit periode ref' \u2192 normalized: 'debit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit periode ref' \u2192 'solde_debit' (confidence: 69.9%) [semantic=32.8, fuzzy=17.1, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit periode ref' \u2192 normalized: 'credit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit periode ref' \u2192 'solde_credit' (confidence: 59.1%) [semantic=24.6, fuzzy=16.5, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt ref' \u2192 normalized: 'solde per dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt ref' \u2192 'solde_final' (confidence: 47.5%) [semantic=12.5, fuzzy=15.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt ref' \u2192 normalized: 'solde per cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt ref' \u2192 'solde_final_credit' (confidence: 40.0%) [semantic=4.9, fuzzy=20.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt ref' \u2192 normalized: 'solde fin dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 54.7%) [semantic=8.6, fuzzy=26.1, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt ref' \u2192 normalized: 'solde fin cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt ref' \u2192 'debit' (confidence: 31.2%) [semantic=5.4, fuzzy=10.8, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'solde_debit', 'credit periode ref': 'solde_credit', 'solde per dbt ref': 'solde_final', 'solde per cdt ref': 'solde_final_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'debit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('solde ant dbt ref', '50.5%'), ('solde ant cdt ref', '50.5%'), ('debit periode ref', '74.9%'), ('credit periode ref', '63.6%'), ('solde per dbt ref', '52.5%'), ('solde per cdt ref', '43.7%'), ('solde fin dbt ref', '59.7%'), ('solde fin cdt ref', '34.9%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'solde ant dbt ref' \u2192 'opening_debit' (confidence: 50.5%)
+INFO:app.services.csv_parsing_service:  'solde ant cdt ref' \u2192 'opening_credit' (confidence: 50.5%)
+INFO:app.services.csv_parsing_service:  'debit periode ref' \u2192 'solde_debit' (confidence: 74.9%)
+INFO:app.services.csv_parsing_service:  'credit periode ref' \u2192 'solde_credit' (confidence: 63.6%)
+INFO:app.services.csv_parsing_service:  'solde per dbt ref' \u2192 'solde_final' (confidence: 52.5%)
+INFO:app.services.csv_parsing_service:  'solde per cdt ref' \u2192 'solde_final_credit' (confidence: 43.7%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 59.7%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt ref' \u2192 'debit' (confidence: 34.9%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'opening_debit': ['solde ant dbt ref'], 'opening_credit': ['solde ant cdt ref'], 'solde_debit': ['debit periode ref'], 'solde_credit': ['credit periode ref'], 'solde_final': ['solde per dbt ref'], 'solde_final_credit': ['solde per cdt ref'], 'solde_final_debit': ['solde fin dbt ref'], 'debit': ['solde fin cdt ref']}
+INFO:app.services.data_extractor:Rename dict (respecting column order): {'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'solde_debit', 'credit periode ref': 'solde_credit', 'solde per dbt ref': 'solde_final', 'solde per cdt ref': 'solde_final_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'debit'}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'opening_debit', 'opening_credit', 'solde_debit', 'solde_credit', 'solde_final', 'solde_final_credit', 'solde_final_debit', 'debit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 10)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label  ...    solde_final_debit                debit
+0       Compte                        Intitulé  ...  Solde fin Dbt (réf)  Solde fin Cdt (réf)
+1     10100000                  CAPITAL SOCIAL  ...                    0             12400000
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE  ...                   10                    0
+3     16210000                EMPRUNT BANCAIRE  ...                    0             21100000
+4     16220000                 EMPRUNT LEASING  ...                    0           1298680,66
+
+[5 rows x 10 columns]
+INFO:app.services.data_extractor:Converted column 'debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final' to numeric
+INFO:app.services.data_extractor:Converted column 'opening_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'opening_credit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final_credit' to numeric
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label  opening_debit  ...  solde_final_credit  solde_final_debit        debit
+0       Compte                        Intitulé            NaN  ...                 NaN                NaN          NaN
+1     10100000                  CAPITAL SOCIAL            0.0  ...         12400000.00                0.0  12400000.00
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE            0.0  ...                0.00               10.0         0.00
+3     16210000                EMPRUNT BANCAIRE            0.0  ...         21100000.00                0.0  21100000.00
+4     16220000                 EMPRUNT LEASING            0.0  ...          1298680.66                0.0   1298680.66
+
+[5 rows x 10 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+INFO:root:Upload 87: Encoding=ISO-8859-1, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'solde_debit', 'credit periode ref': 'solde_credit', 'solde per dbt ref': 'solde_final', 'solde per cdt ref': 'solde_final_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'debit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'solde ant dbt ref': 50.5%, 'solde ant cdt ref': 50.5%, 'debit periode ref': 74.9%, 'credit periode ref': 63.6%, 'solde per dbt ref': 52.5%, 'solde per cdt ref': 43.7%, 'solde fin dbt ref': 59.7%, 'solde fin cdt ref': 34.9%}
+INFO:app.services.upload_service:Upload 87: 165 accounts inserted. Detected columns: ['account_code', 'label', 'opening_debit', 'opening_credit', 'solde_debit', 'solde_credit', 'solde_final', 'solde_final_credit', 'solde_final_debit', 'debit']
+INFO:app.services.upload_service:File saved: app/uploads\F1773661755482_BAL(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 88
+INFO:app.services.upload_service:Starting to parse upload 88: F1773661755482_BAL(in).csv
+INFO:app.utils.helpers:Successfully decoded first line with latin1
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 9, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 10 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7', 'col_8', 'col_9']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Solde ant Dbt (réf)', 'Solde ant Cdt (réf)', 'Débit période (réf)', 'Crédit période (réf)', 'Solde pér Dbt (réf)', 'Solde pér Cdt (réf)', 'Solde fin Dbt (réf)', 'Solde fin Cdt (réf)']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Solde ant Dbt (réf)': 'solde ant dbt ref', 'Solde ant Cdt (réf)': 'solde ant cdt ref', 'Débit période (réf)': 'debit periode ref', 'Crédit période (réf)': 'credit periode ref', 'Solde pér Dbt (réf)': 'solde per dbt ref', 'Solde pér Cdt (réf)': 'solde per cdt ref', 'Solde fin Dbt (réf)': 'solde fin dbt ref', 'Solde fin Cdt (réf)': 'solde fin cdt ref'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant dbt ref' \u2192 normalized: 'solde ant dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant dbt ref' \u2192 'opening_debit' (confidence: 46.8%) [semantic=5.7, fuzzy=26.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant cdt ref' \u2192 normalized: 'solde ant cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant cdt ref' \u2192 'opening_credit' (confidence: 46.7%) [semantic=5.6, fuzzy=26.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit periode ref' \u2192 normalized: 'debit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit periode ref' \u2192 'solde_debit' (confidence: 69.9%) [semantic=32.8, fuzzy=17.1, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit periode ref' \u2192 normalized: 'credit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit periode ref' \u2192 'solde_credit' (confidence: 59.1%) [semantic=24.6, fuzzy=16.5, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt ref' \u2192 normalized: 'solde per dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt ref' \u2192 'solde_final' (confidence: 47.5%) [semantic=12.5, fuzzy=15.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt ref' \u2192 normalized: 'solde per cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt ref' \u2192 'solde_final_credit' (confidence: 40.0%) [semantic=4.9, fuzzy=20.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt ref' \u2192 normalized: 'solde fin dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 54.7%) [semantic=8.6, fuzzy=26.1, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt ref' \u2192 normalized: 'solde fin cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt ref' \u2192 'debit' (confidence: 31.2%) [semantic=5.4, fuzzy=10.8, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'solde_debit', 'credit periode ref': 'solde_credit', 'solde per dbt ref': 'solde_final', 'solde per cdt ref': 'solde_final_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'debit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('solde ant dbt ref', '50.5%'), ('solde ant cdt ref', '50.5%'), ('debit periode ref', '74.9%'), ('credit periode ref', '63.6%'), ('solde per dbt ref', '52.5%'), ('solde per cdt ref', '43.7%'), ('solde fin dbt ref', '59.7%'), ('solde fin cdt ref', '34.9%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'solde ant dbt ref' \u2192 'opening_debit' (confidence: 50.5%)
+INFO:app.services.csv_parsing_service:  'solde ant cdt ref' \u2192 'opening_credit' (confidence: 50.5%)
+INFO:app.services.csv_parsing_service:  'debit periode ref' \u2192 'solde_debit' (confidence: 74.9%)
+INFO:app.services.csv_parsing_service:  'credit periode ref' \u2192 'solde_credit' (confidence: 63.6%)
+INFO:app.services.csv_parsing_service:  'solde per dbt ref' \u2192 'solde_final' (confidence: 52.5%)
+INFO:app.services.csv_parsing_service:  'solde per cdt ref' \u2192 'solde_final_credit' (confidence: 43.7%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 59.7%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt ref' \u2192 'debit' (confidence: 34.9%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'opening_debit': ['solde ant dbt ref'], 'opening_credit': ['solde ant cdt ref'], 'solde_debit': ['debit periode ref'], 'solde_credit': ['credit periode ref'], 'solde_final': ['solde per dbt ref'], 'solde_final_credit': ['solde per cdt ref'], 'solde_final_debit': ['solde fin dbt ref'], 'debit': ['solde fin cdt ref']}
+INFO:app.services.data_extractor:Rename dict (respecting column order): {'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'solde_debit', 'credit periode ref': 'solde_credit', 'solde per dbt ref': 'solde_final', 'solde per cdt ref': 'solde_final_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'debit'}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'opening_debit', 'opening_credit', 'solde_debit', 'solde_credit', 'solde_final', 'solde_final_credit', 'solde_final_debit', 'debit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 10)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label  ...    solde_final_debit                debit
+0       Compte                        Intitulé  ...  Solde fin Dbt (réf)  Solde fin Cdt (réf)
+1     10100000                  CAPITAL SOCIAL  ...                    0             12400000
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE  ...                   10                    0
+3     16210000                EMPRUNT BANCAIRE  ...                    0             21100000
+4     16220000                 EMPRUNT LEASING  ...                    0           1298680,66
+
+[5 rows x 10 columns]
+INFO:app.services.data_extractor:Converted column 'debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final' to numeric
+INFO:app.services.data_extractor:Converted column 'opening_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'opening_credit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final_credit' to numeric
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label  opening_debit  ...  solde_final_credit  solde_final_debit        debit
+0       Compte                        Intitulé            NaN  ...                 NaN                NaN          NaN
+1     10100000                  CAPITAL SOCIAL            0.0  ...         12400000.00                0.0  12400000.00
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE            0.0  ...                0.00               10.0         0.00
+3     16210000                EMPRUNT BANCAIRE            0.0  ...         21100000.00                0.0  21100000.00
+4     16220000                 EMPRUNT LEASING            0.0  ...          1298680.66                0.0   1298680.66
+
+[5 rows x 10 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+INFO:root:Upload 88: Encoding=ISO-8859-1, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'solde_debit', 'credit periode ref': 'solde_credit', 'solde per dbt ref': 'solde_final', 'solde per cdt ref': 'solde_final_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'debit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'solde ant dbt ref': 50.5%, 'solde ant cdt ref': 50.5%, 'debit periode ref': 74.9%, 'credit periode ref': 63.6%, 'solde per dbt ref': 52.5%, 'solde per cdt ref': 43.7%, 'solde fin dbt ref': 59.7%, 'solde fin cdt ref': 34.9%}
+INFO:app.services.upload_service:Upload 88: 165 accounts inserted. Detected columns: ['account_code', 'label', 'opening_debit', 'opening_credit', 'solde_debit', 'solde_credit', 'solde_final', 'solde_final_credit', 'solde_final_debit', 'debit']
+INFO:app.services.upload_service:File saved: app/uploads\F1773661755482_BAL(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 89
+INFO:app.services.upload_service:Starting to parse upload 89: F1773661755482_BAL(in).csv
+INFO:app.utils.helpers:Successfully decoded first line with latin1
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 9, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 10 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7', 'col_8', 'col_9']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Solde ant Dbt (réf)', 'Solde ant Cdt (réf)', 'Débit période (réf)', 'Crédit période (réf)', 'Solde pér Dbt (réf)', 'Solde pér Cdt (réf)', 'Solde fin Dbt (réf)', 'Solde fin Cdt (réf)']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Solde ant Dbt (réf)': 'solde ant dbt ref', 'Solde ant Cdt (réf)': 'solde ant cdt ref', 'Débit période (réf)': 'debit periode ref', 'Crédit période (réf)': 'credit periode ref', 'Solde pér Dbt (réf)': 'solde per dbt ref', 'Solde pér Cdt (réf)': 'solde per cdt ref', 'Solde fin Dbt (réf)': 'solde fin dbt ref', 'Solde fin Cdt (réf)': 'solde fin cdt ref'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant dbt ref' \u2192 normalized: 'solde ant dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant dbt ref' \u2192 'opening_debit' (confidence: 46.8%) [semantic=5.7, fuzzy=26.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant cdt ref' \u2192 normalized: 'solde ant cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant cdt ref' \u2192 'opening_credit' (confidence: 46.7%) [semantic=5.6, fuzzy=26.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit periode ref' \u2192 normalized: 'debit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit periode ref' \u2192 'opening_debit' (confidence: 64.2%) [semantic=30.4, fuzzy=13.8, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit periode ref' \u2192 normalized: 'credit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit periode ref' \u2192 'opening_credit' (confidence: 54.8%) [semantic=25.4, fuzzy=11.4, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt ref' \u2192 normalized: 'solde per dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt ref' \u2192 'solde_debit' (confidence: 53.9%) [semantic=7.8, fuzzy=26.1, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt ref' \u2192 normalized: 'solde per cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt ref' \u2192 'solde_credit' (confidence: 47.9%) [semantic=6.8, fuzzy=26.1, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt ref' \u2192 normalized: 'solde fin dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 52.7%) [semantic=6.6, fuzzy=26.1, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt ref' \u2192 normalized: 'solde fin cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt ref' \u2192 'solde_final_credit' (confidence: 46.2%) [semantic=5.1, fuzzy=26.1, content=15.0]
+WARNING:app.services.column_classifier:\u26a0\ufe0f  Duplicate mapping detected: Field 'opening_debit' mapped from 2 columns:
+WARNING:app.services.column_classifier:     - 'solde ant dbt ref' (confidence: 46.8%)
+WARNING:app.services.column_classifier:     - 'debit periode ref' (confidence: 64.2%)
+WARNING:app.services.column_classifier:     Note: All columns will be preserved as separate keys in output. If this is unexpected, check column names and use confidence scores to disambiguate.
+WARNING:app.services.column_classifier:\u26a0\ufe0f  Duplicate mapping detected: Field 'opening_credit' mapped from 2 columns:
+WARNING:app.services.column_classifier:     - 'solde ant cdt ref' (confidence: 46.7%)
+WARNING:app.services.column_classifier:     - 'credit periode ref' (confidence: 54.8%)
+WARNING:app.services.column_classifier:     Note: All columns will be preserved as separate keys in output. If this is unexpected, check column names and use confidence scores to disambiguate.
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'opening_debit', 'credit periode ref': 'opening_credit', 'solde per dbt ref': 'solde_debit', 'solde per cdt ref': 'solde_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'solde_final_credit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('solde ant dbt ref', '50.5%'), ('solde ant cdt ref', '50.5%'), ('debit periode ref', '69.2%'), ('credit periode ref', '59.3%'), ('solde per dbt ref', '58.9%'), ('solde per cdt ref', '51.6%'), ('solde fin dbt ref', '57.7%'), ('solde fin cdt ref', '49.9%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'solde ant dbt ref' \u2192 'opening_debit' (confidence: 50.5%)
+INFO:app.services.csv_parsing_service:  'solde ant cdt ref' \u2192 'opening_credit' (confidence: 50.5%)
+INFO:app.services.csv_parsing_service:  'debit periode ref' \u2192 'opening_debit' (confidence: 69.2%)
+INFO:app.services.csv_parsing_service:  'credit periode ref' \u2192 'opening_credit' (confidence: 59.3%)
+INFO:app.services.csv_parsing_service:  'solde per dbt ref' \u2192 'solde_debit' (confidence: 58.9%)
+INFO:app.services.csv_parsing_service:  'solde per cdt ref' \u2192 'solde_credit' (confidence: 51.6%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 57.7%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt ref' \u2192 'solde_final_credit' (confidence: 49.9%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'opening_debit': ['solde ant dbt ref', 'debit periode ref'], 'opening_credit': ['solde ant cdt ref', 'credit periode ref'], 'solde_debit': ['solde per dbt ref'], 'solde_credit': ['solde per cdt ref'], 'solde_final_debit': ['solde fin dbt ref'], 'solde_final_credit': ['solde fin cdt ref']}
+WARNING:app.services.data_extractor:\u26a0\ufe0f  Duplicate mapping for field 'opening_debit': column 'debit periode ref' conflicts with existing mapping. Check confidence scores to validate.
+WARNING:app.services.data_extractor:\u26a0\ufe0f  Duplicate mapping for field 'opening_credit': column 'credit periode ref' conflicts with existing mapping. Check confidence scores to validate.
+INFO:app.services.data_extractor:Rename dict: {'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'opening_debit', 'credit periode ref': 'opening_credit', 'solde per dbt ref': 'solde_debit', 'solde per cdt ref': 'solde_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'solde_final_credit'}
+WARNING:app.services.data_extractor:Duplicate mappings: {'opening_debit': ['debit periode ref'], 'opening_credit': ['credit periode ref']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'opening_debit', 'opening_credit', 'opening_debit', 'opening_credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 10)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label  ...    solde_final_debit   solde_final_credit
+0       Compte                        Intitulé  ...  Solde fin Dbt (réf)  Solde fin Cdt (réf)
+1     10100000                  CAPITAL SOCIAL  ...                    0             12400000
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE  ...                   10                    0
+3     16210000                EMPRUNT BANCAIRE  ...                    0             21100000
+4     16220000                 EMPRUNT LEASING  ...                    0           1298680,66
+
+[5 rows x 10 columns]
+WARNING:app.services.data_extractor:Could not parse numeric value: 
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric using French-aware parser
+WARNING:app.services.data_extractor:Could not parse numeric value: 
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric using French-aware parser
+WARNING:app.services.data_extractor:Could not convert 'opening_debit': 0
+WARNING:app.services.data_extractor:Could not convert 'opening_credit': 0
+WARNING:app.services.data_extractor:Could not parse numeric value: 
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric using French-aware parser
+WARNING:app.services.data_extractor:Could not parse numeric value: 
+INFO:app.services.data_extractor:Converted column 'solde_final_credit' to numeric using French-aware parser
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label  ... solde_final_debit solde_final_credit
+0       Compte                        Intitulé  ...               NaN                NaN
+1     10100000                  CAPITAL SOCIAL  ...               0.0        12400000.00
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE  ...              10.0               0.00
+3     16210000                EMPRUNT BANCAIRE  ...               0.0        21100000.00
+4     16220000                 EMPRUNT LEASING  ...               0.0         1298680.66
+
+[5 rows x 10 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+WARNING:app.services.validation_config:Row 0: opening_debit cannot be parsed as number: could not convert string to float: 'Débitpériode(réf)' | opening_credit cannot be parsed as number: could not convert string to float: 'Créditpériode(réf)'
+INFO:app.services.validation_config:Validation summary: {'total': 166, 'valid': 165, 'rejected': 1, 'rejection_rate': '0.6%'}
+WARNING:app.services.validator:Validation: 165/166 records valid (0.6% rejected)
+WARNING:app.services.validator:  Rejected row 0: opening_debit cannot be parsed as number: could not convert string to float: 'Débitpériode(réf)' | opening_credit cannot be parsed as number: could not convert string to float: 'Créditpériode(réf)'
+INFO:root:Upload 89: Encoding=ISO-8859-1, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'opening_debit', 'credit periode ref': 'opening_credit', 'solde per dbt ref': 'solde_debit', 'solde per cdt ref': 'solde_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'solde_final_credit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'solde ant dbt ref': 50.5%, 'solde ant cdt ref': 50.5%, 'debit periode ref': 69.2%, 'credit periode ref': 59.3%, 'solde per dbt ref': 58.9%, 'solde per cdt ref': 51.6%, 'solde fin dbt ref': 57.7%, 'solde fin cdt ref': 49.9%}
+INFO:app.services.upload_service:Upload 89: 165 accounts inserted. Detected columns: ['account_code', 'label', 'opening_debit', 'opening_credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.upload_service:File saved: app/uploads\balance_2021_utf.csv
+INFO:app.services.upload_service:Upload registered with ID: 90
+INFO:app.services.upload_service:Starting to parse upload 90: balance_2021_utf.csv
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 6, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 106 rows, 7 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6']
+INFO:app.services.header_detector:Detected header at row 2: ['N°', 'Libellé écriture', 'Solde Final', '', '', '', '']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'N°': 'n', 'Libellé écriture': 'libelle ecriture', 'Solde Final': 'solde final', '': ''}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'n' \u2192 normalized: 'n'
+INFO:app.services.column_classifier:\u2713 Mapped 'n' \u2192 'account_code' (confidence: 44.7%) [semantic=2.7, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'libelle ecriture' \u2192 normalized: 'libelle ecriture'
+INFO:app.services.column_classifier:\u2713 Mapped 'libelle ecriture' \u2192 'label' (confidence: 46.3%) [semantic=1.3, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde final' \u2192 normalized: 'solde final'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde final' \u2192 'solde_final' (confidence: 40.8%) [semantic=10.8, fuzzy=30.0, content=0.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+WARNING:app.services.semantic_classifier:\u26a0 Suspicious classification: 'solde final' \u2192 'solde_final' (confidence=40.8%, content_score=0.0)
+INFO:app.services.column_classifier:Final column mapping: {'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final'}
+INFO:app.services.column_classifier:Confidence scores: [('n', '44.7%'), ('libelle ecriture', '50.1%'), ('solde final', '40.8%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'n' \u2192 'account_code' (confidence: 44.7%)
+INFO:app.services.csv_parsing_service:  'libelle ecriture' \u2192 'label' (confidence: 50.1%)
+INFO:app.services.csv_parsing_service:  'solde final' \u2192 'solde_final' (confidence: 40.8%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['n'], 'label': ['libelle ecriture'], 'solde_final': ['solde final']}
+INFO:app.services.data_extractor:Rename dict: {'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final'}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'solde_final']
+INFO:app.services.data_extractor:DataFrame shape: (106, 3)
+INFO:app.services.data_extractor:DataFrame sample:
+   account_code             label  solde_final
+0  BALANCE 2021                               
+1                                             
+2            N°  Libellé écriture  Solde Final
+3      10100000           CAPITAL   -1 000,000
+4      11100000    RESERVE LEGALE             
+WARNING:app.services.data_extractor:Could not parse numeric value: 
+INFO:app.services.data_extractor:Converted column 'solde_final' to numeric using French-aware parser
+INFO:app.services.data_extractor:Rows before filtering: 106
+INFO:app.services.data_extractor:Rows after filtering: 100
+INFO:app.services.data_extractor:Sample data:
+   account_code               label  solde_final
+0  BALANCE 2021                              NaN
+2            N°    Libellé écriture          NaN
+3      10100000             CAPITAL      -1000.0
+4      11100000      RESERVE LEGALE          NaN
+5      12100000  RESULTATS REPORTES    -150000.0
+INFO:app.services.data_extractor:Successfully extracted 100 records
+WARNING:app.services.validation_config:Row 0: account_code 'BALANCE 2021' doesn't match pattern ^[0-9\.\-A-Za-z]+$
+WARNING:app.services.validation_config:Row 1: account_code 'N°' doesn't match pattern ^[0-9\.\-A-Za-z]+$
+INFO:app.services.validation_config:Validation summary: {'total': 100, 'valid': 98, 'rejected': 2, 'rejection_rate': '2.0%'}
+WARNING:app.services.validator:Validation: 98/100 records valid (2.0% rejected)
+WARNING:app.services.validator:  Rejected row 0: account_code 'BALANCE 2021' doesn't match pattern ^[0-9\.\-A-Za-z]+$
+WARNING:app.services.validator:  Rejected row 1: account_code 'N°' doesn't match pattern ^[0-9\.\-A-Za-z]+$
+INFO:root:Upload 90: Encoding=UTF-8-SIG, Delimiter=;, Columns={'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final'}, Confidence_Scores={'n': 44.7%, 'libelle ecriture': 50.1%, 'solde final': 40.8%}
+INFO:app.services.upload_service:Upload 90: 98 accounts inserted. Detected columns: ['account_code', 'label', 'solde_final']
+INFO:app.services.upload_service:File saved: app/uploads\balance_2021_utf.csv
+INFO:app.services.upload_service:Upload registered with ID: 91
+INFO:app.services.upload_service:Starting to parse upload 91: balance_2021_utf.csv
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 6, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 106 rows, 7 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6']
+INFO:app.services.header_detector:Detected header at row 2: ['N°', 'Libellé écriture', 'Solde Final', '', '', '', '']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'N°': 'n', 'Libellé écriture': 'libelle ecriture', 'Solde Final': 'solde final', '': ''}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'n' \u2192 normalized: 'n'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'n' \u2192 'account_code' (confidence: 44.7%) [semantic=2.7, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'libelle ecriture' \u2192 normalized: 'libelle ecriture'
+INFO:app.services.column_classifier:\u2713 Mapped 'libelle ecriture' \u2192 'label' (confidence: 46.3%) [semantic=1.3, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde final' \u2192 normalized: 'solde final'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde final' \u2192 'solde_final' (confidence: 40.8%) [semantic=10.8, fuzzy=30.0, content=0.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+WARNING:app.services.semantic_classifier:\u26a0 Suspicious classification: 'solde final' \u2192 'solde_final' (confidence=40.8%, content_score=0.0)
+INFO:app.services.column_classifier:Final column mapping: {'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final'}
+INFO:app.services.column_classifier:Confidence scores: [('n', '44.7%'), ('libelle ecriture', '50.1%'), ('solde final', '40.8%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'n' \u2192 'account_code' (confidence: 44.7%)
+INFO:app.services.csv_parsing_service:  'libelle ecriture' \u2192 'label' (confidence: 50.1%)
+INFO:app.services.csv_parsing_service:  'solde final' \u2192 'solde_final' (confidence: 40.8%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['n'], 'label': ['libelle ecriture'], 'solde_final': ['solde final']}
+INFO:app.services.data_extractor:Rename dict (respecting column order): {'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final'}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'solde_final']
+INFO:app.services.data_extractor:DataFrame shape: (106, 3)
+INFO:app.services.data_extractor:DataFrame sample:
+   account_code             label  solde_final
+0  BALANCE 2021                               
+1                                             
+2            N°  Libellé écriture  Solde Final
+3      10100000           CAPITAL   -1 000,000
+4      11100000    RESERVE LEGALE             
+INFO:app.services.data_extractor:Converted column 'solde_final' to numeric
+INFO:app.services.data_extractor:Rows before filtering: 106
+INFO:app.services.data_extractor:Rows after filtering: 100
+INFO:app.services.data_extractor:Sample data:
+   account_code               label  solde_final
+0  BALANCE 2021                              NaN
+2            N°    Libellé écriture          NaN
+3      10100000             CAPITAL      -1000.0
+4      11100000      RESERVE LEGALE          NaN
+5      12100000  RESULTATS REPORTES    -150000.0
+INFO:app.services.data_extractor:Successfully extracted 100 records
+INFO:root:Upload 91: Encoding=UTF-8-SIG, Delimiter=;, Columns={'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final'}, Confidence_Scores={'n': 44.7%, 'libelle ecriture': 50.1%, 'solde final': 40.8%}
+INFO:app.services.upload_service:Upload 91: 98 accounts inserted. Detected columns: ['account_code', 'label', 'solde_final']
+INFO:app.services.upload_service:File saved: app/uploads\changedcol– Copie 1(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 92
+INFO:app.services.upload_service:Starting to parse upload 92: changedcol– Copie 1(in).csv
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 7, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 8 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde pér Dbt', 'Solde pér Cdt', 'Solde fin Dbt', 'Solde fin Cdt']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Débit': 'debit', 'Crédit': 'credit', 'Solde pér Dbt': 'solde per dbt', 'Solde pér Cdt': 'solde per cdt', 'Solde fin Dbt': 'solde fin dbt', 'Solde fin Cdt': 'solde fin cdt'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit' \u2192 normalized: 'debit'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit' \u2192 'debit' (confidence: 80.3%) [semantic=30.3, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit' \u2192 normalized: 'credit'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit' \u2192 'credit' (confidence: 69.0%) [semantic=21.0, fuzzy=30.0, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt' \u2192 normalized: 'solde per dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt' \u2192 'solde_debit' (confidence: 57.0%) [semantic=7.0, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt' \u2192 normalized: 'solde per cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt' \u2192 'solde_credit' (confidence: 48.4%) [semantic=3.4, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt' \u2192 normalized: 'solde fin dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt' \u2192 'solde_final_debit' (confidence: 57.9%) [semantic=7.9, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt' \u2192 normalized: 'solde fin cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt' \u2192 'solde_final_credit' (confidence: 49.6%) [semantic=4.6, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('debit', '85.3%'), ('credit', '73.5%'), ('solde per dbt', '62.0%'), ('solde per cdt', '52.2%'), ('solde fin dbt', '62.9%'), ('solde fin cdt', '53.4%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'debit' \u2192 'debit' (confidence: 85.3%)
+INFO:app.services.csv_parsing_service:  'credit' \u2192 'credit' (confidence: 73.5%)
+INFO:app.services.csv_parsing_service:  'solde per dbt' \u2192 'solde_debit' (confidence: 62.0%)
+INFO:app.services.csv_parsing_service:  'solde per cdt' \u2192 'solde_credit' (confidence: 52.2%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt' \u2192 'solde_final_debit' (confidence: 62.9%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt' \u2192 'solde_final_credit' (confidence: 53.4%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'debit': ['debit'], 'credit': ['credit'], 'solde_debit': ['solde per dbt'], 'solde_credit': ['solde per cdt'], 'solde_final_debit': ['solde fin dbt'], 'solde_final_credit': ['solde fin cdt']}
+INFO:app.services.data_extractor:Rename dict (respecting column order): {'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 8)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label      debit  ...   solde_credit solde_final_debit solde_final_credit
+0       compte                        intitule      Débit  ...  Solde pér Cdt     Solde fin Dbt      Solde fin Cdt
+1     10100000                  capital social          0  ...       12400000                 0           12400000
+2     10900000  actionnaire capital non appele       3140  ...              0                10                  0
+3     16210000                emprunt bancaire          0  ...       21100000                 0           21100000
+4     16220000                 emprunt leasing  129604,98  ...     1298680,66                 0         1298680,66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Converted column 'debit' to numeric
+INFO:app.services.data_extractor:Converted column 'credit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final_credit' to numeric
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label      debit  ...  solde_credit  solde_final_debit  solde_final_credit
+0       compte                        intitule        NaN  ...           NaN                NaN                 NaN
+1     10100000                  capital social       0.00  ...   12400000.00                0.0         12400000.00
+2     10900000  actionnaire capital non appele    3140.00  ...          0.00               10.0                0.00
+3     16210000                emprunt bancaire       0.00  ...   21100000.00                0.0         21100000.00
+4     16220000                 emprunt leasing  129604.98  ...    1298680.66                0.0          1298680.66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+INFO:root:Upload 92: Encoding=UTF-8-SIG, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'debit': 85.3%, 'credit': 73.5%, 'solde per dbt': 62.0%, 'solde per cdt': 52.2%, 'solde fin dbt': 62.9%, 'solde fin cdt': 53.4%}
+INFO:app.services.upload_service:Upload 92: 165 accounts inserted. Detected columns: ['account_code', 'label', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.upload_service:File saved: app/uploads\changedcol– Copie 1(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 93
+INFO:app.services.upload_service:Starting to parse upload 93: changedcol– Copie 1(in).csv
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 7, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 8 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde pér Dbt', 'Solde pér Cdt', 'Solde fin Dbt', 'Solde fin Cdt']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Débit': 'debit', 'Crédit': 'credit', 'Solde pér Dbt': 'solde per dbt', 'Solde pér Cdt': 'solde per cdt', 'Solde fin Dbt': 'solde fin dbt', 'Solde fin Cdt': 'solde fin cdt'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit' \u2192 normalized: 'debit'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit' \u2192 'debit' (confidence: 82.1%) [semantic=32.1, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit' \u2192 normalized: 'credit'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit' \u2192 'credit' (confidence: 69.7%) [semantic=21.7, fuzzy=30.0, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt' \u2192 normalized: 'solde per dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt' \u2192 'solde_debit' (confidence: 56.9%) [semantic=6.9, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt' \u2192 normalized: 'solde per cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt' \u2192 'solde_credit' (confidence: 48.8%) [semantic=3.8, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt' \u2192 normalized: 'solde fin dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt' \u2192 'solde_final_debit' (confidence: 58.1%) [semantic=8.1, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt' \u2192 normalized: 'solde fin cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt' \u2192 'solde_final_credit' (confidence: 49.5%) [semantic=4.5, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('debit', '87.1%'), ('credit', '74.2%'), ('solde per dbt', '61.9%'), ('solde per cdt', '52.5%'), ('solde fin dbt', '63.1%'), ('solde fin cdt', '53.2%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'debit' \u2192 'debit' (confidence: 87.1%)
+INFO:app.services.csv_parsing_service:  'credit' \u2192 'credit' (confidence: 74.2%)
+INFO:app.services.csv_parsing_service:  'solde per dbt' \u2192 'solde_debit' (confidence: 61.9%)
+INFO:app.services.csv_parsing_service:  'solde per cdt' \u2192 'solde_credit' (confidence: 52.5%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt' \u2192 'solde_final_debit' (confidence: 63.1%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt' \u2192 'solde_final_credit' (confidence: 53.2%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'debit': ['debit'], 'credit': ['credit'], 'solde_debit': ['solde per dbt'], 'solde_credit': ['solde per cdt'], 'solde_final_debit': ['solde fin dbt'], 'solde_final_credit': ['solde fin cdt']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 8)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label      debit  ...    solde_credit solde_final_debit solde_final_credit
+0       Compte                        Intitulé      Débit  ...  Solde pér Cdt      Solde fin Dbt      Solde fin Cdt
+1     10100000                  CAPITAL SOCIAL          0  ...        12400000                 0           12400000
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE       3140  ...               0                10                  0
+3     16210000                EMPRUNT BANCAIRE          0  ...        21100000                 0           21100000
+4     16220000                 EMPRUNT LEASING  129604,98  ...      1298680,66                 0         1298680,66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Converted column 'debit' to numeric
+INFO:app.services.data_extractor:Converted column 'credit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final_credit' to numeric
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label      debit  ...  solde_credit  solde_final_debit  solde_final_credit
+0       Compte                        Intitulé        NaN  ...           NaN                NaN                 NaN
+1     10100000                  CAPITAL SOCIAL       0.00  ...   12400000.00                0.0         12400000.00
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE    3140.00  ...          0.00               10.0                0.00
+3     16210000                EMPRUNT BANCAIRE       0.00  ...   21100000.00                0.0         21100000.00
+4     16220000                 EMPRUNT LEASING  129604.98  ...    1298680.66                0.0          1298680.66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+INFO:root:Upload 93: Encoding=UTF-8-SIG, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'debit': 87.1%, 'credit': 74.2%, 'solde per dbt': 61.9%, 'solde per cdt': 52.5%, 'solde fin dbt': 63.1%, 'solde fin cdt': 53.2%}
+INFO:app.services.upload_service:Upload 93: 165 accounts inserted. Detected columns: ['account_code', 'label', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.upload_service:File saved: app/uploads\changedcol– Copie 1(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 94
+INFO:app.services.upload_service:Starting to parse upload 94: changedcol– Copie 1(in).csv
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 7, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 8 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde pér Dbt', 'Solde pér Cdt', 'Solde fin Dbt', 'Solde fin Cdt']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Débit': 'debit', 'Crédit': 'credit', 'Solde pér Dbt': 'solde per dbt', 'Solde pér Cdt': 'solde per cdt', 'Solde fin Dbt': 'solde fin dbt', 'Solde fin Cdt': 'solde fin cdt'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit' \u2192 normalized: 'debit'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit' \u2192 'debit' (confidence: 82.1%) [semantic=32.1, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit' \u2192 normalized: 'credit'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit' \u2192 'credit' (confidence: 69.7%) [semantic=21.7, fuzzy=30.0, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt' \u2192 normalized: 'solde per dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt' \u2192 'solde_debit' (confidence: 56.9%) [semantic=6.9, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt' \u2192 normalized: 'solde per cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt' \u2192 'solde_credit' (confidence: 48.8%) [semantic=3.8, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt' \u2192 normalized: 'solde fin dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt' \u2192 'solde_final_debit' (confidence: 58.1%) [semantic=8.1, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt' \u2192 normalized: 'solde fin cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt' \u2192 'solde_final_credit' (confidence: 49.5%) [semantic=4.5, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('debit', '87.1%'), ('credit', '74.2%'), ('solde per dbt', '61.9%'), ('solde per cdt', '52.5%'), ('solde fin dbt', '63.1%'), ('solde fin cdt', '53.2%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'debit' \u2192 'debit' (confidence: 87.1%)
+INFO:app.services.csv_parsing_service:  'credit' \u2192 'credit' (confidence: 74.2%)
+INFO:app.services.csv_parsing_service:  'solde per dbt' \u2192 'solde_debit' (confidence: 61.9%)
+INFO:app.services.csv_parsing_service:  'solde per cdt' \u2192 'solde_credit' (confidence: 52.5%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt' \u2192 'solde_final_debit' (confidence: 63.1%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt' \u2192 'solde_final_credit' (confidence: 53.2%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'debit': ['debit'], 'credit': ['credit'], 'solde_debit': ['solde per dbt'], 'solde_credit': ['solde per cdt'], 'solde_final_debit': ['solde fin dbt'], 'solde_final_credit': ['solde fin cdt']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 8)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label      debit  ...    solde_credit solde_final_debit solde_final_credit
+0       Compte                        Intitulé      Débit  ...  Solde pér Cdt      Solde fin Dbt      Solde fin Cdt
+1     10100000                  CAPITAL SOCIAL          0  ...        12400000                 0           12400000
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE       3140  ...               0                10                  0
+3     16210000                EMPRUNT BANCAIRE          0  ...        21100000                 0           21100000
+4     16220000                 EMPRUNT LEASING  129604,98  ...      1298680,66                 0         1298680,66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Converted column 'debit' to numeric
+INFO:app.services.data_extractor:Converted column 'credit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric
+INFO:app.services.data_extractor:Converted column 'solde_final_credit' to numeric
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label      debit  ...  solde_credit  solde_final_debit  solde_final_credit
+0       Compte                        Intitulé        NaN  ...           NaN                NaN                 NaN
+1     10100000                  CAPITAL SOCIAL       0.00  ...   12400000.00                0.0         12400000.00
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE    3140.00  ...          0.00               10.0                0.00
+3     16210000                EMPRUNT BANCAIRE       0.00  ...   21100000.00                0.0         21100000.00
+4     16220000                 EMPRUNT LEASING  129604.98  ...    1298680.66                0.0          1298680.66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+INFO:root:Upload 94: Encoding=UTF-8-SIG, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'debit': 87.1%, 'credit': 74.2%, 'solde per dbt': 61.9%, 'solde per cdt': 52.5%, 'solde fin dbt': 63.1%, 'solde fin cdt': 53.2%}
+INFO:app.services.upload_service:Upload 94: 165 accounts inserted. Detected columns: ['account_code', 'label', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.account_service:Deleted 165 accounts for upload 93
+INFO:app.services.upload_service:File saved: app/uploads\balance_2021_utf.csv
+INFO:app.services.upload_service:Upload registered with ID: 95
+INFO:app.services.upload_service:Starting to parse upload 95: balance_2021_utf.csv
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 6, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 106 rows, 7 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6']
+INFO:app.services.header_detector:Detected header at row 2: ['N°', 'Libellé écriture', 'Solde Final', '', '', '', '']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'N°': 'n', 'Libellé écriture': 'libelle ecriture', 'Solde Final': 'solde final', '': ''}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'n' \u2192 normalized: 'n'
+INFO:app.services.column_classifier:\u2713 Mapped 'n' \u2192 'account_code' (confidence: 44.7%) [semantic=2.7, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'libelle ecriture' \u2192 normalized: 'libelle ecriture'
+INFO:app.services.column_classifier:\u2713 Mapped 'libelle ecriture' \u2192 'label' (confidence: 46.3%) [semantic=1.3, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde final' \u2192 normalized: 'solde final'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde final' \u2192 'solde_final_debit' (confidence: 36.1%) [semantic=10.6, fuzzy=25.5, content=0.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+WARNING:app.services.semantic_classifier:\u26a0 Suspicious classification: 'solde final' \u2192 'solde_final_debit' (confidence=36.1%, content_score=0.0)
+INFO:app.services.column_classifier:Final column mapping: {'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final_debit'}
+INFO:app.services.column_classifier:Confidence scores: [('n', '44.7%'), ('libelle ecriture', '50.1%'), ('solde final', '36.1%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'n' \u2192 'account_code' (confidence: 44.7%)
+INFO:app.services.csv_parsing_service:  'libelle ecriture' \u2192 'label' (confidence: 50.1%)
+INFO:app.services.csv_parsing_service:  'solde final' \u2192 'solde_final_debit' (confidence: 36.1%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['n'], 'label': ['libelle ecriture'], 'solde_final_debit': ['solde final']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'solde_final_debit']
+INFO:app.services.data_extractor:DataFrame shape: (106, 3)
+INFO:app.services.data_extractor:DataFrame sample:
+   account_code             label solde_final_debit
+0  BALANCE 2021                                    
+1                                                  
+2            N°  Libellé écriture       Solde Final
+3      10100000           CAPITAL        -1 000,000
+4      11100000    RESERVE LEGALE                  
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric
+INFO:app.services.data_extractor:Rows before filtering: 106
+INFO:app.services.data_extractor:Rows after filtering: 100
+INFO:app.services.data_extractor:Sample data:
+   account_code               label  solde_final_debit
+0  BALANCE 2021                                    NaN
+2            N°    Libellé écriture                NaN
+3      10100000             CAPITAL            -1000.0
+4      11100000      RESERVE LEGALE                NaN
+5      12100000  RESULTATS REPORTES          -150000.0
+INFO:app.services.data_extractor:Successfully extracted 100 records
+INFO:root:Upload 95: Encoding=UTF-8-SIG, Delimiter=;, Columns={'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final_debit'}, Confidence_Scores={'n': 44.7%, 'libelle ecriture': 50.1%, 'solde final': 36.1%}
+INFO:app.services.upload_service:Upload 95: 98 accounts inserted. Detected columns: ['account_code', 'label', 'solde_final_debit']
+INFO:app.services.account_service:Deleted 98 accounts for upload 95
+INFO:app.services.upload_service:Starting to parse upload 95: balance_2021_utf.csv
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 6, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 106 rows, 7 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6']
+INFO:app.services.header_detector:Detected header at row 2: ['N°', 'Libellé écriture', 'Solde Final', '', '', '', '']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'N°': 'n', 'Libellé écriture': 'libelle ecriture', 'Solde Final': 'solde final', '': ''}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'n' \u2192 normalized: 'n'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'n' \u2192 'account_code' (confidence: 44.7%) [semantic=2.7, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'libelle ecriture' \u2192 normalized: 'libelle ecriture'
+INFO:app.services.column_classifier:\u2713 Mapped 'libelle ecriture' \u2192 'label' (confidence: 46.3%) [semantic=1.3, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde final' \u2192 normalized: 'solde final'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde final' \u2192 'solde_final' (confidence: 40.8%) [semantic=10.8, fuzzy=30.0, content=0.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+WARNING:app.services.semantic_classifier:\u26a0 Suspicious classification: 'solde final' \u2192 'solde_final' (confidence=40.8%, content_score=0.0)
+INFO:app.services.column_classifier:Final column mapping: {'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final'}
+INFO:app.services.column_classifier:Confidence scores: [('n', '44.7%'), ('libelle ecriture', '50.1%'), ('solde final', '40.8%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'n' \u2192 'account_code' (confidence: 44.7%)
+INFO:app.services.csv_parsing_service:  'libelle ecriture' \u2192 'label' (confidence: 50.1%)
+INFO:app.services.csv_parsing_service:  'solde final' \u2192 'solde_final' (confidence: 40.8%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['n'], 'label': ['libelle ecriture'], 'solde_final': ['solde final']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'solde_final']
+INFO:app.services.data_extractor:DataFrame shape: (106, 3)
+INFO:app.services.data_extractor:DataFrame sample:
+   account_code             label  solde_final
+0  BALANCE 2021                               
+1                                             
+2            N°  Libellé écriture  Solde Final
+3      10100000           CAPITAL   -1 000,000
+4      11100000    RESERVE LEGALE             
+INFO:app.services.data_extractor:Converted column 'solde_final' to numeric
+INFO:app.services.data_extractor:Rows before filtering: 106
+INFO:app.services.data_extractor:Rows after filtering: 100
+INFO:app.services.data_extractor:Sample data:
+   account_code               label  solde_final
+0  BALANCE 2021                              NaN
+2            N°    Libellé écriture          NaN
+3      10100000             CAPITAL      -1000.0
+4      11100000      RESERVE LEGALE          NaN
+5      12100000  RESULTATS REPORTES    -150000.0
+INFO:app.services.data_extractor:Successfully extracted 100 records
+INFO:root:Upload 95: Encoding=UTF-8-SIG, Delimiter=;, Columns={'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final'}, Confidence_Scores={'n': 44.7%, 'libelle ecriture': 50.1%, 'solde final': 40.8%}
+INFO:app.services.upload_service:Upload 95: 98 accounts inserted. Detected columns: ['account_code', 'label', 'solde_final']
+INFO:app.services.upload_service:File saved: app/uploads\changedcol– Copie 1(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 96
+INFO:app.services.upload_service:Starting to parse upload 96: changedcol– Copie 1(in).csv
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 7, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 8 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde pér Dbt', 'Solde pér Cdt', 'Solde fin Dbt', 'Solde fin Cdt']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Débit': 'debit', 'Crédit': 'credit', 'Solde pér Dbt': 'solde per dbt', 'Solde pér Cdt': 'solde per cdt', 'Solde fin Dbt': 'solde fin dbt', 'Solde fin Cdt': 'solde fin cdt'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit' \u2192 normalized: 'debit'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit' \u2192 'debit' (confidence: 82.1%) [semantic=32.1, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit' \u2192 normalized: 'credit'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit' \u2192 'credit' (confidence: 69.7%) [semantic=21.7, fuzzy=30.0, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt' \u2192 normalized: 'solde per dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt' \u2192 'solde_debit' (confidence: 56.9%) [semantic=6.9, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt' \u2192 normalized: 'solde per cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt' \u2192 'solde_credit' (confidence: 48.8%) [semantic=3.8, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt' \u2192 normalized: 'solde fin dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt' \u2192 'solde_final_debit' (confidence: 58.1%) [semantic=8.1, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt' \u2192 normalized: 'solde fin cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt' \u2192 'solde_final_credit' (confidence: 49.5%) [semantic=4.5, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('debit', '87.1%'), ('credit', '74.2%'), ('solde per dbt', '61.9%'), ('solde per cdt', '52.5%'), ('solde fin dbt', '63.1%'), ('solde fin cdt', '53.2%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'debit' \u2192 'debit' (confidence: 87.1%)
+INFO:app.services.csv_parsing_service:  'credit' \u2192 'credit' (confidence: 74.2%)
+INFO:app.services.csv_parsing_service:  'solde per dbt' \u2192 'solde_debit' (confidence: 61.9%)
+INFO:app.services.csv_parsing_service:  'solde per cdt' \u2192 'solde_credit' (confidence: 52.5%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt' \u2192 'solde_final_debit' (confidence: 63.1%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt' \u2192 'solde_final_credit' (confidence: 53.2%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'debit': ['debit'], 'credit': ['credit'], 'solde_debit': ['solde per dbt'], 'solde_credit': ['solde per cdt'], 'solde_final_debit': ['solde fin dbt'], 'solde_final_credit': ['solde fin cdt']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 8)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label      debit  ...    solde_credit solde_final_debit solde_final_credit
+0       Compte                        Intitulé      Débit  ...  Solde pér Cdt      Solde fin Dbt      Solde fin Cdt
+1     10100000                  CAPITAL SOCIAL          0  ...        12400000                 0           12400000
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE       3140  ...               0                10                  0
+3     16210000                EMPRUNT BANCAIRE          0  ...        21100000                 0           21100000
+4     16220000                 EMPRUNT LEASING  129604,98  ...      1298680,66                 0         1298680,66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Converted column 'debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_final_credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label      debit  ...  solde_credit  solde_final_debit  solde_final_credit
+0       Compte                        Intitulé       0.00  ...          0.00                0.0                0.00
+1     10100000                  CAPITAL SOCIAL       0.00  ...   12400000.00                0.0         12400000.00
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE    3140.00  ...          0.00               10.0                0.00
+3     16210000                EMPRUNT BANCAIRE       0.00  ...   21100000.00                0.0         21100000.00
+4     16220000                 EMPRUNT LEASING  129604.98  ...    1298680.66                0.0          1298680.66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+INFO:root:Upload 96: Encoding=UTF-8-SIG, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'debit': 87.1%, 'credit': 74.2%, 'solde per dbt': 61.9%, 'solde per cdt': 52.5%, 'solde fin dbt': 63.1%, 'solde fin cdt': 53.2%}
+INFO:app.services.upload_service:Upload 96: 165 accounts inserted. Detected columns: ['account_code', 'label', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.upload_service:File saved: app/uploads\balance_2021_utf.csv
+INFO:app.services.upload_service:Upload registered with ID: 97
+INFO:app.services.upload_service:Starting to parse upload 97: balance_2021_utf.csv
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 6, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 106 rows, 7 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6']
+INFO:app.services.header_detector:Detected header at row 2: ['N°', 'Libellé écriture', 'Solde Final', '', '', '', '']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'N°': 'n', 'Libellé écriture': 'libelle ecriture', 'Solde Final': 'solde final', '': ''}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'n' \u2192 normalized: 'n'
+INFO:app.services.column_classifier:\u2713 Mapped 'n' \u2192 'account_code' (confidence: 44.7%) [semantic=2.7, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'libelle ecriture' \u2192 normalized: 'libelle ecriture'
+INFO:app.services.column_classifier:\u2713 Mapped 'libelle ecriture' \u2192 'label' (confidence: 46.3%) [semantic=1.3, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde final' \u2192 normalized: 'solde final'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde final' \u2192 'solde_final' (confidence: 40.8%) [semantic=10.8, fuzzy=30.0, content=0.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+WARNING:app.services.semantic_classifier:\u26a0 Suspicious classification: 'solde final' \u2192 'solde_final' (confidence=40.8%, content_score=0.0)
+INFO:app.services.column_classifier:Final column mapping: {'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final'}
+INFO:app.services.column_classifier:Confidence scores: [('n', '44.7%'), ('libelle ecriture', '50.1%'), ('solde final', '40.8%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'n' \u2192 'account_code' (confidence: 44.7%)
+INFO:app.services.csv_parsing_service:  'libelle ecriture' \u2192 'label' (confidence: 50.1%)
+INFO:app.services.csv_parsing_service:  'solde final' \u2192 'solde_final' (confidence: 40.8%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['n'], 'label': ['libelle ecriture'], 'solde_final': ['solde final']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'solde_final']
+INFO:app.services.data_extractor:DataFrame shape: (106, 3)
+INFO:app.services.data_extractor:DataFrame sample:
+   account_code             label  solde_final
+0  BALANCE 2021                               
+1                                             
+2            N°  Libellé écriture  Solde Final
+3      10100000           CAPITAL   -1 000,000
+4      11100000    RESERVE LEGALE             
+INFO:app.services.data_extractor:Converted column 'solde_final' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Rows before filtering: 106
+INFO:app.services.data_extractor:Rows after filtering: 100
+INFO:app.services.data_extractor:Sample data:
+   account_code               label  solde_final
+0  BALANCE 2021                              0.0
+2            N°    Libellé écriture          0.0
+3      10100000             CAPITAL      -1000.0
+4      11100000      RESERVE LEGALE          0.0
+5      12100000  RESULTATS REPORTES    -150000.0
+INFO:app.services.data_extractor:Successfully extracted 100 records
+INFO:root:Upload 97: Encoding=UTF-8-SIG, Delimiter=;, Columns={'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final'}, Confidence_Scores={'n': 44.7%, 'libelle ecriture': 50.1%, 'solde final': 40.8%}
+INFO:app.services.upload_service:Upload 97: 98 accounts inserted. Detected columns: ['account_code', 'label', 'solde_final']

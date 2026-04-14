@@ -40,7 +40,14 @@ def extract_data(df, column_mapping):
         )
     
     # Convert numeric columns (handle French format: 1 000,00 → 1000.00)
-    numeric_cols = ["debit", "credit", "solde_debit", "solde_credit", "solde_final"]
+    # FIXED: Added solde_final_debit and solde_final_credit
+    numeric_cols = [
+        "debit", "credit",
+        "solde_debit", "solde_credit",
+        "solde_final",  # Legacy column
+        "solde_final_debit", "solde_final_credit"  # NEW: Final balance columns
+    ]
+    
     for col in numeric_cols:
         if col in df.columns:
             try:
@@ -51,9 +58,9 @@ def extract_data(df, column_mapping):
                     .str.replace(",", ".")
                     .str.replace(r"[^\d.\-]", "", regex=True)
                 )
-                # Keep NaN/None for missing values instead of filling with 0
-                df[col] = pd.to_numeric(df[col], errors="coerce")
-                logger.info(f"Converted column '{col}' to numeric")
+                # Convert to numeric and fill NaN/None with 0
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+                logger.info(f"Converted column '{col}' to numeric (NaN filled with 0)")
             except Exception as e:
                 logger.warning(f"Could not convert '{col}': {e}")
     

@@ -10,7 +10,9 @@ export type Account = {
   credit?: number | null;
   solde_debit?: number | null;
   solde_credit?: number | null;
-  solde_final?: number | null;
+  solde_final_debit?: number | null;
+  solde_final_credit?: number | null;
+  solde_final?: number | null; // Legacy column for backward compatibility
 
   opening_debit?: number | null;
   opening_credit?: number | null;

@@ -16,7 +16,11 @@ def save_accounts(session: Session, accounts, upload_id):
             credit=account.get("credit"),
             solde_debit=account.get("solde_debit"),
             solde_credit=account.get("solde_credit"),
-            solde_final=account.get("solde_final")
+            solde_final=account.get("solde_final"),
+            solde_final_debit=account.get("solde_final_debit"),
+            solde_final_credit=account.get("solde_final_credit"),
+            opening_debit=account.get("opening_debit"),
+            opening_credit=account.get("opening_credit")
         )
         session.add(db_account)
     session.commit()

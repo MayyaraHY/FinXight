@@ -10,6 +10,7 @@ import { getAccountsByUpload } from "@/services/accountService";
 import { getUpload } from "@/services/UploadService";
 import { Account } from "@/models/account";
 import { Upload } from "@/models/Upload";
+import { formatCurrency } from "@/utils/formatters";
 
 export default function UploadDetailsPage() {
   const params = useParams();
@@ -72,7 +73,31 @@ export default function UploadDetailsPage() {
     0
   );
 
+  const totalSoldeFinalDebit = filteredAccounts.reduce(
+    (sum, acc) => sum + (acc.solde_final_debit ?? 0),
+    0
+  );
+
+  const totalSoldeFinalCredit = filteredAccounts.reduce(
+    (sum, acc) => sum + (acc.solde_final_credit ?? 0),
+    0
+  );
+
   const difference = totalDebit - totalCredit;
+
+  // ===== DETECT ACTIVE COLUMNS =====
+  const activeColumns = useMemo(() => {
+    const cols: { [key: string]: boolean } = {
+      debit: filteredAccounts.some((acc) => acc.debit !== null && acc.debit !== undefined),
+      credit: filteredAccounts.some((acc) => acc.credit !== null && acc.credit !== undefined),
+      solde_debit: filteredAccounts.some((acc) => acc.solde_debit !== null && acc.solde_debit !== undefined),
+      solde_credit: filteredAccounts.some((acc) => acc.solde_credit !== null && acc.solde_credit !== undefined),
+      solde_final_debit: filteredAccounts.some((acc) => acc.solde_final_debit !== null && acc.solde_final_debit !== undefined),
+      solde_final_credit: filteredAccounts.some((acc) => acc.solde_final_credit !== null && acc.solde_final_credit !== undefined),
+      solde_final: filteredAccounts.some((acc) => acc.solde_final !== null && acc.solde_final !== undefined),
+    };
+    return cols;
+  }, [filteredAccounts]);
 
   return (
     <div>
@@ -122,18 +147,65 @@ export default function UploadDetailsPage() {
             </div>
 
             {/* 📊 Totals */}
-            <div className="flex flex-wrap gap-6 text-sm font-medium">
-              <div>Total Debit: {totalDebit.toFixed(2)}</div>
-              <div>Total Credit: {totalCredit.toFixed(2)}</div>
-              <div
-                className={
-                  difference !== 0
-                    ? "text-red-500 font-semibold"
-                    : "text-green-500"
-                }
-              >
-                Difference: {difference.toFixed(2)}
+            <div className="space-y-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm font-medium">
+                {activeColumns.debit && (
+                  <div className="flex justify-between">
+                    <span>Total Debit:</span>
+                    <span>{formatCurrency(totalDebit)}</span>
+                  </div>
+                )}
+                {activeColumns.credit && (
+                  <div className="flex justify-between">
+                    <span>Total Credit:</span>
+                    <span>{formatCurrency(totalCredit)}</span>
+                  </div>
+                )}
+                {(activeColumns.debit || activeColumns.credit) && (
+                  <div
+                    className={
+                      difference !== 0
+                        ? "flex justify-between text-red-500 font-semibold"
+                        : "flex justify-between text-green-500"
+                    }
+                  >
+                    <span>Difference:</span>
+                    <span>{formatCurrency(difference)}</span>
+                  </div>
+                )}
               </div>
+
+              {(activeColumns.solde_final_debit || activeColumns.solde_final_credit || activeColumns.solde_final) && (
+                <div className="border-t border-gray-300 dark:border-gray-600 pt-3 mt-3">
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-semibold">Final Balances</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm font-medium">
+                    {activeColumns.solde_final_debit && (
+                      <div className="flex justify-between">
+                        <span>Solde Fin Débit:</span>
+                        <span>{formatCurrency(totalSoldeFinalDebit)}</span>
+                      </div>
+                    )}
+                    {activeColumns.solde_final_credit && (
+                      <div className="flex justify-between">
+                        <span>Solde Fin Crédit:</span>
+                        <span>{formatCurrency(totalSoldeFinalCredit)}</span>
+                      </div>
+                    )}
+                    {(activeColumns.solde_final_debit || activeColumns.solde_final_credit) && (
+                      <div
+                        className={
+                          totalSoldeFinalDebit !== totalSoldeFinalCredit
+                            ? "flex justify-between text-red-500 font-semibold"
+                            : "flex justify-between text-green-500"
+                        }
+                      >
+                        <span>Status:</span>
+                        <span>{totalSoldeFinalDebit === totalSoldeFinalCredit ? "✓ Balanced" : "✗ Unbalanced"}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 📋 Table */}
@@ -143,9 +215,13 @@ export default function UploadDetailsPage() {
                   <tr>
                     <th className="px-3 py-2 text-left">Code</th>
                     <th className="px-3 py-2 text-left">Label</th>
-                    <th className="px-3 py-2 text-right">Debit</th>
-                    <th className="px-3 py-2 text-right">Credit</th>
-                    <th className="px-3 py-2 text-right">Solde</th>
+                    {activeColumns.debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Debit</th>}
+                    {activeColumns.credit && <th className="px-3 py-2 text-right">Credit</th>}
+                    {activeColumns.solde_debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Solde Pér Dbt</th>}
+                    {activeColumns.solde_credit && <th className="px-3 py-2 text-right">Solde Pér Cdt</th>}
+                    {activeColumns.solde_final_debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Solde Fin Dbt</th>}
+                    {activeColumns.solde_final_credit && <th className="px-3 py-2 text-right">Solde Fin Cdt</th>}
+                    {activeColumns.solde_final && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Solde Final</th>}
                   </tr>
                 </thead>
 
@@ -161,15 +237,13 @@ export default function UploadDetailsPage() {
                       <td className="px-3 py-2">
                         {acc.label || "-"}
                       </td>
-                      <td className="px-3 py-2 text-right">
-                        {acc.debit ?? 0}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        {acc.credit ?? 0}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        {acc.solde_final ?? 0}
-                      </td>
+                      {activeColumns.debit && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.debit)}</td>}
+                      {activeColumns.credit && <td className="px-3 py-2 text-right">{formatCurrency(acc.credit)}</td>}
+                      {activeColumns.solde_debit && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.solde_debit)}</td>}
+                      {activeColumns.solde_credit && <td className="px-3 py-2 text-right">{formatCurrency(acc.solde_credit)}</td>}
+                      {activeColumns.solde_final_debit && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.solde_final_debit)}</td>}
+                      {activeColumns.solde_final_credit && <td className="px-3 py-2 text-right">{formatCurrency(acc.solde_final_credit)}</td>}
+                      {activeColumns.solde_final && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.solde_final)}</td>}
                     </tr>
                   ))}
                 </tbody>
