@@ -22,65 +22,291 @@ except ImportError:
 # FIXED: Added solde_final_debit and solde_final_credit as separate entries
 ENRICHED_COLUMN_MAPPING = {
     "account_code": {
-        "keywords": ["compte", "code", "n°", "numero", "num", "n", "account", "acc"],
+        "keywords": ["compte", "code", "n", "num", "numero", "account", "acc"],
         "description": "numerical identifier reference code account number accounting",
         "expected_content": {"type": "numeric_or_short_text", "avg_length": 8, "numeric_ratio": 0.7},
+        "priority": 10,
     },
     "label": {
-        "keywords": ["intitulé", "libellé", "libelle ecriture", "description", "nom", "name", "label", "designation"],
+        "keywords": ["intitule", "libelle", "designation", "description", "nom", "name", "label"],
         "description": "text description designation name account title account label",
         "expected_content": {"type": "text", "avg_length": 30, "numeric_ratio": 0.0},
+        "priority": 10,
     },
+    
+    # ============ OPENING BALANCES (Start of period) ============
+    "opening_debit": {
+        "keywords": [
+            # Your exact format (WITHOUT accents after normalization)
+            "solde ant dbt",
+            "solde ant dbt ref",
+            "solde anterior dbt",
+            "solde ancien dbt",
+            "solde ancien debit",
+            # Other variants
+            "ouverture debit",
+            "opening debit",
+            "initial debit",
+            "balance initiale dbt",
+            "solde d ouverture dbt",
+        ],
+        "description": "opening balance debit previous period balance beginning balance debit anterior",
+        "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.85, "decimal_ratio": 0.6},
+        "priority": 9,
+    },
+    "opening_credit": {
+        "keywords": [
+            # Your exact format (WITHOUT accents after normalization)
+            "solde ant cdt",
+            "solde ant cdt ref",
+            "solde anterior cdt",
+            "solde ancien cdt",
+            "solde ancien credit",
+            # Other variants
+            "ouverture credit",
+            "opening credit",
+            "initial credit",
+            "balance initiale cdt",
+            "solde d ouverture cdt",
+        ],
+        "description": "opening balance credit previous period balance beginning balance credit anterior",
+        "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.85, "decimal_ratio": 0.6},
+        "priority": 9,
+    },
+    
+    # ============ PERIOD MOVEMENTS (Actual debit/credit entries in period) ============
     "debit": {
-        "keywords": ["débit", "debit", "db"],
-        "description": "debit amount monetary value debit column transactions",
+        "keywords": [
+            # Your exact format (WITHOUT accents)
+            "debit periode ref",
+            "debit period ref",
+            "debit periode",
+            "debit period",
+            # Variations
+            "debit mouvement",
+            "mouvement debit",
+            "debit",  # Last resort - too generic
+            "db",
+        ],
+        "description": "debit amount monetary value debit column transactions period movement",
         "expected_content": {"type": "numeric", "avg_length": 10, "numeric_ratio": 0.8, "decimal_ratio": 0.5},
+        "priority": 8,
+        "must_exclude_keywords": ["solde", "fin", "final", "ant"],  # Don't match if contains these
     },
     "credit": {
-        "keywords": ["crédit", "credit", "cr"],
-        "description": "credit amount monetary value credit column transactions",
+        "keywords": [
+            # Your exact format (WITHOUT accents)
+            "credit periode ref",
+            "credit period ref",
+            "credit periode",
+            "credit period",
+            # Variations
+            "credit mouvement",
+            "mouvement credit",
+            "credit",  # Last resort - too generic
+            "cr",
+        ],
+        "description": "credit amount monetary value credit column transactions period movement",
         "expected_content": {"type": "numeric", "avg_length": 10, "numeric_ratio": 0.8, "decimal_ratio": 0.5},
+        "priority": 8,
+        "must_exclude_keywords": ["solde", "fin", "final", "ant"],  # Don't match if contains these
     },
+    
+    # ============ PERIOD BALANCES (Balance at end of current period) ============
     "solde_debit": {
         "keywords": [
-            "solde débiteur", "solde debiteur", "solde deb", "solde debit",  # Period balance
-            "solde pér dbt", "solde periode debit", "balance debit", "periode debit"
+            # Your exact format (WITHOUT accents)
+            "solde per dbt",
+            "solde per dbt ref",
+            "solde periode dbt",
+            "solde periode dbt ref",
+            # Variations
+            "solde period dbt",
+            "periode dbt balance",
+            "period balance dbt",
+            "balance dbt periode",
         ],
-        "description": "balance debit total debit accounting account balance debit side period balance",
+        "description": "balance debit total debit accounting account balance debit side period balance current period",
         "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.8, "decimal_ratio": 0.6},
+        "priority": 7,
     },
     "solde_credit": {
         "keywords": [
-            "solde créditeur", "solde crediteur", "solde cdt", "solde credit",  # Period balance
-            "solde pér cdt", "solde periode credit", "balance credit", "periode credit"
+            # Your exact format (WITHOUT accents)
+            "solde per cdt",
+            "solde per cdt ref",
+            "solde periode cdt",
+            "solde periode cdt ref",
+            # Variations
+            "solde period cdt",
+            "periode cdt balance",
+            "period balance cdt",
+            "balance cdt periode",
         ],
-        "description": "balance credit total credit accounting account balance credit side period balance",
+        "description": "balance credit total credit accounting account balance credit side period balance current period",
         "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.8, "decimal_ratio": 0.6},
+        "priority": 7,
     },
-    "solde_final": {
-        "keywords": ["solde", "solde final", "value", "montant", "total", "final", "amount", "balance", "solde final", "balance final"],
-        "description": "final balance total amount final value accounting balance total final amount account balance total balance final settlement",
-        "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.85, "decimal_ratio": 0.7},
-        "synonyms": ["solde total", "balance totale", "montant final", "solde arrête"],
-    },
+    
+    # ============ FINAL BALANCES (Closing balance - MOST SPECIFIC!) ============
     "solde_final_debit": {
         "keywords": [
-            "solde fin dbt", "solde final debit", "solde fin debit", "final debit",
-            "solde final dbt", "solde final debiteur", "final balance debit"
+            # Your exact format (WITHOUT accents)
+            "solde fin dbt",
+            "solde fin dbt ref",
+            "solde final dbt",
+            "solde final dbt ref",
+            "solde final debit",
+            "solde final debit ref",
+            # Avoid generic matches - must have "fin" or "final"
         ],
-        "description": "final balance debit side total debit accounting final account balance debit",
+        "description": "final balance debit side total debit accounting final account balance debit closing balance",
         "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.85, "decimal_ratio": 0.7},
+        "priority": 11,  # HIGHEST - Check this FIRST
+        "must_contain_keywords": ["fin", "final"],  # Must have one of these
     },
     "solde_final_credit": {
         "keywords": [
-            "solde fin cdt", "solde final credit", "solde fin credit", "final credit",
-            "solde final cdt", "solde final crediteur", "final balance credit"
+            # Your exact format (WITHOUT accents)
+            "solde fin cdt",
+            "solde fin cdt ref",
+            "solde final cdt",
+            "solde final cdt ref",
+            "solde final credit",
+            "solde final credit ref",
+            # Avoid generic matches - must have "fin" or "final"
         ],
-        "description": "final balance credit side total credit accounting final account balance credit",
+        "description": "final balance credit side total credit accounting final account balance credit closing balance",
         "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.85, "decimal_ratio": 0.7},
+        "priority": 11,  # HIGHEST - Check this FIRST
+        "must_contain_keywords": ["fin", "final"],  # Must have one of these
+    },
+    
+    # ============ FALLBACK ONLY - DO NOT USE ============
+    "solde_final": {
+        "keywords": [],  # ← EMPTY! Don't match anything!
+        "description": "DEPRECATED - Use solde_final_debit/credit instead",
+        "priority": 0,  # LOWEST - Never match
+        "note": "This column should NEVER be detected. It's a generic placeholder.",
     },
 }
-
+ 
+ 
+# ==============================================================================
+# MATCHING ALGORITHM PSEUDOCODE
+# ==============================================================================
+"""
+Algorithm to fix the detection:
+ 
+1. NORMALIZE all column names:
+   - Remove accents: "Crédit" → "Credit"
+   - Lowercase: "CREDIT" → "credit"
+   - Remove special chars: "Crédit (réf)" → "credit ref"
+ 
+2. CHECK IN PRIORITY ORDER (highest first):
+   - solde_final_debit (priority 11)
+   - solde_final_credit (priority 11)
+   - opening_debit (priority 9)
+   - opening_credit (priority 9)
+   - debit (priority 8)
+   - credit (priority 8)
+   - solde_debit (priority 7)
+   - solde_credit (priority 7)
+   - solde_final (priority 0 - SKIP)
+ 
+3. FOR EACH COLUMN, FOR EACH FIELD (in priority order):
+   
+   if field has "must_contain_keywords":
+       if none of these keywords in column_name:
+           skip this field
+   
+   if field has "must_exclude_keywords":
+       if ANY of these keywords in column_name:
+           skip this field
+   
+   for each keyword in field["keywords"]:
+       if keyword in column_name:
+           MATCH FOUND! Assign column to this field
+           Break to next column
+"""
+ 
+ 
+# ==============================================================================
+# EXAMPLE MAPPING OF YOUR CSV
+# ==============================================================================
+"""
+Your original CSV (after normalization):
+ 
+1. compte                          → account_code ✓
+2. intitule                        → label ✓
+3. solde ant dbt ref               → opening_debit ✓
+4. solde ant cdt ref               → opening_credit ✓
+5. debit periode ref               → debit ✓
+6. credit periode ref              → credit ✓ (NOT solde_final!)
+7. solde per dbt ref               → solde_debit ✓
+8. solde per cdt ref               → solde_credit ✓
+9. solde fin dbt ref               → solde_final_debit ✓
+10. solde fin cdt ref              → solde_final_credit ✓
+ 
+Total expected: 10 columns correctly detected
+"""
+ 
+ 
+# ==============================================================================
+# REQUIRED CHANGES TO CLASSIFIER ALGORITHM
+# ==============================================================================
+"""
+In your column classifier (column_classifier.py or preparation_service.py):
+ 
+1. NORMALIZE KEYWORDS TOO:
+   
+   def normalize_keyword(kw):
+       import unicodedata
+       import re
+       # Remove accents from keywords before comparing
+       kw = ''.join(c for c in unicodedata.normalize('NFD', kw) 
+                    if unicodedata.category(c) != 'Mn')
+       kw = kw.lower()
+       kw = re.sub(r'[^a-z0-9\s]', '', kw)
+       return kw
+ 
+2. IMPLEMENT PRIORITY ORDERING:
+   
+   # Sort fields by priority (descending)
+   fields_sorted = sorted(
+       ENRICHED_COLUMN_MAPPING.items(),
+       key=lambda x: x[1].get("priority", 0),
+       reverse=True
+   )
+   
+   # Check fields in priority order
+   for field_name, field_config in fields_sorted:
+       for column_name in unmatched_columns:
+           if matches(column_name, field_config):
+               assign(column_name, field_name)
+               break
+ 
+3. ADD CONSTRAINT CHECKING:
+   
+   def matches(column_name, field_config):
+       # Check "must contain"
+       if "must_contain_keywords" in field_config:
+           if not any(kw in column_name for kw in field_config["must_contain_keywords"]):
+               return False
+       
+       # Check "must exclude"
+       if "must_exclude_keywords" in field_config:
+           if any(kw in column_name for kw in field_config["must_exclude_keywords"]):
+               return False
+       
+       # Check keyword match
+       for kw in field_config["keywords"]:
+           kw_normalized = normalize_keyword(kw)
+           if kw_normalized in column_name:
+               return True
+       
+       return False
+"""
 
 class SemanticMatcher:
     """

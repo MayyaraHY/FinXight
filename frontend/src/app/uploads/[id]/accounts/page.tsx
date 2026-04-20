@@ -88,6 +88,8 @@ export default function UploadDetailsPage() {
   // ===== DETECT ACTIVE COLUMNS =====
   const activeColumns = useMemo(() => {
     const cols: { [key: string]: boolean } = {
+      opening_debit: filteredAccounts.some((acc) => acc.opening_debit !== null && acc.opening_debit !== undefined),
+      opening_credit: filteredAccounts.some((acc) => acc.opening_credit !== null && acc.opening_credit !== undefined),
       debit: filteredAccounts.some((acc) => acc.debit !== null && acc.debit !== undefined),
       credit: filteredAccounts.some((acc) => acc.credit !== null && acc.credit !== undefined),
       solde_debit: filteredAccounts.some((acc) => acc.solde_debit !== null && acc.solde_debit !== undefined),
@@ -215,6 +217,8 @@ export default function UploadDetailsPage() {
                   <tr>
                     <th className="px-3 py-2 text-left">Code</th>
                     <th className="px-3 py-2 text-left">Label</th>
+                    {activeColumns.opening_debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Opening Debit</th>}
+                    {activeColumns.opening_credit && <th className="px-3 py-2 text-right">Opening Credit</th>}
                     {activeColumns.debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Debit</th>}
                     {activeColumns.credit && <th className="px-3 py-2 text-right">Credit</th>}
                     {activeColumns.solde_debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Solde Pér Dbt</th>}
@@ -237,6 +241,8 @@ export default function UploadDetailsPage() {
                       <td className="px-3 py-2">
                         {acc.label || "-"}
                       </td>
+                      {activeColumns.opening_debit && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.opening_debit)}</td>}
+                      {activeColumns.opening_credit && <td className="px-3 py-2 text-right">{formatCurrency(acc.opening_credit)}</td>}
                       {activeColumns.debit && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.debit)}</td>}
                       {activeColumns.credit && <td className="px-3 py-2 text-right">{formatCurrency(acc.credit)}</td>}
                       {activeColumns.solde_debit && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.solde_debit)}</td>}

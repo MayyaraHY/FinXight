@@ -126,40 +126,71 @@ def parse_csv_file(db, upload_id: int):
         raise
 
 
-def add_and_parse_document(db, file):
+def upload_and_parse_document(db, file, display_filename: str = None):
     """
-    Combined operation: upload document and parse it in one call.
-    Equivalent to the old save_file_and_register() function.
-    
-    Args:
-        db: Database session
-        file: FastAPI UploadFile object
-        
-    Returns:
-        Dict with upload_id, filename, and parsing results
+    Upload + parse in one step.
+    Saves file, registers upload, parses CSV, and stores accounts.
+
+    Returns full parsing result.
     """
+    file_path = None
+
     try:
-        # Step 1: Upload document
-        upload_result = upload_document(db, file)
-        upload_id = upload_result["upload_id"]
+        # 📁 Save file
+        file_path = os.path.join(settings.UPLOAD_DIR, file.filename)
+        with open(file_path, "wb") as f:
+            f.write(file.file.read())
 
-        # Step 2: Parse CSV
-        parse_result = parse_csv_file(db, upload_id)
+        logger.info(f"File saved: {file_path}")
 
-        return parse_result
+        # 🗄️ Save upload metadata
+        upload = create_upload(
+            db=db,
+            filename=file.filename,
+            file_path=file_path,
+            display_filename=display_filename
+        )
+
+        logger.info(f"Upload registered with ID: {upload.id}")
+
+        # 🚀 AUTO PARSE (THIS IS THE KEY PART)
+        with open(upload.file_path, "rb") as f:
+            validated_data = parse_csv(f, upload.id)
+
+        # 💾 Save parsed accounts
+        save_accounts(db, validated_data, upload.id)
+
+        # 📊 Result
+        return {
+            "status": "success",
+            "upload_id": upload.id,
+            "filename": upload.filename,
+            "display_filename": upload.display_filename or upload.filename,
+            "accounts_inserted": len(validated_data),
+            "detected_columns": list(validated_data[0].keys()) if validated_data else [],
+            "message": "File uploaded and parsed successfully"
+        }
 
     except Exception as e:
-        logger.error(f"Upload and parse failed: {str(e)}", exc_info=True)
+        logger.error(f"Upload+Parse failed: {str(e)}", exc_info=True)
+
+        # 🧹 Cleanup file if error
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except:
+                pass
+
         raise
 
 
 # Legacy alias for backward compatibility
 def save_file_and_register(db, file, display_filename: str = None):
     """
-    Legacy function - use add_and_parse_document() instead.
+    Legacy function - use upload_and_parse_document() instead.
     Kept for backward compatibility.
     """
-    return add_and_parse_document(db, file, display_filename=display_filename)
+    return upload_and_parse_document(db, file, display_filename=display_filename)
 
 
 def preview_csv_file(db, upload_id: int, rows: int = 20):

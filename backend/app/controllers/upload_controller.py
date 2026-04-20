@@ -1,11 +1,11 @@
-from fastapi import APIRouter, UploadFile, File, Depends, Query
+from fastapi import APIRouter, Form, UploadFile, File, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.cnx import SessionLocal
 from app.services.upload_service import (
     upload_document,
     parse_csv_file,
-    add_and_parse_document,
+    upload_and_parse_document,
     get_upload_service,
     get_all_uploads_service,
     update_upload_service,
@@ -64,22 +64,26 @@ def preview_file(upload_id: int, rows: int = 20, db: Session = Depends(get_db)):
     return result
 
 
-@router.post("/add_upload")
-def upload_and_parse_file(
+@router.post("/upload_and_parse")
+async def upload_and_parse(
     file: UploadFile = File(...),
-    display_filename: str = Query(None, description="Custom name to display for this file. Defaults to original filename."),
+    display_name: str = Form(None),
     db: Session = Depends(get_db)
 ):
     """
-    Upload and parse a file in one operation.
-    
-    This is the combined workflow: saves file, registers it, and parses it immediately.
-    Returns detailed results including inserted accounts and detected columns.
+    Upload a CSV file and automatically parse it.
     """
-    result = add_and_parse_document(db, file, display_filename)
-    return result
+    try:
+        result = upload_and_parse_document(
+            db=db,
+            file=file,
+            display_filename=display_name
+        )
+        return result
 
-
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 # ====== EXISTING CRUD ENDPOINTS ======
 
 # 🔹 READ ONE
