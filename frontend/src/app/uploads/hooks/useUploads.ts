@@ -6,7 +6,7 @@ import {
   deleteUpload,
   deleteAllUploads,
   uploadFile,
-  uploadAndParse,
+  uploadAndParseWithProgress,
   parseUpload,
 } from "@/services/UploadService";
 import { Upload } from "@/models/Upload";
@@ -16,6 +16,7 @@ export function useUploads() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [parsingId, setParsingId] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const fetchUploads = async () => {
     try {
@@ -73,9 +74,16 @@ export function useUploads() {
 
   const uploadParse = async (file: File, displayName?: string) => {
     setLoading(true);
-    await uploadAndParse(file, displayName);
-    await fetchUploads();
-    setLoading(false);
+    setUploadProgress(0);
+    try {
+      await uploadAndParseWithProgress(file, displayName, (progress) => {
+        setUploadProgress(progress);
+      });
+      await fetchUploads();
+    } finally {
+      setLoading(false);
+      setUploadProgress(0);
+    }
   };
 
   const parse = async (id: number) => {
@@ -103,6 +111,7 @@ export function useUploads() {
     loading,
     error,
     parsingId,
+    uploadProgress,
     fetchUploads,
     upload,
     uploadParse,

@@ -1,6 +1,10 @@
 const API_URL = "http://127.0.0.1:8000/accounts";
 
-import { Account } from "@/models/account";
+import { 
+  Account, 
+  UpdateAccountResponse, 
+  DeleteAccountResponse, 
+  UpdateAccountPayload } from "@/models/account";
 
 // ===== READ =====
 
@@ -97,5 +101,82 @@ export async function getAccountsByUpload(
 
   if (!res.ok) throw new Error("Failed to fetch accounts for upload");
 
+  return res.json();
+}
+
+// ===== UPDATE =====
+function buildQueryParams(obj: Record<string, unknown>): URLSearchParams {
+  const query = new URLSearchParams();
+  
+  Object.entries(obj).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      query.append(key, String(value));
+    }
+  });
+  
+  return query;
+}
+
+export async function updateAccount(
+  accountId: number,
+  updates: UpdateAccountPayload
+): Promise<UpdateAccountResponse> {
+  const query = buildQueryParams(updates);
+ 
+  const res = await fetch(`${API_URL}/update/${accountId}?${query}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+ 
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || "Failed to update account");
+  }
+ 
+  return res.json();
+}
+
+// ===== DELETE =====
+export async function deleteAccount(
+  accountId: number
+): Promise<DeleteAccountResponse> {
+  const res = await fetch(`${API_URL}/delete/${accountId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+ 
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || "Failed to delete account");
+  }
+ 
+  return res.json();
+}
+
+// ===== DELETE ALL =====
+export async function deleteAccountsByUpload(
+  uploadId: number,
+  confirm: boolean = false
+) {
+  const query = buildQueryParams({
+    confirm,
+  });
+ 
+  const res = await fetch(`${API_URL}/delete_upload/${uploadId}?${query}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+ 
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || "Failed to delete accounts");
+  }
+ 
   return res.json();
 }

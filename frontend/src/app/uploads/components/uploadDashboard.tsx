@@ -3,23 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ComponentCard from "@/components/common/ComponentCard";
-import Button from "@/components/ui/button/Button";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import Badge from "@/components/ui/badge/Badge";
 import { Modal } from "@/components/ui/modal";
 import Alert from "@/components/ui/alert/Alert";
 
 import { useUploads } from "../hooks/useUploads";
-import { getPreviewCSV } from "@/services/UploadService";
 
 export default function UploadDashboard() {
   const router = useRouter();
   const {
     uploads,
-    upload,
-    parse,
+    uploadParse,
+    uploadProgress,
     remove,
-    parsingId,
   } = useUploads();
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; fileId: number | null; fileName: string }>({
@@ -31,24 +27,6 @@ export default function UploadDashboard() {
   const [fileError, setFileError] = useState<{ isOpen: boolean; message: string }>({
     isOpen: false,
     message: "",
-  });
-
-  const [preview, setPreview] = useState<{
-    isOpen: boolean;
-    data: null | {
-      filename: string;
-      headers: string[];
-      preview_data: string[][];
-      preview_row_count: number;
-      total_rows: number;
-    };
-    loading: boolean;
-    error: string | null;
-  }>({
-    isOpen: false,
-    data: null,
-    loading: false,
-    error: null,
   });
 
   const [displayNameInput, setDisplayNameInput] = useState<{ isOpen: boolean; file: File | null; displayName: string }>({
@@ -97,26 +75,13 @@ export default function UploadDashboard() {
   const handleConfirmUpload = async () => {
     if (displayNameInput.file) {
       const displayName = displayNameInput.displayName.trim() || undefined;
-      await upload(displayNameInput.file, displayName);
+      await uploadParse(displayNameInput.file, displayName);
       setDisplayNameInput({ isOpen: false, file: null, displayName: "" });
     }
   };
 
   const handleCancelUpload = () => {
     setDisplayNameInput({ isOpen: false, file: null, displayName: "" });
-  };
-
-  const getBadgeColor = (status: string) => {
-    switch (status) {
-      case "processed":
-        return "success";
-      case "error":
-        return "error";
-      case "uploaded":
-        return "warning";
-      default:
-        return "primary";
-    }
   };
 
   const handleDeleteClick = (fileId: number, fileName: string) => {
@@ -132,27 +97,6 @@ export default function UploadDashboard() {
 
   const handleCancelDelete = () => {
     setDeleteConfirm({ isOpen: false, fileId: null, fileName: "" });
-  };
-
-  const handlePreview = async (uploadId: number, filename: string) => {
-    setPreview({ isOpen: true, data: null, loading: true, error: null });
-    try {
-      const result = await getPreviewCSV(uploadId);
-      setPreview({
-        isOpen: true,
-        data: result,
-        loading: false,
-        error: null,
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to load preview";
-      setPreview({
-        isOpen: true,
-        data: null,
-        loading: false,
-        error: message,
-      });
-    }
   };
 
   return (
@@ -202,6 +146,7 @@ export default function UploadDashboard() {
                 </label>
                 <input
                   type="text"
+                  autoFocus
                   value={displayNameInput.displayName}
                   onChange={(e) =>
                     setDisplayNameInput({
@@ -209,6 +154,11 @@ export default function UploadDashboard() {
                       displayName: e.target.value,
                     })
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && uploadProgress === 0) {
+                      handleConfirmUpload();
+                    }
+                  }}
                   placeholder="Leave empty to use original filename"
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 />
@@ -220,15 +170,17 @@ export default function UploadDashboard() {
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={handleCancelUpload}
-                  className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                  disabled={uploadProgress > 0}
+                  className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleConfirmUpload}
-                  className="flex-1 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition"
+                  disabled={uploadProgress > 0}
+                  className="flex-1 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Upload
+                  {uploadProgress > 0 ? `Uploading... ${uploadProgress}%` : "Upload"}
                 </button>
               </div>
             </div>
@@ -265,23 +217,10 @@ export default function UploadDashboard() {
               {[...uploads].reverse().map((u) => (
                 <div
                   key={u.id}
-                  onClick={() => handlePreview(u.id, u.filename)}
+                  onClick={() => router.push(`/uploads/${u.id}/accounts`)}
                   className="flex flex-col p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-lg hover:border-brand-500 dark:hover:border-brand-500 transition-all bg-white dark:bg-gray-800 cursor-pointer relative"
                 >
-                  {/* Header Section with Hover Preview */}
-                  <div className="group relative">
-                    {/* Hover Preview Overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/10 dark:group-hover:bg-black/30 transition-colors rounded pointer-events-none">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center">
-                        <svg className="w-8 h-8 text-brand-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        <p className="text-xs font-medium text-white">Click to preview</p>
-                      </div>
-                    </div>
-
-                    {/* File Header */}
+                  {/* File Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 dark:text-white truncate text-sm" title={u.display_filename || u.filename}>
@@ -298,67 +237,30 @@ export default function UploadDashboard() {
                       </div>
                     </div>
 
-                    {/* Status Badge */}
-                    <div className="mb-4">
-                      <Badge color={getBadgeColor(u.status)} variant="light">
-                        {u.status}
-                      </Badge>
+                  {/* Parsing Progress Bar */}
+                  {uploadProgress > 0 && (
+                    <div className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden mt-2">
+                      <div 
+                        className="h-full bg-brand-500 transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Actions */}
-                  <div className="flex gap-2 mt-auto">
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/uploads/${u.id}/accounts`);
-                      }}
-                      disabled={parsingId === u.id}
-                      className="flex-1 bg-brand-500 hover:bg-brand-600 text-white border-none"
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
-                      </svg>
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        parse(u.id);
-                      }}
-                      disabled={parsingId === u.id}
-                      className="flex-1 bg-warning-500 hover:bg-warning-600 text-white border-none"
-                    >
-                      {parsingId === u.id ? (
-                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                      ) : (
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      )}
-                    </Button>
-                    <Button
-                      size="sm"
+                  {/* Delete Button */}
+                  <div className="mt-4 flex justify-end">
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteClick(u.id, u.filename);
                       }}
-                      disabled={parsingId === u.id}
-                      className="flex-1 bg-error-500 hover:bg-error-600 text-white border-none"
+                      className="px-3 py-2 bg-error-500 hover:bg-error-600 text-white rounded-lg transition text-sm"
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-9l-1 1H5v2h14V4z" />
                       </svg>
-                    </Button>
+                    </button>
                   </div>
-
-                  {/* Parsing Progress Bar */}
-                  {parsingId === u.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 rounded-b-lg overflow-hidden">
-                      <div className="h-full bg-brand-500 animate-pulse"></div>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -366,91 +268,6 @@ export default function UploadDashboard() {
         </ComponentCard>
 
       </div>
-
-      {/* CSV Preview Modal */}
-      <Modal
-        isOpen={preview.isOpen}
-        onClose={() => setPreview({ isOpen: false, data: null, loading: false, error: null })}
-        className="max-w-2xl"
-        showBackdrop={true}
-      >
-        <div className="p-6 pt-8">
-          {preview.loading && (
-            <div className="flex justify-center py-8">
-              <div className="text-center">
-                <div className="animate-spin inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full"></div>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">Loading preview...</p>
-              </div>
-            </div>
-          )}
-
-          {preview.error && (
-            <Alert
-              variant="error"
-              title="Preview Error"
-              message={preview.error}
-              showLink={false}
-            />
-          )}
-
-          {preview.data && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  {preview.data.filename}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Showing {preview.data.preview_row_count} of {preview.data.total_rows} rows
-                </p>
-              </div>
-
-              <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                    <tr>
-                      {preview.data.headers.map((header, i) => (
-                        <th
-                          key={i}
-                          className="px-4 py-2 text-left font-semibold text-gray-900 dark:text-white whitespace-nowrap"
-                        >
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {preview.data.preview_data.map((row, rowIdx) => (
-                      <tr
-                        key={rowIdx}
-                        className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                      >
-                        {row.map((cell, cellIdx) => (
-                          <td
-                            key={cellIdx}
-                            className="px-4 py-2 text-gray-600 dark:text-gray-400 whitespace-nowrap overflow-hidden overflow-ellipsis max-w-xs"
-                          >
-                            {cell}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPreview({ isOpen: false, data: null, loading: false, error: null })}
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
@@ -467,21 +284,18 @@ export default function UploadDashboard() {
             showLink={false}
           />
           <div className="mt-4 flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={handleCancelDelete}
+              className="px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
               Cancel
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
+            </button>
+            <button
               onClick={handleConfirmDelete}
-              className="bg-error-500 hover:bg-error-600 text-white"
+              className="px-4 py-2 bg-error-500 hover:bg-error-600 text-white rounded-lg transition"
             >
               Delete
-            </Button>
+            </button>
           </div>
         </div>
       </Modal>

@@ -1,3 +1,5 @@
+import { BilanStatus } from "./bilan";
+
 export type Account = {
   id: number;
 
@@ -19,3 +21,20 @@ export type Account = {
 
   created_at: string; // ISO date string
 };
+
+export type UpdateAccountResponse = {
+  status: string;
+  account_id: number;
+  account_code: string;
+  message: string;
+  bilan: BilanStatus;
+};
+ 
+export type DeleteAccountResponse = {
+  status: string;
+  message: string;
+  bilan: BilanStatus;
+};
+export type UpdateAccountPayload = Partial<
+  Omit<Account, "id" | "upload_id" | "account_code" | "created_at">
+>;

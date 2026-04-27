@@ -31,3 +31,22 @@ export interface BreakdownItem {
   raw_amount: number;
   signed_amount?: number;
 }
+export type BilanStatus = {
+  bilan_recalculated: boolean;
+  reason?: string;
+  error?: string;
+  totals?: {
+    actif: {
+      actifs_non_courants: number;
+      actifs_courants: number;
+      total_actif: number;
+    };
+    passif: {
+      capitaux_propres: number;
+      passifs_non_courants: number;
+      passifs_courants: number;
+      total_passif: number;
+    };
+    difference: number;
+  };
+};

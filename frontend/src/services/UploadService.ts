@@ -23,13 +23,11 @@ export async function uploadFile(file: File, displayName?: string) {
 export async function uploadAndParse(file: File, displayName?: string) {
   const formData = new FormData();
   formData.append("file", file);
-
-  let url = `${API_URL}/add_upload`;
   if (displayName) {
-    url += `?display_filename=${encodeURIComponent(displayName)}`;
+    formData.append("display_name", displayName);
   }
 
-  const res = await fetch(url, {
+  const res = await fetch(`${API_URL}/upload_and_parse`, {
     method: "POST",
     body: formData,
   });
@@ -37,6 +35,63 @@ export async function uploadAndParse(file: File, displayName?: string) {
   if (!res.ok) throw new Error("Upload & parse failed");
 
   return res.json();
+}
+
+export async function uploadAndParseWithProgress(
+  file: File,
+  displayName?: string,
+  onProgress?: (progress: number) => void
+): Promise<Upload> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+
+    formData.append("file", file);
+    if (displayName) {
+      formData.append("display_name", displayName);
+    }
+
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) {
+        const percentComplete = Math.round((e.loaded / e.total) * 90);
+        onProgress?.(percentComplete);
+      }
+    });
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        let parseProgress = 90;
+        const interval = setInterval(() => {
+          parseProgress = Math.min(parseProgress + 3, 99);
+          onProgress?.(parseProgress);
+          if (parseProgress >= 99) clearInterval(interval);
+        }, 200);
+
+        try {
+          const result = JSON.parse(xhr.responseText);
+          clearInterval(interval);
+          onProgress?.(100);
+          resolve(result);
+        } catch (e) {
+          clearInterval(interval);
+          reject(new Error("Failed to parse response"));
+        }
+      } else {
+        reject(new Error(`Upload & parse failed: ${xhr.status}`));
+      }
+    });
+
+    xhr.addEventListener("error", () => {
+      reject(new Error("Upload & parse failed"));
+    });
+
+    xhr.addEventListener("abort", () => {
+      reject(new Error("Upload & parse cancelled"));
+    });
+
+    xhr.open("POST", `${API_URL}/upload_and_parse`);
+    xhr.send(formData);
+  });
 }
 
 export async function parseUpload(uploadId: number) {

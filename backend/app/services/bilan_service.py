@@ -1,7 +1,7 @@
 import json
 from decimal import Decimal
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from app.models.account import Account
@@ -142,6 +142,7 @@ class BilanService:
                     breakdown.append({
                         "phase": "amort",
                         "account": acc.account_code,
+                        "label" : acc.label,
                         "raw_amount": float(amount)
                     })
 
@@ -157,6 +158,7 @@ class BilanService:
                     breakdown.append({
                         "phase": "net",
                         "account": acc.account_code,
+                        "label" : acc.label,
                         "raw_amount": float(amount)
                     })
 
@@ -310,3 +312,56 @@ class BilanService:
         self.repo.update(upload_id, final_result)
 
         return final_result
+
+    # =====================================================
+    # CRUD OPERATIONS
+    # =====================================================
+    def get_bilan(self, upload_id: int) -> Optional[dict]:
+        """
+        Get bilan by upload_id.
+        
+        Args:
+            upload_id: Upload ID
+            
+        Returns:
+            Bilan data dict or None if not found
+        """
+        bilan = self.repo.get_by_upload_id(upload_id)
+        if not bilan:
+            return None
+        return bilan.data
+
+    def update_bilan(self, upload_id: int, data: dict) -> dict:
+        """
+        Update bilan data for an upload.
+        Validates that the upload_id exists before updating.
+        
+        Args:
+            upload_id: Upload ID
+            data: New bilan data
+            
+        Returns:
+            Updated bilan data
+            
+        Raises:
+            ValueError: If no bilan exists for this upload
+        """
+        existing_bilan = self.repo.get_by_upload_id(upload_id)
+        if not existing_bilan:
+            raise ValueError(f"No bilan found for upload_id {upload_id}")
+        
+        updated_bilan = self.repo.update(upload_id, data)
+        return updated_bilan.data
+
+    def delete_bilan(self, upload_id: int) -> bool:
+        """
+        Delete bilan for an upload. Does not delete accounts.
+        
+        Args:
+            upload_id: Upload ID
+            
+        Returns:
+            True if deletion successful
+        """
+        self.repo.delete_by_upload_id(upload_id)
+        return True

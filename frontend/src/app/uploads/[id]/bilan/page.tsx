@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { getBilan, generateBilan } from "@/services/bilanService";
 import { formatCurrency } from "@/utils/formatters";
@@ -64,6 +64,75 @@ interface BilanData {
   };
 }
 
+// ===== TYPE DEFINITIONS =====
+type ItemRecord = Record<string, unknown>;
+
+// ===== HELPER FUNCTIONS =====
+
+// Helper to check if item is a valid account item (has amount)
+function isValidItem(item: unknown): item is SectionItem {
+  return (
+    item !== null &&
+    typeof item === "object" &&
+    "amount" in item &&
+    "label" in item
+  );
+}
+
+// Helper to render items, skipping empty containers
+function renderItemsHelper(
+  items: ItemRecord,
+  expandedItems: Set<string>,
+  toggleExpanded: (key: string) => void
+): React.ReactNode[] {
+  return Object.entries(items)
+    .map(([key, item]) => {
+      // Skip if not an object
+      if (!item || typeof item !== "object") return null;
+
+      // If it's a valid account item, render it
+      if (isValidItem(item)) {
+        return (
+          <ExpandableRow
+            key={key}
+            label={item.label}
+            amount={item.amount}
+            breakdown={item.amount_details?.breakdown || []}
+            expanded={expandedItems.has(key)}
+            onToggle={() => toggleExpanded(key)}
+          />
+        );
+      }
+
+      // If it's a container (has nested items), recurse through them
+      const hasValidChildren = Object.values(item).some(isValidItem);
+      if (hasValidChildren) {
+        return (
+          <div key={key}>
+            {Object.entries(item).map(([subKey, subItem]) => {
+              if (!isValidItem(subItem)) return null;
+              return (
+                <ExpandableRow
+                  key={subKey}
+                  label={subItem.label}
+                  amount={subItem.amount}
+                  breakdown={subItem.amount_details?.breakdown || []}
+                  expanded={expandedItems.has(subKey)}
+                  onToggle={() => toggleExpanded(subKey)}
+                />
+              );
+            })}
+          </div>
+        );
+      }
+
+      // Skip empty containers
+      return null;
+    })
+    .filter(Boolean);
+}
+
+// ===== MAIN COMPONENT =====
 export default function BilanPage() {
   const params = useParams();
   const uploadId = Number(params.id);
@@ -71,16 +140,16 @@ export default function BilanPage() {
   const [bilanData, setBilanData] = useState<BilanData | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadBilan = async () => {
+  const loadBilan = useCallback(async () => {
     try {
-      const res = await getBilan(uploadId) as unknown;
-      
+      const res = (await getBilan(uploadId)) as unknown;
       const bilanRes = res as BilanResponse;
 
       if (!bilanRes.success) {
-        const generateRes = await generateBilan(uploadId) as unknown;
+        const generateRes = (await generateBilan(uploadId)) as unknown;
         setBilanData((generateRes as BilanResponse).data);
       } else {
         setBilanData(bilanRes.data);
@@ -90,11 +159,29 @@ export default function BilanPage() {
     } finally {
       setLoading(false);
     }
+  }, [uploadId]);
+
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      const res = (await generateBilan(uploadId)) as unknown;
+      const bilanRes = res as BilanResponse;
+      if (bilanRes.success) {
+        setBilanData(bilanRes.data);
+        setError(null);
+      } else {
+        setError(bilanRes.message || "Failed to regenerate bilan");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to regenerate bilan");
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   useEffect(() => {
     loadBilan();
-  }, [uploadId]);
+  }, [loadBilan]);
 
   const toggleExpanded = (key: string) => {
     const newSet = new Set(expandedItems);
@@ -105,6 +192,10 @@ export default function BilanPage() {
     }
     setExpandedItems(newSet);
   };
+
+  // Helper to render items with proper typing
+  const renderItems = (items: ItemRecord) =>
+    renderItemsHelper(items, expandedItems, toggleExpanded);
 
   if (loading) return <p className="p-6 text-center">Loading bilan...</p>;
   if (error)
@@ -120,7 +211,15 @@ export default function BilanPage() {
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             Bilan (Balance Sheet)
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">Upload #{uploadId}</p>
+          <div className="flex justify-between items-center">
+            <button
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition font-medium"
+            >
+              {regenerating ? "Regenerating..." : "Regenerate Bilan"}
+            </button>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -151,25 +250,7 @@ export default function BilanPage() {
               title="Actifs Non-Courants"
               total={bilanData.totals.actif.actifs_non_courants}
             >
-              {Object.entries(
-                bilanData.bilan.actifs.actifs_non_courants
-              ).map(([categoryKey, categoryItems]) => (
-                <div key={categoryKey}>
-                  {Object.entries(categoryItems).map(
-                    ([itemKey, item]) => (
-                      <ExpandableRow
-                        key={itemKey}
-                        itemKey={itemKey}
-                        label={item.label}
-                        amount={item.amount}
-                        breakdown={item.amount_details?.breakdown || []}
-                        expanded={expandedItems.has(itemKey)}
-                        onToggle={() => toggleExpanded(itemKey)}
-                      />
-                    )
-                  )}
-                </div>
-              ))}
+              {renderItems(bilanData.bilan.actifs.actifs_non_courants)}
             </SectionCard>
 
             {/* Current Assets */}
@@ -178,19 +259,7 @@ export default function BilanPage() {
               total={bilanData.totals.actif.actifs_courants}
               className="mt-6"
             >
-              {Object.entries(bilanData.bilan.actifs.actifs_courants).map(
-                ([itemKey, item]) => (
-                  <ExpandableRow
-                    key={itemKey}
-                    itemKey={itemKey}
-                    label={item.label}
-                    amount={item.amount}
-                    breakdown={item.amount_details?.breakdown || []}
-                    expanded={expandedItems.has(itemKey)}
-                    onToggle={() => toggleExpanded(itemKey)}
-                  />
-                )
-              )}
+              {renderItems(bilanData.bilan.actifs.actifs_courants)}
             </SectionCard>
           </div>
 
@@ -201,19 +270,9 @@ export default function BilanPage() {
               title="Capitaux Propres"
               total={bilanData.totals.passif.capitaux_propres}
             >
-              {Object.entries(
+              {renderItems(
                 bilanData.bilan["capitaux propres et passifs"]["capitaux propres"]
-              ).map(([itemKey, item]) => (
-                <ExpandableRow
-                  key={itemKey}
-                  itemKey={itemKey}
-                  label={item.label}
-                  amount={item.amount}
-                  breakdown={item.amount_details?.breakdown || []}
-                  expanded={expandedItems.has(itemKey)}
-                  onToggle={() => toggleExpanded(itemKey)}
-                />
-              ))}
+              )}
             </SectionCard>
 
             <SectionCard
@@ -221,21 +280,11 @@ export default function BilanPage() {
               total={bilanData.totals.passif.passifs_non_courants}
               className="mt-6"
             >
-              {Object.entries(
+              {renderItems(
                 bilanData.bilan["capitaux propres et passifs"].passifs[
                   "passifs non courant"
                 ]
-              ).map(([itemKey, item]) => (
-                <ExpandableRow
-                  key={itemKey}
-                  itemKey={itemKey}
-                  label={item.label}
-                  amount={item.amount}
-                  breakdown={item.amount_details?.breakdown || []}
-                  expanded={expandedItems.has(itemKey)}
-                  onToggle={() => toggleExpanded(itemKey)}
-                />
-              ))}
+              )}
             </SectionCard>
 
             {/* Current Liabilities */}
@@ -244,21 +293,11 @@ export default function BilanPage() {
               total={bilanData.totals.passif.passifs_courants}
               className="mt-6"
             >
-              {Object.entries(
+              {renderItems(
                 bilanData.bilan["capitaux propres et passifs"].passifs[
                   "passifs courant"
                 ]
-              ).map(([itemKey, item]) => (
-                <ExpandableRow
-                  key={itemKey}
-                  itemKey={itemKey}
-                  label={item.label}
-                  amount={item.amount}
-                  breakdown={item.amount_details?.breakdown || []}
-                  expanded={expandedItems.has(itemKey)}
-                  onToggle={() => toggleExpanded(itemKey)}
-                />
-              ))}
+              )}
             </SectionCard>
           </div>
         </div>
@@ -310,7 +349,9 @@ function SectionCard({
 }: SectionCardProps) {
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden ${className || ""}`}
+      className={`bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden ${
+        className || ""
+      }`}
     >
       <div className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-center">
@@ -330,7 +371,6 @@ function SectionCard({
 }
 
 interface ExpandableRowProps {
-  itemKey: string;
   label: string;
   amount: number;
   breakdown: BreakdownItem[];
@@ -339,7 +379,6 @@ interface ExpandableRowProps {
 }
 
 function ExpandableRow({
-  itemKey,
   label,
   amount,
   breakdown,
@@ -372,35 +411,47 @@ function ExpandableRow({
       </div>
 
       {/* Breakdown Details */}
-      {expanded && breakdown.length > 0 && (
+      {expanded && (
         <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/30">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-600">
-                <th className="text-left py-2 font-semibold">Compte</th>
-                <th className="text-left py-2 font-semibold">Description</th>
-                <th className="text-right py-2 font-semibold">Montant</th>
-              </tr>
-            </thead>
-            <tbody>
-              {breakdown.map((item, idx) => (
-                <tr
-                  key={idx}
-                  className="border-b border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600/30"
-                >
-                  <td className="py-2 text-gray-900 dark:text-gray-300">
-                    {item.account}
-                  </td>
-                  <td className="py-2 text-gray-700 dark:text-gray-400">
-                    {item.label || "-"}
-                  </td>
-                  <td className="py-2 text-right text-gray-900 dark:text-white font-medium">
-                    {formatCurrency(item.raw_amount || 0)}
-                  </td>
+          {breakdown.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 italic">
+              No breakdown details available
+            </p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-600">
+                  <th className="text-left py-2 font-semibold">Compte</th>
+                  <th className="text-left py-2 font-semibold">Description</th>
+                  <th className="text-right py-2 font-semibold">Montant</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {breakdown.map((item, idx) => (
+                  <tr
+                    key={idx}
+                    className="border-b border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600/30"
+                  >
+                    <td className="py-2 text-gray-900 dark:text-gray-300">
+                      {item.account}
+                    </td>
+                    <td className="py-2 text-gray-700 dark:text-gray-400">
+                      {item.label ? (
+                        item.label
+                      ) : (
+                        <span className="italic text-gray-500 dark:text-gray-500">
+                          (no label)
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2 text-right text-gray-900 dark:text-white font-medium">
+                      {formatCurrency(item.raw_amount || 0)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </React.Fragment>

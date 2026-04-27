@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import ComponentCard from "@/components/common/ComponentCard";
 import Alert from "@/components/ui/alert/Alert";
 
-import { getAccountsByUpload } from "@/services/accountService";
+import { getAccountsByUpload, updateAccount, deleteAccount } from "@/services/accountService";
 import { getUpload } from "@/services/UploadService";
 import { Account } from "@/models/account";
 import { Upload } from "@/models/Upload";
@@ -24,6 +24,23 @@ export default function UploadDetailsPage() {
   // 🔍 Filters
   const [search, setSearch] = useState("");
   const [prefix, setPrefix] = useState("");
+
+  // ✏️ EDIT & DELETE
+  const [editingCell, setEditingCell] = useState<{ accountId: number; field: string } | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+  const [contextMenu, setContextMenu] = useState<{ 
+    accountId: number; 
+    x: number; 
+    y: number; 
+    code: string;
+    label: string;
+  } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    accountId: number;
+    code: string;
+    label: string;
+  } | null>(null);
 
   // ===== FETCH =====
   useEffect(() => {
@@ -100,6 +117,74 @@ export default function UploadDetailsPage() {
     };
     return cols;
   }, [filteredAccounts]);
+
+  // ✏️ EDIT & DELETE HANDLERS
+  const handleCellDoubleClick = (accountId: number, field: string, value: unknown) => {
+    setEditingCell({ accountId, field });
+    setEditValue(String(value || ""));
+  };
+
+  const handleRightClick = (e: React.MouseEvent, accountId: number, code: string, label: string) => {
+    e.preventDefault();
+    setContextMenu({ accountId, x: e.clientX, y: e.clientY, code, label });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingCell) return;
+    
+    try {
+      const updates: Record<string, string | number | null> = {};
+      const numericFields = ["debit", "credit", "solde_debit", "solde_credit", "solde_final_debit", "solde_final_credit", "solde_final", "opening_debit", "opening_credit"];
+      
+      if (numericFields.includes(editingCell.field)) {
+        // Convert to number for numeric fields
+        updates[editingCell.field] = editValue === "" ? null : parseFloat(editValue);
+      } else {
+        // Keep as string for text fields
+        updates[editingCell.field] = editValue === "" ? null : editValue;
+      }
+      
+      await updateAccount(editingCell.accountId, updates);
+      
+      // Update local state
+      const newValue = numericFields.includes(editingCell.field) 
+        ? (editValue === "" ? null : parseFloat(editValue))
+        : (editValue === "" ? null : editValue);
+      
+      setAccounts(accounts.map(acc => 
+        acc.id === editingCell.accountId 
+          ? { ...acc, [editingCell.field]: newValue }
+          : acc
+      ));
+      
+      setEditingCell(null);
+      setEditValue("");
+    } catch (err) {
+      alert("Failed to update account: " + (err instanceof Error ? err.message : "Unknown error"));
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deleteConfirm) return;
+    
+    try {
+      await deleteAccount(deleteConfirm.accountId);
+      setAccounts(accounts.filter(acc => acc.id !== deleteConfirm.accountId));
+      setDeleteConfirm(null);
+      setContextMenu(null);
+    } catch (err) {
+      alert("Failed to delete account: " + (err instanceof Error ? err.message : "Unknown error"));
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSaveEdit();
+    } else if (e.key === "Escape") {
+      setEditingCell(null);
+      setEditValue("");
+    }
+  };
 
   return (
     <div>
@@ -234,22 +319,224 @@ export default function UploadDetailsPage() {
                     <tr
                       key={acc.id}
                       className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      onContextMenu={(e) => handleRightClick(e, acc.id, acc.account_code, acc.label || "")}
                     >
-                      <td className="px-3 py-2 font-medium">
-                        {acc.account_code}
+                      <td 
+                        className="px-3 py-2 font-medium cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                        onDoubleClick={() => handleCellDoubleClick(acc.id, "account_code", acc.account_code)}
+                      >
+                        {editingCell?.accountId === acc.id && editingCell.field === "account_code" ? (
+                          <input
+                            autoFocus
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            onBlur={handleSaveEdit}
+                            className="w-full px-2 py-1 border border-blue-500 rounded"
+                          />
+                        ) : (
+                          acc.account_code
+                        )}
                       </td>
-                      <td className="px-3 py-2">
-                        {acc.label || "-"}
+                      <td 
+                        className="px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                        onDoubleClick={() => handleCellDoubleClick(acc.id, "label", acc.label || "")}
+                      >
+                        {editingCell?.accountId === acc.id && editingCell.field === "label" ? (
+                          <input
+                            autoFocus
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            onBlur={handleSaveEdit}
+                            className="w-full px-2 py-1 border border-blue-500 rounded"
+                          />
+                        ) : (
+                          acc.label || "-"
+                        )}
                       </td>
-                      {activeColumns.opening_debit && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.opening_debit)}</td>}
-                      {activeColumns.opening_credit && <td className="px-3 py-2 text-right">{formatCurrency(acc.opening_credit)}</td>}
-                      {activeColumns.debit && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.debit)}</td>}
-                      {activeColumns.credit && <td className="px-3 py-2 text-right">{formatCurrency(acc.credit)}</td>}
-                      {activeColumns.solde_debit && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.solde_debit)}</td>}
-                      {activeColumns.solde_credit && <td className="px-3 py-2 text-right">{formatCurrency(acc.solde_credit)}</td>}
-                      {activeColumns.solde_final_debit && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.solde_final_debit)}</td>}
-                      {activeColumns.solde_final_credit && <td className="px-3 py-2 text-right">{formatCurrency(acc.solde_final_credit)}</td>}
-                      {activeColumns.solde_final && <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">{formatCurrency(acc.solde_final)}</td>}
+                      {activeColumns.opening_debit && (
+                        <td 
+                          className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                          onDoubleClick={() => handleCellDoubleClick(acc.id, "opening_debit", acc.opening_debit)}
+                        >
+                          {editingCell?.accountId === acc.id && editingCell.field === "opening_debit" ? (
+                            <input
+                              autoFocus
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              onBlur={handleSaveEdit}
+                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
+                            />
+                          ) : (
+                            formatCurrency(acc.opening_debit)
+                          )}
+                        </td>
+                      )}
+                      {activeColumns.opening_credit && (
+                        <td 
+                          className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                          onDoubleClick={() => handleCellDoubleClick(acc.id, "opening_credit", acc.opening_credit)}
+                        >
+                          {editingCell?.accountId === acc.id && editingCell.field === "opening_credit" ? (
+                            <input
+                              autoFocus
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              onBlur={handleSaveEdit}
+                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
+                            />
+                          ) : (
+                            formatCurrency(acc.opening_credit)
+                          )}
+                        </td>
+                      )}
+                      {activeColumns.debit && (
+                        <td 
+                          className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                          onDoubleClick={() => handleCellDoubleClick(acc.id, "debit", acc.debit)}
+                        >
+                          {editingCell?.accountId === acc.id && editingCell.field === "debit" ? (
+                            <input
+                              autoFocus
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              onBlur={handleSaveEdit}
+                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
+                            />
+                          ) : (
+                            formatCurrency(acc.debit)
+                          )}
+                        </td>
+                      )}
+                      {activeColumns.credit && (
+                        <td 
+                          className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                          onDoubleClick={() => handleCellDoubleClick(acc.id, "credit", acc.credit)}
+                        >
+                          {editingCell?.accountId === acc.id && editingCell.field === "credit" ? (
+                            <input
+                              autoFocus
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              onBlur={handleSaveEdit}
+                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
+                            />
+                          ) : (
+                            formatCurrency(acc.credit)
+                          )}
+                        </td>
+                      )}
+                      {activeColumns.solde_debit && (
+                        <td 
+                          className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                          onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_debit", acc.solde_debit)}
+                        >
+                          {editingCell?.accountId === acc.id && editingCell.field === "solde_debit" ? (
+                            <input
+                              autoFocus
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              onBlur={handleSaveEdit}
+                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
+                            />
+                          ) : (
+                            formatCurrency(acc.solde_debit)
+                          )}
+                        </td>
+                      )}
+                      {activeColumns.solde_credit && (
+                        <td 
+                          className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                          onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_credit", acc.solde_credit)}
+                        >
+                          {editingCell?.accountId === acc.id && editingCell.field === "solde_credit" ? (
+                            <input
+                              autoFocus
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              onBlur={handleSaveEdit}
+                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
+                            />
+                          ) : (
+                            formatCurrency(acc.solde_credit)
+                          )}
+                        </td>
+                      )}
+                      {activeColumns.solde_final_debit && (
+                        <td 
+                          className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                          onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_final_debit", acc.solde_final_debit)}
+                        >
+                          {editingCell?.accountId === acc.id && editingCell.field === "solde_final_debit" ? (
+                            <input
+                              autoFocus
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              onBlur={handleSaveEdit}
+                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
+                            />
+                          ) : (
+                            formatCurrency(acc.solde_final_debit)
+                          )}
+                        </td>
+                      )}
+                      {activeColumns.solde_final_credit && (
+                        <td 
+                          className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                          onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_final_credit", acc.solde_final_credit)}
+                        >
+                          {editingCell?.accountId === acc.id && editingCell.field === "solde_final_credit" ? (
+                            <input
+                              autoFocus
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              onBlur={handleSaveEdit}
+                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
+                            />
+                          ) : (
+                            formatCurrency(acc.solde_final_credit)
+                          )}
+                        </td>
+                      )}
+                      {activeColumns.solde_final && (
+                        <td 
+                          className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                          onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_final", acc.solde_final)}
+                        >
+                          {editingCell?.accountId === acc.id && editingCell.field === "solde_final" ? (
+                            <input
+                              autoFocus
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              onBlur={handleSaveEdit}
+                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
+                            />
+                          ) : (
+                            formatCurrency(acc.solde_final)
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -260,6 +547,59 @@ export default function UploadDetailsPage() {
                   No matching accounts
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* 🎯 Context Menu */}
+        {contextMenu && (
+          <div
+            className="fixed bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-50"
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+            onClick={() => setContextMenu(null)}
+          >
+            <button
+              className="block w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
+              onClick={() => setDeleteConfirm({
+                isOpen: true,
+                accountId: contextMenu.accountId,
+                code: contextMenu.code,
+                label: contextMenu.label
+              })}
+            >
+              Delete
+            </button>
+          </div>
+        )}
+
+        {/* 🗑️ Delete Confirmation Modal */}
+        {deleteConfirm?.isOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Delete Account?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Are you sure you want to delete this account?
+                <br />
+                <strong>Code:</strong> {deleteConfirm.code}
+                <br />
+                <strong>Label:</strong> {deleteConfirm.label}
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         )}

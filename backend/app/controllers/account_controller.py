@@ -10,9 +10,9 @@ from app.services.account_service import (
     search_accounts,
     get_accounts_by_code_prefix,
     get_accounts_count_by_code_prefix,
-    update_account,
-    delete_account,
     delete_accounts_by_upload,
+    update_account_with_bilan,
+    delete_account_with_bilan
 )
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
@@ -192,8 +192,8 @@ def get_accounts_by_upload_id(
         "data": [account_to_dict(acc) for acc in accounts],
     }
 
-# ===== UPDATE ====="
-@router.put("/{account_id}")
+# ===== UPDATE=====
+@router.put("/update/{account_id}")
 def update_account_endpoint(
     account_id: int,
     label: str = None,
@@ -208,59 +208,39 @@ def update_account_endpoint(
     opening_credit: float = None,
     db: Session = Depends(get_db),
 ):
-    """Update an account (partial update supported)"""
-    
-    # Build update dict with only non-None values
-    update_data = {}
-    if label is not None:
-        update_data["label"] = label
-    if debit is not None:
-        update_data["debit"] = debit
-    if credit is not None:
-        update_data["credit"] = credit
-    if solde_debit is not None:
-        update_data["solde_debit"] = solde_debit
-    if solde_credit is not None:
-        update_data["solde_credit"] = solde_credit
-    if solde_final is not None:
-        update_data["solde_final"] = solde_final
-    if solde_final_debit is not None:
-        update_data["solde_final_debit"] = solde_final_debit
-    if solde_final_credit is not None:
-        update_data["solde_final_credit"] = solde_final_credit
-    if opening_debit is not None:
-        update_data["opening_debit"] = opening_debit
-    if opening_credit is not None:
-        update_data["opening_credit"] = opening_credit
-    
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No fields to update")
-    
-    account = update_account(db, account_id, update_data)
-    if not account:
-        raise HTTPException(status_code=404, detail="Account not found")
-    
-    return {
-        "status": "success",
-        "account_id": account.id,
-        "account_code": account.account_code,
-        "message": "Account updated successfully"
-    }
-
-
+    """Update account + auto-recalculate bilan if exists"""
+    try:
+        # All business logic is in the service function
+        result = update_account_with_bilan(
+            db,
+            account_id,
+            label=label,
+            debit=debit,
+            credit=credit,
+            solde_debit=solde_debit,
+            solde_credit=solde_credit,
+            solde_final=solde_final,
+            solde_final_debit=solde_final_debit,
+            solde_final_credit=solde_final_credit,
+            opening_debit=opening_debit,
+            opening_credit=opening_credit,
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+ 
+ 
 # ===== DELETE =====
-@router.delete("/{account_id}")
+@router.delete("/delete/{account_id}")
 def delete_account_endpoint(account_id: int, db: Session = Depends(get_db)):
-    """Delete an account by ID"""
-    success = delete_account(db, account_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Account not found")
-    
-    return {
-        "status": "success",
-        "message": "Account deleted successfully"
-    }
-
+    """Delete account + auto-recalculate bilan if exists"""
+    try:
+        # All business logic is in the service function
+        result = delete_account_with_bilan(db, account_id)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+ 
 
 @router.delete("/upload/{upload_id}")
 def delete_accounts_by_upload_endpoint(
