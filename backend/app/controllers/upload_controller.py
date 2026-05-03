@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, UploadFile, File, Depends, Query, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Form, UploadFile, File, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.cnx import SessionLocal
@@ -46,14 +46,16 @@ def upload_file_only(
 
 
 @router.post("/parse/{upload_id}")
-def parse_uploaded_file(upload_id: int, db: Session = Depends(get_db)):
+def parse_uploaded_file(
+    upload_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     """
     Parse a previously uploaded CSV file.
-    
-    Use this endpoint to parse a file that was uploaded with POST /upload.
-    Requires the upload_id returned from the upload endpoint.
+    Anomaly detection runs as a background task after accounts are saved.
     """
-    result = parse_csv_file(db, upload_id)
+    result = parse_csv_file(db, upload_id, background_tasks=background_tasks)
     return result
 
 
@@ -66,18 +68,21 @@ def preview_file(upload_id: int, rows: int = 20, db: Session = Depends(get_db)):
 
 @router.post("/upload_and_parse")
 async def upload_and_parse(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     display_name: str = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Upload a CSV file and automatically parse it.
+    Anomaly detection runs as a background task after accounts are saved.
     """
     try:
         result = upload_and_parse_document(
             db=db,
             file=file,
-            display_filename=display_name
+            display_filename=display_name,
+            background_tasks=background_tasks,
         )
         return result
 

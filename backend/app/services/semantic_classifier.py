@@ -182,12 +182,21 @@ ENRICHED_COLUMN_MAPPING = {
         "must_contain_keywords": ["fin", "final"],  # Must have one of these
     },
     
-    # ============ FALLBACK ONLY - DO NOT USE ============
+    # ============ SIGNED SINGLE BALANCE (e.g. "Solde Final" in simple trial balances) ============
     "solde_final": {
-        "keywords": [],  # ← EMPTY! Don't match anything!
-        "description": "DEPRECATED - Use solde_final_debit/credit instead",
-        "priority": 0,  # LOWEST - Never match
-        "note": "This column should NEVER be detected. It's a generic placeholder.",
+        "keywords": [
+            "solde final",
+            "solde net",
+            "solde global",
+            "solde",
+            "balance",
+            "balance finale",
+            "net balance",
+            "closing balance",
+        ],
+        "description": "final signed net balance closing account balance single column debit credit combined",
+        "expected_content": {"type": "numeric", "avg_length": 12, "numeric_ratio": 0.6, "decimal_ratio": 0.5},
+        "priority": 5,  # Lower than specific debit/credit variants (11) so they win when both could match
     },
 }
  

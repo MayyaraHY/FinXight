@@ -12,4 +12,8 @@ class Settings:
     UPLOAD_DIR = os.getenv("UPLOAD_DIR")
     MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", 100))
 
+    #GEMINI
+    GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 settings = Settings()

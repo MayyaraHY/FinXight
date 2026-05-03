@@ -34,13 +34,23 @@ def parse_csv(file, upload_id):
     # Step 5: Classify columns using intelligent NLP-based matching (French)
     logger.info("Starting NLP-based column classification with semantic matching...")
     column_mapping, confidence_scores = classify_columns_smart(df.columns, df)
-    
+
     # Log confidence scores for transparency
     logger.info("Column classification results with confidence:")
     for col in df.columns:
         confidence = confidence_scores.get(col, 0.0)
         mapped_to = column_mapping.get(col, "unknown")
         logger.info(f"  '{col}' → '{mapped_to}' (confidence: {confidence:.1f}%)")
+
+    # Step 5b: Gemini fallback for columns the smart classifier couldn't map
+    unknown_cols = [col for col, mapped in column_mapping.items() if mapped == "unknown"]
+    if unknown_cols:
+        logger.info(f"Gemini fallback for {len(unknown_cols)} unknown column(s): {unknown_cols}")
+        try:
+            from app.ai.gemini_client import gemini_classify_fallback
+            column_mapping = gemini_classify_fallback(unknown_cols, df, column_mapping)
+        except Exception as e:
+            logger.warning(f"Gemini fallback skipped (non-blocking): {e}")
 
     # Step 6: Extract and clean data
     extracted_data = extract_data(df, column_mapping)

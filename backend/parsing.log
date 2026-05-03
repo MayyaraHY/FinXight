@@ -6963,3 +6963,894 @@ INFO:app.services.account_service:Account deleted: 21300000
 INFO:app.services.account_service:Bilan recalculated for upload 108
 INFO:app.services.account_service:Account updated: 28122000
 INFO:app.services.account_service:Bilan recalculated for upload 108
+INFO:app.services.upload_service:File saved: app/uploads\changedcol– Copie 1(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 113
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 7, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 8 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde pér Dbt', 'Solde pér Cdt', 'Solde fin Dbt', 'Solde fin Cdt']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Débit': 'debit', 'Crédit': 'credit', 'Solde pér Dbt': 'solde per dbt', 'Solde pér Cdt': 'solde per cdt', 'Solde fin Dbt': 'solde fin dbt', 'Solde fin Cdt': 'solde fin cdt'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit' \u2192 normalized: 'debit'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit' \u2192 'debit' (confidence: 79.4%) [semantic=29.4, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit' \u2192 normalized: 'credit'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit' \u2192 'credit' (confidence: 67.0%) [semantic=19.0, fuzzy=30.0, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt' \u2192 normalized: 'solde per dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt' \u2192 'solde_debit' (confidence: 56.2%) [semantic=6.2, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt' \u2192 normalized: 'solde per cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt' \u2192 'solde_credit' (confidence: 48.8%) [semantic=3.8, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt' \u2192 normalized: 'solde fin dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt' \u2192 'solde_final_debit' (confidence: 57.5%) [semantic=7.5, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt' \u2192 normalized: 'solde fin cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt' \u2192 'solde_final_credit' (confidence: 49.0%) [semantic=4.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('debit', '84.4%'), ('credit', '71.5%'), ('solde per dbt', '61.2%'), ('solde per cdt', '52.6%'), ('solde fin dbt', '62.5%'), ('solde fin cdt', '52.8%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'debit' \u2192 'debit' (confidence: 84.4%)
+INFO:app.services.csv_parsing_service:  'credit' \u2192 'credit' (confidence: 71.5%)
+INFO:app.services.csv_parsing_service:  'solde per dbt' \u2192 'solde_debit' (confidence: 61.2%)
+INFO:app.services.csv_parsing_service:  'solde per cdt' \u2192 'solde_credit' (confidence: 52.6%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt' \u2192 'solde_final_debit' (confidence: 62.5%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt' \u2192 'solde_final_credit' (confidence: 52.8%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'debit': ['debit'], 'credit': ['credit'], 'solde_debit': ['solde per dbt'], 'solde_credit': ['solde per cdt'], 'solde_final_debit': ['solde fin dbt'], 'solde_final_credit': ['solde fin cdt']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 8)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label      debit  ...    solde_credit solde_final_debit solde_final_credit
+0       Compte                        Intitulé      Débit  ...  Solde pér Cdt      Solde fin Dbt      Solde fin Cdt
+1     10100000                  CAPITAL SOCIAL          0  ...        12400000                 0           12400000
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE       3140  ...               0                10                  0
+3     16210000                EMPRUNT BANCAIRE          0  ...        21100000                 0           21100000
+4     16220000                 EMPRUNT LEASING  129604,98  ...      1298680,66                 0         1298680,66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Converted column 'debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_final_credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label      debit  ...  solde_credit  solde_final_debit  solde_final_credit
+0       Compte                        Intitulé       0.00  ...          0.00                0.0                0.00
+1     10100000                  CAPITAL SOCIAL       0.00  ...   12400000.00                0.0         12400000.00
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE    3140.00  ...          0.00               10.0                0.00
+3     16210000                EMPRUNT BANCAIRE       0.00  ...   21100000.00                0.0         21100000.00
+4     16220000                 EMPRUNT LEASING  129604.98  ...    1298680.66                0.0          1298680.66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+INFO:root:Upload 113: Encoding=UTF-8-SIG, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'debit': 84.4%, 'credit': 71.5%, 'solde per dbt': 61.2%, 'solde per cdt': 52.6%, 'solde fin dbt': 62.5%, 'solde fin cdt': 52.8%}
+INFO:app.core.accounting_loader:\u2713 Found bilan_rules.json at: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:AccountingRulesLoader initialized with rules path: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:Starting balance sheet calculation for upload 113
+INFO:app.services.bilan_service:Loaded 165 accounts for upload 113
+INFO:app.core.accounting_loader:\u2713 Rules loaded and cached from C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.services.bilan_service:Balance sheet totals: Actif=60056961.2, Passif=-37607082.70999999, Diff=97664043.91
+INFO:app.services.bilan_service:\u2713 Balance sheet saved for upload 113
+INFO:app.core.accounting_loader:\u2713 Found bilan_rules.json at: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:AccountingRulesLoader initialized with rules path: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.upload_service:File saved: app/uploads\changedcol– Copie 1(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 114
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 7, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 8 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde pér Dbt', 'Solde pér Cdt', 'Solde fin Dbt', 'Solde fin Cdt']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Débit': 'debit', 'Crédit': 'credit', 'Solde pér Dbt': 'solde per dbt', 'Solde pér Cdt': 'solde per cdt', 'Solde fin Dbt': 'solde fin dbt', 'Solde fin Cdt': 'solde fin cdt'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'debit', 'credit', 'solde per dbt', 'solde per cdt', 'solde fin dbt', 'solde fin cdt']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit' \u2192 normalized: 'debit'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit' \u2192 'debit' (confidence: 79.4%) [semantic=29.4, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit' \u2192 normalized: 'credit'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit' \u2192 'credit' (confidence: 67.0%) [semantic=19.0, fuzzy=30.0, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt' \u2192 normalized: 'solde per dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt' \u2192 'solde_debit' (confidence: 56.2%) [semantic=6.2, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt' \u2192 normalized: 'solde per cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt' \u2192 'solde_credit' (confidence: 48.8%) [semantic=3.8, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt' \u2192 normalized: 'solde fin dbt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt' \u2192 'solde_final_debit' (confidence: 57.5%) [semantic=7.5, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt' \u2192 normalized: 'solde fin cdt'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt' \u2192 'solde_final_credit' (confidence: 49.0%) [semantic=4.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('debit', '84.4%'), ('credit', '71.5%'), ('solde per dbt', '61.2%'), ('solde per cdt', '52.6%'), ('solde fin dbt', '62.5%'), ('solde fin cdt', '52.8%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'debit' \u2192 'debit' (confidence: 84.4%)
+INFO:app.services.csv_parsing_service:  'credit' \u2192 'credit' (confidence: 71.5%)
+INFO:app.services.csv_parsing_service:  'solde per dbt' \u2192 'solde_debit' (confidence: 61.2%)
+INFO:app.services.csv_parsing_service:  'solde per cdt' \u2192 'solde_credit' (confidence: 52.6%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt' \u2192 'solde_final_debit' (confidence: 62.5%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt' \u2192 'solde_final_credit' (confidence: 52.8%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'debit': ['debit'], 'credit': ['credit'], 'solde_debit': ['solde per dbt'], 'solde_credit': ['solde per cdt'], 'solde_final_debit': ['solde fin dbt'], 'solde_final_credit': ['solde fin cdt']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 8)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label      debit  ...    solde_credit solde_final_debit solde_final_credit
+0       Compte                        Intitulé      Débit  ...  Solde pér Cdt      Solde fin Dbt      Solde fin Cdt
+1     10100000                  CAPITAL SOCIAL          0  ...        12400000                 0           12400000
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE       3140  ...               0                10                  0
+3     16210000                EMPRUNT BANCAIRE          0  ...        21100000                 0           21100000
+4     16220000                 EMPRUNT LEASING  129604,98  ...      1298680,66                 0         1298680,66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Converted column 'debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_final_credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label      debit  ...  solde_credit  solde_final_debit  solde_final_credit
+0       Compte                        Intitulé       0.00  ...          0.00                0.0                0.00
+1     10100000                  CAPITAL SOCIAL       0.00  ...   12400000.00                0.0         12400000.00
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE    3140.00  ...          0.00               10.0                0.00
+3     16210000                EMPRUNT BANCAIRE       0.00  ...   21100000.00                0.0         21100000.00
+4     16220000                 EMPRUNT LEASING  129604.98  ...    1298680.66                0.0          1298680.66
+
+[5 rows x 8 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+INFO:root:Upload 114: Encoding=UTF-8-SIG, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'debit': 'debit', 'credit': 'credit', 'solde per dbt': 'solde_debit', 'solde per cdt': 'solde_credit', 'solde fin dbt': 'solde_final_debit', 'solde fin cdt': 'solde_final_credit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'debit': 84.4%, 'credit': 71.5%, 'solde per dbt': 61.2%, 'solde per cdt': 52.6%, 'solde fin dbt': 62.5%, 'solde fin cdt': 52.8%}
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:Starting balance sheet calculation for upload 114
+INFO:app.services.bilan_service:Loaded 165 accounts for upload 114
+INFO:app.core.accounting_loader:\u2713 Rules loaded and cached from C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.services.bilan_service:Balance sheet totals: Actif=60056961.2, Passif=-37607082.70999999, Diff=97664043.91
+INFO:app.services.bilan_service:\u2713 Balance sheet saved for upload 114
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:Starting balance sheet calculation for upload 114
+INFO:app.services.bilan_service:Loaded 165 accounts for upload 114
+INFO:app.services.bilan_service:Balance sheet totals: Actif=60056961.2, Passif=-37607082.70999999, Diff=97664043.91
+INFO:app.services.bilan_service:\u2713 Balance sheet saved for upload 114
+INFO:app.services.account_service:Account updated: 16220000
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:Starting balance sheet calculation for upload 114
+INFO:app.services.bilan_service:Loaded 165 accounts for upload 114
+INFO:app.services.bilan_service:Balance sheet totals: Actif=60056961.2, Passif=-37607082.70999999, Diff=97664043.91
+INFO:app.services.bilan_service:\u2713 Balance sheet saved for upload 114
+INFO:app.services.account_service:Bilan recalculated for upload 114
+INFO:app.services.account_service:Account updated: 16210000
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:Starting balance sheet calculation for upload 114
+INFO:app.services.bilan_service:Loaded 165 accounts for upload 114
+INFO:app.services.bilan_service:Balance sheet totals: Actif=60056961.2, Passif=-37607082.70999999, Diff=97664043.91
+INFO:app.services.bilan_service:\u2713 Balance sheet saved for upload 114
+INFO:app.services.account_service:Bilan recalculated for upload 114
+INFO:app.core.accounting_loader:\u2713 Found bilan_rules.json at: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:AccountingRulesLoader initialized with rules path: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.core.accounting_loader:\u2713 Rules loaded and cached from C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+INFO:app.services.upload_service:File saved: app/uploads\balance_fixed.csv
+INFO:app.services.upload_service:Upload registered with ID: 115
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 7, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 107 rows, 8 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7']
+INFO:app.services.header_detector:Detected header at row 0: ['BALANCE 2021', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'clean_balance']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'BALANCE 2021': 'balance 2021', 'Unnamed: 1': 'unnamed 1', 'Unnamed: 2': 'unnamed 2', 'Unnamed: 3': 'unnamed 3', 'Unnamed: 4': 'unnamed 4', 'Unnamed: 5': 'unnamed 5', 'Unnamed: 6': 'unnamed 6', 'clean_balance': 'clean balance'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['balance 2021', 'unnamed 1', 'unnamed 2', 'unnamed 3', 'unnamed 4', 'unnamed 5', 'unnamed 6', 'clean balance']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['balance 2021', 'unnamed 1', 'unnamed 2', 'unnamed 3', 'unnamed 4', 'unnamed 5', 'unnamed 6', 'clean balance']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'balance 2021' \u2192 normalized: 'balance 2021'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'balance 2021' \u2192 'opening_debit' (confidence: 58.1%) [semantic=26.1, fuzzy=15.0, content=17.0]
+INFO:app.services.column_classifier:Processing column: 'unnamed 1' \u2192 normalized: 'unnamed 1'
+INFO:app.services.column_classifier:\u2713 Mapped 'unnamed 1' \u2192 'label' (confidence: 46.0%) [semantic=12.4, fuzzy=18.6, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'unnamed 2' \u2192 normalized: 'unnamed 2'
+INFO:app.services.column_classifier:\u2713 Mapped 'unnamed 2' \u2192 'account_code' (confidence: 32.0%) [semantic=8.0, fuzzy=12.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'unnamed 3' \u2192 normalized: 'unnamed 3'
+WARNING:app.services.column_classifier:\u2717 Column 'unnamed 3' partially matched 'opening_credit' (score: 10.5/100, below 30 threshold)
+INFO:app.services.column_classifier:Processing column: 'unnamed 4' \u2192 normalized: 'unnamed 4'
+WARNING:app.services.column_classifier:\u2717 Column 'unnamed 4' partially matched 'opening_credit' (score: 10.5/100, below 30 threshold)
+INFO:app.services.column_classifier:Processing column: 'unnamed 5' \u2192 normalized: 'unnamed 5'
+WARNING:app.services.column_classifier:\u2717 Column 'unnamed 5' partially matched 'opening_credit' (score: 10.5/100, below 30 threshold)
+INFO:app.services.column_classifier:Processing column: 'unnamed 6' \u2192 normalized: 'unnamed 6'
+WARNING:app.services.column_classifier:\u2717 Column 'unnamed 6' partially matched 'opening_credit' (score: 10.5/100, below 30 threshold)
+INFO:app.services.column_classifier:Processing column: 'clean balance' \u2192 normalized: 'clean balance'
+INFO:app.services.column_classifier:\u2713 Mapped 'clean balance' \u2192 'opening_credit' (confidence: 51.7%) [semantic=22.3, fuzzy=14.4, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'balance 2021': 'opening_debit', 'unnamed 1': 'label', 'unnamed 2': 'account_code', 'unnamed 3': 'unknown', 'unnamed 4': 'unknown', 'unnamed 5': 'unknown', 'unnamed 6': 'unknown', 'clean balance': 'opening_credit'}
+INFO:app.services.column_classifier:Confidence scores: [('balance 2021', '62.4%'), ('unnamed 1', '49.7%'), ('unnamed 2', '32.0%'), ('unnamed 3', '0.0%'), ('unnamed 4', '0.0%'), ('unnamed 5', '0.0%'), ('unnamed 6', '0.0%'), ('clean balance', '55.5%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'balance 2021' \u2192 'opening_debit' (confidence: 62.4%)
+INFO:app.services.csv_parsing_service:  'unnamed 1' \u2192 'label' (confidence: 49.7%)
+INFO:app.services.csv_parsing_service:  'unnamed 2' \u2192 'account_code' (confidence: 32.0%)
+INFO:app.services.csv_parsing_service:  'unnamed 3' \u2192 'unknown' (confidence: 0.0%)
+INFO:app.services.csv_parsing_service:  'unnamed 4' \u2192 'unknown' (confidence: 0.0%)
+INFO:app.services.csv_parsing_service:  'unnamed 5' \u2192 'unknown' (confidence: 0.0%)
+INFO:app.services.csv_parsing_service:  'unnamed 6' \u2192 'unknown' (confidence: 0.0%)
+INFO:app.services.csv_parsing_service:  'clean balance' \u2192 'opening_credit' (confidence: 55.5%)
+INFO:app.services.csv_parsing_service:Gemini fallback for 4 unknown column(s): ['unnamed 3', 'unnamed 4', 'unnamed 5', 'unnamed 6']
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+WARNING:app.ai.gemini_client:Gemini fallback failed for column 'unnamed 3': Erreur IA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+WARNING:app.ai.gemini_client:Gemini fallback failed for column 'unnamed 4': Erreur IA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+WARNING:app.ai.gemini_client:Gemini fallback failed for column 'unnamed 5': Erreur IA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+WARNING:app.ai.gemini_client:Gemini fallback failed for column 'unnamed 6': Erreur IA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+INFO:app.services.data_extractor:Reverse mapping: {'opening_debit': ['balance 2021'], 'label': ['unnamed 1'], 'account_code': ['unnamed 2'], 'opening_credit': ['clean balance']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['opening_debit', 'label', 'account_code', 'unnamed 3', 'unnamed 4', 'unnamed 5', 'unnamed 6', 'opening_credit']
+INFO:app.services.data_extractor:DataFrame shape: (107, 8)
+INFO:app.services.data_extractor:DataFrame sample:
+  opening_debit             label account_code  unnamed 3  unnamed 4  unnamed 5  unnamed 6 opening_credit
+0  BALANCE 2021         unnamed 1    unnamed 2  unnamed 3  unnamed 4  unnamed 5  unnamed 6  clean_balance
+1             0                                                                                         0
+2            N°  libelle ecriture  solde final                                                          0
+3      10100000           capital     1 000000                                                          0
+4      11100000    reserve legale                                                                       0
+INFO:app.services.data_extractor:Rows before filtering: 107
+INFO:app.services.data_extractor:Rows after filtering: 27
+INFO:app.services.data_extractor:Sample data:
+  opening_debit               label  account_code  unnamed 3  unnamed 4  unnamed 5  unnamed 6 opening_credit
+0  BALANCE 2021           unnamed 1     unnamed 2  unnamed 3  unnamed 4  unnamed 5  unnamed 6  clean_balance
+2            N°    libelle ecriture   solde final                                                          0
+3      10100000             capital      1 000000                                                          0
+5      12100000  resultats reportes    150 000000                                                          0
+8      21300000           logiciels  2 500 000000                                                          0
+INFO:app.services.data_extractor:Successfully extracted 27 records
+INFO:root:Upload 115: Encoding=utf-8, Delimiter=;, Columns={'balance 2021': 'opening_debit', 'unnamed 1': 'label', 'unnamed 2': 'account_code', 'unnamed 3': 'unknown', 'unnamed 4': 'unknown', 'unnamed 5': 'unknown', 'unnamed 6': 'unknown', 'clean balance': 'opening_credit'}, Confidence_Scores={'balance 2021': 62.4%, 'unnamed 1': 49.7%, 'unnamed 2': 32.0%, 'unnamed 3': 0.0%, 'unnamed 4': 0.0%, 'unnamed 5': 0.0%, 'unnamed 6': 0.0%, 'clean balance': 55.5%}
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.gemini_client:Anomaly detection failed: Erreur IA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.anomaly_service:Anomaly detection background task failed for upload 115: (psycopg2.errors.UndefinedColumn) ERREUR:  la colonne anomalies.anomalies n'existe pas
+LINE 1: ...s_id, anomalies.upload_id AS anomalies_upload_id, anomalies....
+                                                             ^
+
+[SQL: SELECT anomalies.id AS anomalies_id, anomalies.upload_id AS anomalies_upload_id, anomalies.anomalies AS anomalies_anomalies, anomalies.created_at AS anomalies_created_at 
+FROM anomalies 
+WHERE anomalies.upload_id = %(upload_id_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'upload_id_1': 115, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: ERREUR:  la colonne anomalies.anomalies n'existe pas
+LINE 1: ...s_id, anomalies.upload_id AS anomalies_upload_id, anomalies....
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\ai\anomaly_service.py", line 43, in run_anomaly_detection
+    save_anomalies(db, upload_id, anomalies)
+  File "C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\repositories\anomaly_repository.py", line 6, in save_anomalies
+    record = db.query(Anomaly).filter(Anomaly.upload_id == upload_id).first()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\query.py", line 2759, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) ERREUR:  la colonne anomalies.anomalies n'existe pas
+LINE 1: ...s_id, anomalies.upload_id AS anomalies_upload_id, anomalies....
+                                                             ^
+
+[SQL: SELECT anomalies.id AS anomalies_id, anomalies.upload_id AS anomalies_upload_id, anomalies.anomalies AS anomalies_anomalies, anomalies.created_at AS anomalies_created_at 
+FROM anomalies 
+WHERE anomalies.upload_id = %(upload_id_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'upload_id_1': 115, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:Starting balance sheet calculation for upload 115
+INFO:app.services.bilan_service:Loaded 7 accounts for upload 115
+INFO:app.services.bilan_service:Balance sheet totals: Actif=0.0, Passif=0.0, Diff=0.0
+INFO:app.services.bilan_service:\u2713 Balance sheet saved for upload 115
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.gemini_client:Bilan analysis failed: Erreur IA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+INFO:app.services.upload_service:File saved: app/uploads\balance_2021.csv
+INFO:app.services.upload_service:Upload registered with ID: 116
+INFO:app.utils.helpers:Successfully decoded first line with utf-8
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 6, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 106 rows, 7 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6']
+INFO:app.services.header_detector:Detected header at row 2: ['N\u221e', 'LibellÈ Ècriture', 'Solde Final', '', '', '', '']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'N\u221e': 'n', 'LibellÈ Ècriture': 'libelle ecriture', 'Solde Final': 'solde final', '': ''}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['n', 'libelle ecriture', 'solde final']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'n' \u2192 normalized: 'n'
+INFO:app.services.column_classifier:\u2713 Mapped 'n' \u2192 'account_code' (confidence: 44.7%) [semantic=2.7, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'libelle ecriture' \u2192 normalized: 'libelle ecriture'
+INFO:app.services.column_classifier:\u2713 Mapped 'libelle ecriture' \u2192 'label' (confidence: 34.6%) [semantic=1.3, fuzzy=18.3, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde final' \u2192 normalized: 'solde final'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde final' \u2192 'solde_final_debit' (confidence: 51.9%) [semantic=11.4, fuzzy=25.5, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final_debit'}
+INFO:app.services.column_classifier:Confidence scores: [('n', '44.7%'), ('libelle ecriture', '38.4%'), ('solde final', '55.6%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'n' \u2192 'account_code' (confidence: 44.7%)
+INFO:app.services.csv_parsing_service:  'libelle ecriture' \u2192 'label' (confidence: 38.4%)
+INFO:app.services.csv_parsing_service:  'solde final' \u2192 'solde_final_debit' (confidence: 55.6%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['n'], 'label': ['libelle ecriture'], 'solde_final_debit': ['solde final']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'solde_final_debit']
+INFO:app.services.data_extractor:DataFrame shape: (106, 3)
+INFO:app.services.data_extractor:DataFrame sample:
+   account_code             label solde_final_debit
+0  balance 2021                                   0
+1                                                 0
+2             n  libelle ecriture       Solde Final
+3      10100000           capital        -1 000,000
+4      11100000    reserve legale                 0
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Rows before filtering: 106
+INFO:app.services.data_extractor:Rows after filtering: 100
+INFO:app.services.data_extractor:Sample data:
+   account_code               label  solde_final_debit
+0  balance 2021                                    0.0
+2             n    libelle ecriture                0.0
+3      10100000             capital            -1000.0
+4      11100000      reserve legale                0.0
+5      12100000  resultats reportes          -150000.0
+INFO:app.services.data_extractor:Successfully extracted 100 records
+INFO:root:Upload 116: Encoding=MacRoman, Delimiter=;, Columns={'n': 'account_code', 'libelle ecriture': 'label', 'solde final': 'solde_final_debit'}, Confidence_Scores={'n': 44.7%, 'libelle ecriture': 38.4%, 'solde final': 55.6%}
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.gemini_client:Anomaly detection failed: Erreur IA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.anomaly_service:Anomaly detection background task failed for upload 116: (psycopg2.errors.UndefinedColumn) ERREUR:  la colonne anomalies.anomalies n'existe pas
+LINE 1: ...s_id, anomalies.upload_id AS anomalies_upload_id, anomalies....
+                                                             ^
+
+[SQL: SELECT anomalies.id AS anomalies_id, anomalies.upload_id AS anomalies_upload_id, anomalies.anomalies AS anomalies_anomalies, anomalies.created_at AS anomalies_created_at 
+FROM anomalies 
+WHERE anomalies.upload_id = %(upload_id_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'upload_id_1': 116, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: ERREUR:  la colonne anomalies.anomalies n'existe pas
+LINE 1: ...s_id, anomalies.upload_id AS anomalies_upload_id, anomalies....
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\ai\anomaly_service.py", line 43, in run_anomaly_detection
+    save_anomalies(db, upload_id, anomalies)
+  File "C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\repositories\anomaly_repository.py", line 6, in save_anomalies
+    record = db.query(Anomaly).filter(Anomaly.upload_id == upload_id).first()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\query.py", line 2759, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) ERREUR:  la colonne anomalies.anomalies n'existe pas
+LINE 1: ...s_id, anomalies.upload_id AS anomalies_upload_id, anomalies....
+                                                             ^
+
+[SQL: SELECT anomalies.id AS anomalies_id, anomalies.upload_id AS anomalies_upload_id, anomalies.anomalies AS anomalies_anomalies, anomalies.created_at AS anomalies_created_at 
+FROM anomalies 
+WHERE anomalies.upload_id = %(upload_id_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'upload_id_1': 116, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:Starting balance sheet calculation for upload 116
+INFO:app.services.bilan_service:Loaded 98 accounts for upload 116
+INFO:app.services.bilan_service:Balance sheet totals: Actif=0.0, Passif=0.0, Diff=0.0
+INFO:app.services.bilan_service:\u2713 Balance sheet saved for upload 116
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.gemini_client:Bilan analysis failed: Erreur IA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+INFO:app.services.upload_service:File saved: app/uploads\F1773661755482_BAL(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 117
+INFO:app.utils.helpers:Successfully decoded first line with latin1
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 9, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 10 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7', 'col_8', 'col_9']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Solde ant Dbt (réf)', 'Solde ant Cdt (réf)', 'Débit période (réf)', 'Crédit période (réf)', 'Solde pér Dbt (réf)', 'Solde pér Cdt (réf)', 'Solde fin Dbt (réf)', 'Solde fin Cdt (réf)']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Solde ant Dbt (réf)': 'solde ant dbt ref', 'Solde ant Cdt (réf)': 'solde ant cdt ref', 'Débit période (réf)': 'debit periode ref', 'Crédit période (réf)': 'credit periode ref', 'Solde pér Dbt (réf)': 'solde per dbt ref', 'Solde pér Cdt (réf)': 'solde per cdt ref', 'Solde fin Dbt (réf)': 'solde fin dbt ref', 'Solde fin Cdt (réf)': 'solde fin cdt ref'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant dbt ref' \u2192 normalized: 'solde ant dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant dbt ref' \u2192 'opening_debit' (confidence: 52.2%) [semantic=7.2, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant cdt ref' \u2192 normalized: 'solde ant cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant cdt ref' \u2192 'opening_credit' (confidence: 52.8%) [semantic=7.8, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit periode ref' \u2192 normalized: 'debit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit periode ref' \u2192 'debit' (confidence: 80.8%) [semantic=30.8, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit periode ref' \u2192 normalized: 'credit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit periode ref' \u2192 'credit' (confidence: 73.1%) [semantic=25.1, fuzzy=30.0, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt ref' \u2192 normalized: 'solde per dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt ref' \u2192 'solde_debit' (confidence: 57.1%) [semantic=7.1, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt ref' \u2192 normalized: 'solde per cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt ref' \u2192 'solde_credit' (confidence: 51.5%) [semantic=6.5, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt ref' \u2192 normalized: 'solde fin dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 58.6%) [semantic=8.6, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt ref' \u2192 normalized: 'solde fin cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt ref' \u2192 'solde_final_credit' (confidence: 52.0%) [semantic=7.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'debit', 'credit periode ref': 'credit', 'solde per dbt ref': 'solde_debit', 'solde per cdt ref': 'solde_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'solde_final_credit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('solde ant dbt ref', '55.9%'), ('solde ant cdt ref', '56.6%'), ('debit periode ref', '85.8%'), ('credit periode ref', '77.6%'), ('solde per dbt ref', '62.1%'), ('solde per cdt ref', '55.3%'), ('solde fin dbt ref', '63.6%'), ('solde fin cdt ref', '55.7%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'solde ant dbt ref' \u2192 'opening_debit' (confidence: 55.9%)
+INFO:app.services.csv_parsing_service:  'solde ant cdt ref' \u2192 'opening_credit' (confidence: 56.6%)
+INFO:app.services.csv_parsing_service:  'debit periode ref' \u2192 'debit' (confidence: 85.8%)
+INFO:app.services.csv_parsing_service:  'credit periode ref' \u2192 'credit' (confidence: 77.6%)
+INFO:app.services.csv_parsing_service:  'solde per dbt ref' \u2192 'solde_debit' (confidence: 62.1%)
+INFO:app.services.csv_parsing_service:  'solde per cdt ref' \u2192 'solde_credit' (confidence: 55.3%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 63.6%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt ref' \u2192 'solde_final_credit' (confidence: 55.7%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'opening_debit': ['solde ant dbt ref'], 'opening_credit': ['solde ant cdt ref'], 'debit': ['debit periode ref'], 'credit': ['credit periode ref'], 'solde_debit': ['solde per dbt ref'], 'solde_credit': ['solde per cdt ref'], 'solde_final_debit': ['solde fin dbt ref'], 'solde_final_credit': ['solde fin cdt ref']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'opening_debit', 'opening_credit', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 10)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label  ...    solde_final_debit   solde_final_credit
+0       compte                        intitule  ...  Solde fin Dbt (réf)  Solde fin Cdt (réf)
+1     10100000                  capital social  ...                    0             12400000
+2     10900000  actionnaire capital non appele  ...                   10                    0
+3     16210000                emprunt bancaire  ...                    0             21100000
+4     16220000                 emprunt leasing  ...                    0           1298680,66
+
+[5 rows x 10 columns]
+INFO:app.services.data_extractor:Converted column 'debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_final_credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label  ... solde_final_debit solde_final_credit
+0       compte                        intitule  ...               0.0               0.00
+1     10100000                  capital social  ...               0.0        12400000.00
+2     10900000  actionnaire capital non appele  ...              10.0               0.00
+3     16210000                emprunt bancaire  ...               0.0        21100000.00
+4     16220000                 emprunt leasing  ...               0.0         1298680.66
+
+[5 rows x 10 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+INFO:root:Upload 117: Encoding=ISO-8859-1, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'debit', 'credit periode ref': 'credit', 'solde per dbt ref': 'solde_debit', 'solde per cdt ref': 'solde_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'solde_final_credit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'solde ant dbt ref': 55.9%, 'solde ant cdt ref': 56.6%, 'debit periode ref': 85.8%, 'credit periode ref': 77.6%, 'solde per dbt ref': 62.1%, 'solde per cdt ref': 55.3%, 'solde fin dbt ref': 63.6%, 'solde fin cdt ref': 55.7%}
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.gemini_client:Anomaly detection failed: Erreur IA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.anomaly_service:Anomaly detection background task failed for upload 117: (psycopg2.errors.UndefinedColumn) ERREUR:  la colonne anomalies.anomalies n'existe pas
+LINE 1: ...s_id, anomalies.upload_id AS anomalies_upload_id, anomalies....
+                                                             ^
+
+[SQL: SELECT anomalies.id AS anomalies_id, anomalies.upload_id AS anomalies_upload_id, anomalies.anomalies AS anomalies_anomalies, anomalies.created_at AS anomalies_created_at 
+FROM anomalies 
+WHERE anomalies.upload_id = %(upload_id_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'upload_id_1': 117, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: ERREUR:  la colonne anomalies.anomalies n'existe pas
+LINE 1: ...s_id, anomalies.upload_id AS anomalies_upload_id, anomalies....
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\ai\anomaly_service.py", line 43, in run_anomaly_detection
+    save_anomalies(db, upload_id, anomalies)
+  File "C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\repositories\anomaly_repository.py", line 6, in save_anomalies
+    record = db.query(Anomaly).filter(Anomaly.upload_id == upload_id).first()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\query.py", line 2759, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\mayyara.haj-yahia\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) ERREUR:  la colonne anomalies.anomalies n'existe pas
+LINE 1: ...s_id, anomalies.upload_id AS anomalies_upload_id, anomalies....
+                                                             ^
+
+[SQL: SELECT anomalies.id AS anomalies_id, anomalies.upload_id AS anomalies_upload_id, anomalies.anomalies AS anomalies_anomalies, anomalies.created_at AS anomalies_created_at 
+FROM anomalies 
+WHERE anomalies.upload_id = %(upload_id_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'upload_id_1': 117, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:Starting balance sheet calculation for upload 117
+INFO:app.services.bilan_service:Loaded 165 accounts for upload 117
+INFO:app.services.bilan_service:Balance sheet totals: Actif=60056961.2, Passif=-37607082.70999999, Diff=97664043.91
+INFO:app.services.bilan_service:\u2713 Balance sheet saved for upload 117
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+ERROR:app.ai.gemini_client:Bilan analysis failed: Erreur IA: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+INFO:app.core.accounting_loader:\u2713 Found bilan_rules.json at: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:AccountingRulesLoader initialized with rules path: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:\u2713 Rules loaded and cached from C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+INFO:app.core.accounting_loader:\u2713 Found bilan_rules.json at: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:AccountingRulesLoader initialized with rules path: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:\u2713 Rules loaded and cached from C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+INFO:app.core.accounting_loader:\u2713 Found bilan_rules.json at: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:AccountingRulesLoader initialized with rules path: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:\u2713 Rules loaded and cached from C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+ERROR:app.ai.gemini_client:Gemini API error: 404 models/gemini-1.5-pro is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+INFO:app.core.accounting_loader:\u2713 Found bilan_rules.json at: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:AccountingRulesLoader initialized with rules path: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:\u2713 Rules loaded and cached from C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:google_genai.models:AFC is enabled with max remote calls: 10.
+INFO:httpx:HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+INFO:app.core.accounting_loader:\u2713 Found bilan_rules.json at: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:AccountingRulesLoader initialized with rules path: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.core.accounting_loader:\u2713 Rules loaded and cached from C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:google_genai.models:AFC is enabled with max remote calls: 10.
+INFO:httpx:HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+INFO:app.services.upload_service:File saved: app/uploads\F1773661755482_BAL(in).csv
+INFO:app.services.upload_service:Upload registered with ID: 118
+INFO:app.utils.helpers:Successfully decoded first line with latin1
+INFO:app.utils.helpers:Detected delimiter: ';' from: {',': 0, ';': 9, '\t': 0, '|': 0}
+INFO:app.utils.helpers:CSV read successfully: 166 rows, 10 columns
+INFO:app.services.csv_parsing_service:Raw columns after reading CSV: ['col_0', 'col_1', 'col_2', 'col_3', 'col_4', 'col_5', 'col_6', 'col_7', 'col_8', 'col_9']
+INFO:app.services.header_detector:Detected header at row 0: ['Compte', 'Intitulé', 'Solde ant Dbt (réf)', 'Solde ant Cdt (réf)', 'Débit période (réf)', 'Crédit période (réf)', 'Solde pér Dbt (réf)', 'Solde pér Cdt (réf)', 'Solde fin Dbt (réf)', 'Solde fin Cdt (réf)']
+INFO:app.services.csv_parsing_service:Preparing DataFrame: normalizing column names and data...
+INFO:app.services.preparation_service:Starting DataFrame preparation...
+INFO:app.services.preparation_service:Normalized column names: {'Compte': 'compte', 'Intitulé': 'intitule', 'Solde ant Dbt (réf)': 'solde ant dbt ref', 'Solde ant Cdt (réf)': 'solde ant cdt ref', 'Débit période (réf)': 'debit periode ref', 'Crédit période (réf)': 'credit periode ref', 'Solde pér Dbt (réf)': 'solde per dbt ref', 'Solde pér Cdt (réf)': 'solde per cdt ref', 'Solde fin Dbt (réf)': 'solde fin dbt ref', 'Solde fin Cdt (réf)': 'solde fin cdt ref'}
+INFO:app.services.preparation_service:Removed empty columns. Remaining: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.preparation_service:DataFrame preparation complete
+INFO:app.services.csv_parsing_service:Columns after preparation: ['compte', 'intitule', 'solde ant dbt ref', 'solde ant cdt ref', 'debit periode ref', 'credit periode ref', 'solde per dbt ref', 'solde per cdt ref', 'solde fin dbt ref', 'solde fin cdt ref']
+INFO:app.services.csv_parsing_service:Starting NLP-based column classification with semantic matching...
+INFO:app.services.column_classifier:Processing column: 'compte' \u2192 normalized: 'compte'
+INFO:app.services.semantic_classifier:Loading semantic model: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cpu
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+INFO:app.services.semantic_classifier:Semantic model loaded successfully
+INFO:app.services.column_classifier:\u2713 Mapped 'compte' \u2192 'account_code' (confidence: 42.0%) [semantic=0.0, fuzzy=30.0, content=12.0]
+INFO:app.services.column_classifier:Processing column: 'intitule' \u2192 normalized: 'intitule'
+INFO:app.services.column_classifier:\u2713 Mapped 'intitule' \u2192 'label' (confidence: 45.0%) [semantic=0.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant dbt ref' \u2192 normalized: 'solde ant dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant dbt ref' \u2192 'opening_debit' (confidence: 52.2%) [semantic=7.2, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde ant cdt ref' \u2192 normalized: 'solde ant cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde ant cdt ref' \u2192 'opening_credit' (confidence: 52.8%) [semantic=7.8, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'debit periode ref' \u2192 normalized: 'debit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'debit periode ref' \u2192 'debit' (confidence: 80.8%) [semantic=30.8, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'credit periode ref' \u2192 normalized: 'credit periode ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'credit periode ref' \u2192 'credit' (confidence: 73.1%) [semantic=25.1, fuzzy=30.0, content=18.0]
+INFO:app.services.column_classifier:Processing column: 'solde per dbt ref' \u2192 normalized: 'solde per dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per dbt ref' \u2192 'solde_debit' (confidence: 57.1%) [semantic=7.1, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde per cdt ref' \u2192 normalized: 'solde per cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde per cdt ref' \u2192 'solde_credit' (confidence: 51.5%) [semantic=6.5, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin dbt ref' \u2192 normalized: 'solde fin dbt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 58.6%) [semantic=8.6, fuzzy=30.0, content=20.0]
+INFO:app.services.column_classifier:Processing column: 'solde fin cdt ref' \u2192 normalized: 'solde fin cdt ref'
+INFO:app.services.column_classifier:\u2713 Mapped 'solde fin cdt ref' \u2192 'solde_final_credit' (confidence: 52.0%) [semantic=7.0, fuzzy=30.0, content=15.0]
+INFO:app.services.column_classifier:Validating and boosting confidence scores using content analysis...
+INFO:app.services.column_classifier:Final column mapping: {'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'debit', 'credit periode ref': 'credit', 'solde per dbt ref': 'solde_debit', 'solde per cdt ref': 'solde_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'solde_final_credit'}
+INFO:app.services.column_classifier:Confidence scores: [('compte', '42.0%'), ('intitule', '48.8%'), ('solde ant dbt ref', '55.9%'), ('solde ant cdt ref', '56.6%'), ('debit periode ref', '85.8%'), ('credit periode ref', '77.6%'), ('solde per dbt ref', '62.1%'), ('solde per cdt ref', '55.3%'), ('solde fin dbt ref', '63.6%'), ('solde fin cdt ref', '55.7%')]
+INFO:app.services.csv_parsing_service:Column classification results with confidence:
+INFO:app.services.csv_parsing_service:  'compte' \u2192 'account_code' (confidence: 42.0%)
+INFO:app.services.csv_parsing_service:  'intitule' \u2192 'label' (confidence: 48.8%)
+INFO:app.services.csv_parsing_service:  'solde ant dbt ref' \u2192 'opening_debit' (confidence: 55.9%)
+INFO:app.services.csv_parsing_service:  'solde ant cdt ref' \u2192 'opening_credit' (confidence: 56.6%)
+INFO:app.services.csv_parsing_service:  'debit periode ref' \u2192 'debit' (confidence: 85.8%)
+INFO:app.services.csv_parsing_service:  'credit periode ref' \u2192 'credit' (confidence: 77.6%)
+INFO:app.services.csv_parsing_service:  'solde per dbt ref' \u2192 'solde_debit' (confidence: 62.1%)
+INFO:app.services.csv_parsing_service:  'solde per cdt ref' \u2192 'solde_credit' (confidence: 55.3%)
+INFO:app.services.csv_parsing_service:  'solde fin dbt ref' \u2192 'solde_final_debit' (confidence: 63.6%)
+INFO:app.services.csv_parsing_service:  'solde fin cdt ref' \u2192 'solde_final_credit' (confidence: 55.7%)
+INFO:app.services.data_extractor:Reverse mapping: {'account_code': ['compte'], 'label': ['intitule'], 'opening_debit': ['solde ant dbt ref'], 'opening_credit': ['solde ant cdt ref'], 'debit': ['debit periode ref'], 'credit': ['credit periode ref'], 'solde_debit': ['solde per dbt ref'], 'solde_credit': ['solde per cdt ref'], 'solde_final_debit': ['solde fin dbt ref'], 'solde_final_credit': ['solde fin cdt ref']}
+INFO:app.services.data_extractor:DataFrame columns after renaming: ['account_code', 'label', 'opening_debit', 'opening_credit', 'debit', 'credit', 'solde_debit', 'solde_credit', 'solde_final_debit', 'solde_final_credit']
+INFO:app.services.data_extractor:DataFrame shape: (166, 10)
+INFO:app.services.data_extractor:DataFrame sample:
+  account_code                           label  ...    solde_final_debit   solde_final_credit
+0       Compte                        Intitulé  ...  Solde fin Dbt (réf)  Solde fin Cdt (réf)
+1     10100000                  CAPITAL SOCIAL  ...                    0             12400000
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE  ...                   10                    0
+3     16210000                EMPRUNT BANCAIRE  ...                    0             21100000
+4     16220000                 EMPRUNT LEASING  ...                    0           1298680,66
+
+[5 rows x 10 columns]
+INFO:app.services.data_extractor:Converted column 'debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_final_debit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Converted column 'solde_final_credit' to numeric (NaN filled with 0)
+INFO:app.services.data_extractor:Rows before filtering: 166
+INFO:app.services.data_extractor:Rows after filtering: 166
+INFO:app.services.data_extractor:Sample data:
+  account_code                           label  ... solde_final_debit solde_final_credit
+0       Compte                        Intitulé  ...               0.0               0.00
+1     10100000                  CAPITAL SOCIAL  ...               0.0        12400000.00
+2     10900000  ACTIONNAIRE CAPITAL NON APPELE  ...              10.0               0.00
+3     16210000                EMPRUNT BANCAIRE  ...               0.0        21100000.00
+4     16220000                 EMPRUNT LEASING  ...               0.0         1298680.66
+
+[5 rows x 10 columns]
+INFO:app.services.data_extractor:Successfully extracted 166 records
+INFO:root:Upload 118: Encoding=ISO-8859-1, Delimiter=;, Columns={'compte': 'account_code', 'intitule': 'label', 'solde ant dbt ref': 'opening_debit', 'solde ant cdt ref': 'opening_credit', 'debit periode ref': 'debit', 'credit periode ref': 'credit', 'solde per dbt ref': 'solde_debit', 'solde per cdt ref': 'solde_credit', 'solde fin dbt ref': 'solde_final_debit', 'solde fin cdt ref': 'solde_final_credit'}, Confidence_Scores={'compte': 42.0%, 'intitule': 48.8%, 'solde ant dbt ref': 55.9%, 'solde ant cdt ref': 56.6%, 'debit periode ref': 85.8%, 'credit periode ref': 77.6%, 'solde per dbt ref': 62.1%, 'solde per cdt ref': 55.3%, 'solde fin dbt ref': 63.6%, 'solde fin cdt ref': 55.7%}
+INFO:app.core.accounting_loader:\u2713 Found bilan_rules.json at: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:AccountingRulesLoader initialized with rules path: C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:app.core.accounting_loader:\u2713 Rules loaded and cached from C:\Users\mayyara.haj-yahia\Travail\Project\financial_engine\backend\app\core\bilan_rules.json
+INFO:google_genai.models:AFC is enabled with max remote calls: 10.
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:Starting balance sheet calculation for upload 118
+INFO:app.services.bilan_service:Loaded 165 accounts for upload 118
+INFO:app.services.bilan_service:Balance sheet totals: Actif=60056961.2, Passif=-37607082.70999999, Diff=97664043.91
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:Starting balance sheet calculation for upload 118
+INFO:app.services.bilan_service:Loaded 165 accounts for upload 118
+INFO:app.services.bilan_service:Balance sheet totals: Actif=60056961.2, Passif=-37607082.70999999, Diff=97664043.91
+INFO:app.services.bilan_service:\u2713 Balance sheet saved for upload 118
+INFO:google_genai.models:AFC is enabled with max remote calls: 10.
+INFO:app.services.bilan_service:\u2713 Balance sheet saved for upload 118
+INFO:google_genai.models:AFC is enabled with max remote calls: 10.
+INFO:httpx:HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+INFO:app.ai.anomaly_service:Anomaly detection complete for upload 118: 0 anomalies found
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:httpx:HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+INFO:google_genai.models:AFC is enabled with max remote calls: 10.
+INFO:httpx:HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+INFO:google_genai.models:AFC is enabled with max remote calls: 10.
+INFO:httpx:HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+INFO:google_genai.models:AFC is enabled with max remote calls: 10.
+INFO:httpx:HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:app.services.bilan_service:BilanService initialized with AccountingRulesLoader singleton
+INFO:google_genai.models:AFC is enabled with max remote calls: 10.
+INFO:httpx:HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"

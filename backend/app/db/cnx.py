@@ -18,3 +18,4 @@ def get_db():
 from app.models.upload import Upload
 from app.models.account import Account
 from app.models.bilan import Bilan
+from app.models.anomaly import Anomaly

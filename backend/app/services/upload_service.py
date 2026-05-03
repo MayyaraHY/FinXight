@@ -66,7 +66,7 @@ def upload_document(db, file, display_filename: str = None):
         raise
 
 
-def parse_csv_file(db, upload_id: int):
+def parse_csv_file(db, upload_id: int, background_tasks=None):
     """
     Parse a previously uploaded CSV file.
     Performs preparation (normalization), classification, extraction, and validation.
@@ -93,6 +93,11 @@ def parse_csv_file(db, upload_id: int):
 
         # 💾 Save accounts to DB
         save_accounts(db, validated_data, upload_id)
+
+        # 🤖 Schedule anomaly detection as a background task (non-blocking)
+        if background_tasks is not None:
+            from app.ai.anomaly_service import run_anomaly_detection
+            background_tasks.add_task(run_anomaly_detection, upload_id)
 
         # 📝 Prepare result
         parse_result = {
@@ -126,7 +131,7 @@ def parse_csv_file(db, upload_id: int):
         raise
 
 
-def upload_and_parse_document(db, file, display_filename: str = None):
+def upload_and_parse_document(db, file, display_filename: str = None, background_tasks=None):
     """
     Upload + parse in one step.
     Saves file, registers upload, parses CSV, and stores accounts.
@@ -159,6 +164,11 @@ def upload_and_parse_document(db, file, display_filename: str = None):
 
         # 💾 Save parsed accounts
         save_accounts(db, validated_data, upload.id)
+
+        # 🤖 Schedule anomaly detection as a background task (non-blocking)
+        if background_tasks is not None:
+            from app.ai.anomaly_service import run_anomaly_detection
+            background_tasks.add_task(run_anomaly_detection, upload.id)
 
         # 📊 Result
         return {

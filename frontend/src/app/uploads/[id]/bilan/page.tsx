@@ -62,6 +62,7 @@ interface BilanData {
     };
     difference: number;
   };
+  analysis?: string;
 }
 
 // ===== TYPE DEFINITIONS =====
@@ -240,6 +241,18 @@ export default function BilanPage() {
             variant="info"
           />
         </div>
+
+        {/* AI Analysis */}
+        {bilanData.analysis && (
+          <div className="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span className="text-blue-500">✦</span> Analyse IA
+            </h2>
+            <div className="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-sm leading-relaxed">
+              {bilanData.analysis}
+            </div>
+          </div>
+        )}
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

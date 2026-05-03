@@ -5,8 +5,10 @@ __pycache__/
 data/*
 .idea/
 *.pyc
-parsing.log
-
+*.parsing.log
+*.log
+blueprints/*
+tests/*
 #-------------------frontend-------------------
 # dependencies
 /.idea

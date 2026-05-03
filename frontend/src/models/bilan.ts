@@ -10,6 +10,7 @@ export interface BilanData {
     actifs: unknown;
     passifs?: unknown;
   };
+  analysis?: string;
 }
 
 export interface BilanItem {
