@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.cnx import get_db
-from app.ai.gemini_client import ask_gemini
+from app.ai.ai_service_client import chat as ai_chat
 from app.models.account import Account
 from app.repositories.bilan_repository import BilanRepository
 from app.repositories.anomaly_repository import get_anomalies
@@ -50,10 +50,19 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
     }
 
     try:
-        response = ask_gemini(request.message, context=context)
+        response = ai_chat(request.message, context=context)
         return {"success": True, "response": response}
     except ValueError as e:
-        raise HTTPException(status_code=429, detail=str(e))
+        # Map AI-service errors to meaningful HTTP codes for the frontend.
+        msg = str(e)
+        if "surchargé" in msg:
+            # Gemini 503 — transient overload, surface as 503 to the frontend
+            # so it can show a "try again in 30s" hint.
+            raise HTTPException(status_code=503, detail=msg)
+        if "Limite" in msg:
+            # Gemini 429 — quota / per-minute limit on your account.
+            raise HTTPException(status_code=429, detail=msg)
+        raise HTTPException(status_code=502, detail=msg)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

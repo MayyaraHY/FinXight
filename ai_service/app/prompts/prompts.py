@@ -235,15 +235,44 @@ CONTEXTE FINANCIER:
 def get_system_prompt(language: str = "fr") -> str:
     """
     Get system prompt in requested language.
-    
+
     Args:
         language: "fr" for French, "ar" for Arabic, "en" for English
-        
+
     Returns:
         System prompt string
     """
     prompts = {
         "fr": SYSTEM_PROMPT_FR,
     }
-    
+
     return prompts.get(language, SYSTEM_PROMPT_FR)
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# TASK PROMPTS — used by individual route handlers
+# Centralized here to avoid duplication between gemini_client and routes.
+# ───────────────────────────────────────────────────────────────────────────
+
+ANOMALY_DETECTION_PROMPT = (
+    "Analyse ces comptes du plan comptable tunisien (PCGT) et détecte les anomalies:\n"
+    "- Soldes anormaux (ex: actif avec solde créditeur, passif avec solde débiteur)\n"
+    "- Codes de compte hors PCGT (pas dans les classes 1-7)\n"
+    "- Montants aberrants (nuls sans justification, ou excessivement élevés)\n"
+    "- Incohérences entre débit et crédit\n\n"
+    "Pour chaque anomalie détectée, fournis: le code compte, le problème exact, "
+    "et la correction suggérée.\n"
+    "Réponds UNIQUEMENT avec un tableau JSON valide: "
+    '[{"compte": "...", "probleme": "...", "suggestion": "..."}]\n'
+    "Si aucune anomalie, réponds: []"
+)
+
+
+BILAN_ANALYSIS_PROMPT = (
+    "Analyse ces totaux de bilan tunisien et fournis:\n"
+    "1. Ratios clés (liquidité générale, autonomie financière, taux d'endettement)\n"
+    "2. Score de santé financière (/10) avec justification\n"
+    "3. Interprétation en français (2-3 paragraphes)\n"
+    "4. 3 recommandations concrètes et actionnables\n\n"
+    "Utilise exactement les montants fournis dans tes calculs. Monnaie: TND."
+)

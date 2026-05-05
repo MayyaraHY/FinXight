@@ -9,4 +9,5 @@ numpy
 chardet
 fuzzywuzzy
 sentence-transformers
-google-genai
+groq
+httpx

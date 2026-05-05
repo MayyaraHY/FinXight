@@ -7,8 +7,11 @@ data/*
 *.pyc
 *.parsing.log
 *.log
-blueprints/*
-tests/*
+blueprints/
+tests/
+.claude/
+venv_ai/
+venv_ai/*
 #-------------------frontend-------------------
 # dependencies
 /.idea

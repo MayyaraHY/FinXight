@@ -340,8 +340,8 @@ class BilanService:
 
             # 6. AI interpretation (non-blocking — failure does not abort the response)
             try:
-                from app.ai.gemini_client import ask_gemini_bilan_analysis
-                analysis = ask_gemini_bilan_analysis(totals)
+                from app.ai.ai_service_client import analyze_bilan
+                analysis = analyze_bilan(totals)
                 final_result["analysis"] = analysis
             except Exception as e:
                 logger.warning(f"AI bilan interpretation skipped (non-blocking): {e}")

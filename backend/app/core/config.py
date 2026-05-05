@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class Settings:
     APP_NAME = os.getenv("APP_NAME")
     ENV = os.getenv("ENV")
@@ -12,8 +13,11 @@ class Settings:
     UPLOAD_DIR = os.getenv("UPLOAD_DIR")
     MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", 100))
 
-    #GEMINI
-    GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    # GROQ — used by classifier_client for cheap CSV column classification
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+    # AI microservice URL — Gemini-backed chat / anomalies / bilan analysis
+    AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://localhost:8001")
+
 
 settings = Settings()

@@ -5,6 +5,7 @@ from app.services.validator import validate_accounts
 from app.services.preparation_service import prepare_dataframe
 from app.utils.logger import log_parsing
 from app.utils.helpers import detect_encoding, detect_delimiter, read_csv
+from app.ai.classifier_client import classify_columns
 import logging
 
 logger = logging.getLogger(__name__)
@@ -47,8 +48,7 @@ def parse_csv(file, upload_id):
     if unknown_cols:
         logger.info(f"Gemini fallback for {len(unknown_cols)} unknown column(s): {unknown_cols}")
         try:
-            from app.ai.gemini_client import gemini_classify_fallback
-            column_mapping = gemini_classify_fallback(unknown_cols, df, column_mapping)
+            column_mapping = classify_columns(unknown_cols, df, column_mapping)
         except Exception as e:
             logger.warning(f"Gemini fallback skipped (non-blocking): {e}")
 
