@@ -1,4 +1,0 @@
-package tn.inetum.usersrvice.entities.enums;
-
-public enum RoleName {
-}
