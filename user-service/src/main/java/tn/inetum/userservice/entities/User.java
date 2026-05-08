@@ -5,7 +5,9 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -18,6 +20,8 @@ import tn.inetum.userservice.entities.enums.AuthProvider;
 
 import java.net.InetAddress;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -63,6 +67,10 @@ public class User {
     @ColumnTransformer(write = "?::inet")
     @Column(name = "last_login_ip", columnDefinition = "inet")
     private InetAddress lastLoginIp;
+
+    /** Lazy-loaded list of role assignments. Used when building JWT claims and Spring authorities. */
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<UserRole> roles = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

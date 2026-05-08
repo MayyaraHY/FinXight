@@ -1,4 +1,12 @@
 package tn.inetum.userservice.dto.request;
 
-public class ForgotPasswordRequest {
-}
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
+/** Body of POST /auth/forgot-password. */
+public record ForgotPasswordRequest(
+
+        @NotBlank
+        @Email
+        String email
+) {}
