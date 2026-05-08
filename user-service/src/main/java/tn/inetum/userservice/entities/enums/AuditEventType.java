@@ -1,4 +1,17 @@
 package tn.inetum.userservice.entities.enums;
 
 public enum AuditEventType {
+    REGISTER,
+    LOGIN_SUCCESS,
+    LOGIN_FAILED,
+    LOGOUT,
+    TOKEN_REFRESHED,
+    TOKEN_REUSE_DETECTED,
+    PASSWORD_RESET_REQUESTED,
+    PASSWORD_RESET,
+    EMAIL_VERIFIED,
+    ACCOUNT_LOCKED,
+    ROLE_GRANTED,
+    ROLE_REVOKED,
+    ACCOUNT_DEACTIVATED
 }
