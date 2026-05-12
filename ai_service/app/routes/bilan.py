@@ -4,10 +4,17 @@ from app.models.requests import BilanAnalyzeRequest, BilanAnalyzeResponse
 from app.core.gemini_client import ask_gemini
 from app.prompts.prompts import BILAN_ANALYSIS_PROMPT
 
-router = APIRouter()
+from fastapi import Depends
+from app.auth import CurrentUser, current_user
+
+router = APIRouter(
+    prefix="/bilan",   
+    tags=["Bilan"],    
+    dependencies=[Depends(current_user)]
+)
 
 
-@router.post("/bilan/analyze", response_model=BilanAnalyzeResponse)
+@router.post("/analyze", response_model=BilanAnalyzeResponse)
 def analyze_bilan(req: BilanAnalyzeRequest):
     try:
         analysis = ask_gemini(BILAN_ANALYSIS_PROMPT, context={"totals": req.totals})

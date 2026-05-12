@@ -1,5 +1,10 @@
 package tn.inetum.userservice.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +26,13 @@ import java.util.UUID;
 
 /**
  * Endpoints for the currently logged-in user to manage their own account.
- * All routes here require a valid JWT (enforced by SecurityConfig).
+ * All routes require a valid JWT (enforced by SecurityConfig).
  *
- * We extract the user's UUID from the JWT "uid" claim injected by @AuthenticationPrincipal.
- * This means we NEVER trust a user-supplied ID in the request body — they can only act on themselves.
+ * The user's UUID is extracted from the JWT "uid" claim — never from the request body.
+ * This means users can only ever act on their own account.
  */
+@Tag(name = "User Profile", description = "View and manage the logged-in user's own account")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
@@ -33,13 +40,28 @@ public class UserController {
 
     private final UserService userService;
 
-    /** GET /users/me — returns the profile of the logged-in user. */
+    // ----------------------------------------------------------------
+
+    @Operation(summary = "Get my profile",
+               description = "Returns the profile of the currently authenticated user.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Profile returned"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getProfile(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(userService.getProfile(extractUserId(jwt)));
     }
 
-    /** PUT /users/me — updates the logged-in user's full name. */
+    // ----------------------------------------------------------------
+
+    @Operation(summary = "Update my profile",
+               description = "Updates the full name of the currently authenticated user.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Profile updated"),
+        @ApiResponse(responseCode = "400", description = "Validation error"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     @PutMapping("/me")
     public ResponseEntity<UserResponse> updateProfile(
             @AuthenticationPrincipal Jwt jwt,
@@ -47,7 +69,15 @@ public class UserController {
         return ResponseEntity.ok(userService.updateProfile(extractUserId(jwt), req));
     }
 
-    /** POST /users/me/change-password — changes the logged-in user's password. */
+    // ----------------------------------------------------------------
+
+    @Operation(summary = "Change my password",
+               description = "Changes the password. Requires the current password for confirmation.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Password changed"),
+        @ApiResponse(responseCode = "400", description = "Current password is incorrect"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     @PostMapping("/me/change-password")
     public ResponseEntity<Map<String, String>> changePassword(
             @AuthenticationPrincipal Jwt jwt,
@@ -57,13 +87,24 @@ public class UserController {
     }
 
     // ----------------------------------------------------------------
+
+    @Operation(summary = "Log out everywhere",
+               description = "Revokes all refresh tokens for this account across all devices. " +
+                             "Each device will need to log in again when its current access token expires.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "All sessions revoked"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
+    @PostMapping("/me/logout-all")
+    public ResponseEntity<Map<String, String>> logoutAll(@AuthenticationPrincipal Jwt jwt) {
+        userService.logoutAll(extractUserId(jwt));
+        return ResponseEntity.ok(Map.of("message", "All sessions have been revoked. Please log in again."));
+    }
+
+    // ----------------------------------------------------------------
     //  Helper
     // ----------------------------------------------------------------
 
-    /**
-     * The JWT contains a "uid" claim set during minting in TokenService.
-     * We read it here to know which user is making the request.
-     */
     private UUID extractUserId(Jwt jwt) {
         return UUID.fromString(jwt.getClaimAsString("uid"));
     }

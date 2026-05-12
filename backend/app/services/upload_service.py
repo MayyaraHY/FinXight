@@ -1,3 +1,5 @@
+from uuid import UUID as PyUUID
+
 from app.services.csv_parsing_service import parse_csv
 from app.repositories.upload_repository import *
 from app.core.config import settings
@@ -12,7 +14,7 @@ logger = logging.getLogger(__name__)
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
 
-def upload_document(db, file, display_filename: str = None):
+def upload_document(db, file, user_id: PyUUID, display_filename: str = None):
     """
     Upload a document: save file to disk and register in upload table.
     Returns the upload ID and metadata, ready for parsing.
@@ -34,12 +36,13 @@ def upload_document(db, file, display_filename: str = None):
 
         logger.info(f"File saved: {file_path}")
 
-        # 🗄️ Save upload metadata
+        # 🗄️ Save upload metadata (owned by the authenticated user)
         upload = create_upload(
             db=db,
             filename=file.filename,
             file_path=file_path,
-            display_filename=display_filename
+            user_id=user_id,
+            display_filename=display_filename,
         )
 
         logger.info(f"Upload registered with ID: {upload.id}")
@@ -131,7 +134,13 @@ def parse_csv_file(db, upload_id: int, background_tasks=None):
         raise
 
 
-def upload_and_parse_document(db, file, display_filename: str = None, background_tasks=None):
+def upload_and_parse_document(
+    db,
+    file,
+    user_id: PyUUID,
+    display_filename: str = None,
+    background_tasks=None,
+):
     """
     Upload + parse in one step.
     Saves file, registers upload, parses CSV, and stores accounts.
@@ -148,12 +157,13 @@ def upload_and_parse_document(db, file, display_filename: str = None, background
 
         logger.info(f"File saved: {file_path}")
 
-        # 🗄️ Save upload metadata
+        # 🗄️ Save upload metadata (owned by the authenticated user)
         upload = create_upload(
             db=db,
             filename=file.filename,
             file_path=file_path,
-            display_filename=display_filename
+            user_id=user_id,
+            display_filename=display_filename,
         )
 
         logger.info(f"Upload registered with ID: {upload.id}")
@@ -195,12 +205,14 @@ def upload_and_parse_document(db, file, display_filename: str = None, background
 
 
 # Legacy alias for backward compatibility
-def save_file_and_register(db, file, display_filename: str = None):
+def save_file_and_register(db, file, user_id: PyUUID, display_filename: str = None):
     """
     Legacy function - use upload_and_parse_document() instead.
     Kept for backward compatibility.
     """
-    return upload_and_parse_document(db, file, display_filename=display_filename)
+    return upload_and_parse_document(
+        db, file, user_id=user_id, display_filename=display_filename
+    )
 
 
 def preview_csv_file(db, upload_id: int, rows: int = 20):
@@ -374,22 +386,22 @@ def preview_mapped_columns(db, upload_id: int, rows: int = 10):
         raise
 
 
-# 🔹 READ ONE
-def get_upload_service(db, upload_id: int):
-    upload = get_upload_by_id(db, upload_id)
+# 🔹 READ ONE (owner-scoped)
+def get_upload_service(db, upload_id: int, user_id: PyUUID):
+    upload = get_upload_by_id(db, upload_id, user_id=user_id)
     if not upload:
         return {"error": "Upload not found"}
     return upload
 
 
-# 🔹 READ ALL
-def get_all_uploads_service(db):
-    return get_all_uploads(db)
+# 🔹 READ ALL (owner-scoped)
+def get_all_uploads_service(db, user_id: PyUUID):
+    return get_all_uploads(db, user_id=user_id)
 
 
-# 🔹 UPDATE
-def update_upload_service(db, upload_id: int, filename: str):
-    upload = update_upload(db, upload_id, filename)
+# 🔹 UPDATE (owner-scoped)
+def update_upload_service(db, upload_id: int, user_id: PyUUID, filename: str):
+    upload = update_upload(db, upload_id, user_id=user_id, display_filename=filename)
 
     if not upload:
         return {"error": "Upload not found"}
@@ -397,9 +409,9 @@ def update_upload_service(db, upload_id: int, filename: str):
     return upload
 
 
-# 🔹 DELETE ONE
-def delete_upload_service(db, upload_id: int):
-    upload = get_upload_by_id(db, upload_id)
+# 🔹 DELETE ONE (owner-scoped)
+def delete_upload_service(db, upload_id: int, user_id: PyUUID):
+    upload = get_upload_by_id(db, upload_id, user_id=user_id)
 
     if not upload:
         return {"error": "Upload not found"}
@@ -408,20 +420,20 @@ def delete_upload_service(db, upload_id: int):
     if upload.file_path and os.path.exists(upload.file_path):
         os.remove(upload.file_path)
 
-    delete_upload(db, upload_id)
+    delete_upload(db, upload_id, user_id=user_id)
 
     return {"message": f"Upload {upload_id} deleted"}
 
 
-# 🔹 DELETE ALL
-def delete_all_uploads_service(db):
-    uploads = get_all_uploads(db)
+# 🔹 DELETE ALL (owner-scoped — only the caller's uploads)
+def delete_all_uploads_service(db, user_id: PyUUID):
+    uploads = get_all_uploads(db, user_id=user_id)
 
     # delete all files
     for upload in uploads:
         if upload.file_path and os.path.exists(upload.file_path):
             os.remove(upload.file_path)
 
-    delete_all_uploads(db)
+    delete_all_uploads(db, user_id=user_id)
 
     return {"message": "All uploads deleted"}

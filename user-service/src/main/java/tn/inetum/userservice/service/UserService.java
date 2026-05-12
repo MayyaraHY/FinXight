@@ -23,6 +23,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TokenService tokenService;
 
     /** Returns the profile of the user with the given id. */
     @Transactional(readOnly = true)
@@ -53,6 +54,15 @@ public class UserService {
 
         user.setHashedPassword(passwordEncoder.encode(req.newPassword()));
         userRepository.save(user);
+    }
+
+    /**
+     * Revokes every refresh token the user has across all devices.
+     * After this call they must log in again everywhere.
+     */
+    @Transactional
+    public void logoutAll(UUID userId) {
+        tokenService.revokeAllUserTokens(userId);
     }
 
     // ----------------------------------------------------------------

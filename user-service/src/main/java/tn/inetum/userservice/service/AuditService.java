@@ -10,6 +10,7 @@ import tn.inetum.userservice.entities.AuditLog;
 import tn.inetum.userservice.entities.User;
 import tn.inetum.userservice.entities.enums.AuditEventType;
 import tn.inetum.userservice.repository.AuditLogRepository;
+import tn.inetum.userservice.repository.UserRepository;
 
 import java.net.InetAddress;
 
@@ -18,8 +19,16 @@ import java.net.InetAddress;
  * is not slowed down by a second DB write.
  *
  * @Async means Spring runs the method in a separate thread pool.
- * @Transactional(propagation = REQUIRES_NEW) ensures the audit log
- * is committed even if the main transaction rolls back (e.g. login failed).
+ * @Transactional(propagation = REQUIRES_NEW) opens a brand-new Hibernate session
+ * in the async thread — completely separate from the caller's session.
+ *
+ * WHY getReferenceById:
+ * The User entity passed by the caller is "detached" in this new session
+ * (its original session already committed and closed). If we set that detached
+ * object directly on AuditLog, Hibernate sees it as transient and throws
+ * TransientPropertyValueException on flush.
+ * getReferenceById returns a managed proxy within THIS session using only the
+ * user's ID — no extra SELECT is fired, and Hibernate is happy to write the FK.
  */
 @Slf4j
 @Service
@@ -27,6 +36,7 @@ import java.net.InetAddress;
 public class AuditService {
 
     private final AuditLogRepository auditLogRepository;
+    private final UserRepository userRepository;
 
     @Async
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -38,7 +48,13 @@ public class AuditService {
         try {
             AuditLog entry = new AuditLog();
             entry.setEventType(eventType);
-            entry.setUser(user);
+
+            // Re-attach the user to THIS session so Hibernate can write the FK.
+            // getReferenceById creates a managed proxy without hitting the DB.
+            if (user != null && user.getId() != null) {
+                entry.setUser(userRepository.getReferenceById(user.getId()));
+            }
+
             entry.setIpAddress(ipAddress);
             entry.setUserAgent(userAgent);
             entry.setDetails(details);

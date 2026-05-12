@@ -1,14 +1,24 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.auth import CurrentUser, assert_upload_owned, current_user
 from app.db.cnx import get_db
 from app.ai.ai_service_client import chat as ai_chat
 from app.models.account import Account
 from app.repositories.bilan_repository import BilanRepository
 from app.repositories.anomaly_repository import get_anomalies
 
-router = APIRouter(prefix="/ai", tags=["AI"])
+logger = logging.getLogger(__name__)
+
+# Router-level auth: every endpoint below requires a valid JWT.
+router = APIRouter(
+    prefix="/ai",
+    tags=["AI"],
+    dependencies=[Depends(current_user)],
+)
 
 
 class ChatRequest(BaseModel):
@@ -17,11 +27,17 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/chat")
-def chat(request: ChatRequest, db: Session = Depends(get_db)):
+def chat(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+    user: CurrentUser = Depends(current_user),
+):
     """
     Stateless Q&A: context (accounts + bilan totals) is rebuilt from DB on every call.
     No session state required; works correctly with multiple workers.
     """
+    logger.info("ai/chat upload_id=%s by user_id=%s", request.upload_id, user.id)
+    assert_upload_owned(db, request.upload_id, user)
     accounts = (
         db.query(Account)
         .filter(Account.upload_id == request.upload_id)
@@ -68,11 +84,16 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/anomalies/{upload_id}")
-def get_upload_anomalies(upload_id: int, db: Session = Depends(get_db)):
+def get_upload_anomalies(
+    upload_id: int,
+    db: Session = Depends(get_db),
+    user: CurrentUser = Depends(current_user),
+):
     """
     Return anomalies detected by the background task for a given upload.
     Returns an empty list if detection has not run yet or found nothing.
     """
+    assert_upload_owned(db, upload_id, user)
     anomalies = get_anomalies(db, upload_id)
     return {
         "success": True,

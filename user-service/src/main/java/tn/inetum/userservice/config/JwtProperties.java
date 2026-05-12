@@ -19,5 +19,8 @@ public record JwtProperties(
         String publicKeyPath,
         long accessTokenExpiry,
         long refreshTokenExpiry,
-        long refreshTokenAbsoluteExpiry
+        long refreshTokenAbsoluteExpiry,
+        String issuer,
+        String audience,
+        String kid
 ) {}

@@ -1,5 +1,9 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+
+from app.auth import CurrentUser, assert_upload_owned, current_user
 from app.db.cnx import SessionLocal
 from app.services.account_service import (
     get_account_by_id,
@@ -15,7 +19,14 @@ from app.services.account_service import (
     delete_account_with_bilan
 )
 
-router = APIRouter(prefix="/accounts", tags=["accounts"])
+logger = logging.getLogger(__name__)
+
+# Router-level auth: every endpoint below requires a valid JWT.
+router = APIRouter(
+    prefix="/accounts",
+    tags=["accounts"],
+    dependencies=[Depends(current_user)],
+)
 
 # DB dependency
 def get_db():
@@ -165,6 +176,7 @@ def get_accounts_by_upload_id(
     skip: int = Query(0, ge=0),
     limit: int = Query(1000, ge=1, le=10000),
     db: Session = Depends(get_db),
+    user: CurrentUser = Depends(current_user),
 ):
     """
     Get all accounts for a specific upload.
@@ -179,6 +191,7 @@ def get_accounts_by_upload_id(
     - /accounts/by_upload/1                (all accounts for upload 1)
     - /accounts/by_upload/1?skip=50&limit=100  (accounts for upload 1, offset 50, max 100)
     """
+    assert_upload_owned(db, upload_id, user)
     accounts = get_accounts_by_upload(db, upload_id, skip, limit)
     total = get_accounts_count(db, upload_id)
     
@@ -232,21 +245,27 @@ def update_account_endpoint(
  
 # ===== DELETE =====
 @router.delete("/delete/{account_id}")
-def delete_account_endpoint(account_id: int, db: Session = Depends(get_db)):
+def delete_account_endpoint(
+    account_id: int,
+    db: Session = Depends(get_db),
+    user: CurrentUser = Depends(current_user),
+):
     """Delete account + auto-recalculate bilan if exists"""
+    logger.info("accounts/delete account_id=%s by user_id=%s", account_id, user.id)
     try:
         # All business logic is in the service function
         result = delete_account_with_bilan(db, account_id)
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
- 
+
 
 @router.delete("/upload/{upload_id}")
 def delete_accounts_by_upload_endpoint(
     upload_id: int,
     confirm: bool = Query(False, description="Set to true to confirm deletion"),
     db: Session = Depends(get_db),
+    user: CurrentUser = Depends(current_user),
 ):
     """
     Delete all accounts for a specific upload.
@@ -258,7 +277,9 @@ def delete_accounts_by_upload_endpoint(
             status_code=400,
             detail="Deletion requires confirmation. Set ?confirm=true"
         )
-    
+
+    logger.info("accounts/delete-by-upload upload_id=%s by user_id=%s", upload_id, user.id)
+    assert_upload_owned(db, upload_id, user)
     count = delete_accounts_by_upload(db, upload_id)
     return {
         "status": "success",

@@ -1,6 +1,5 @@
 package tn.inetum.userservice.config;
 
-import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -11,10 +10,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +23,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import java.util.UUID;
+import java.util.List;
 
 /**
  * Loads the RS256 keypair and exposes encoder/decoder beans for Spring Security's JWT support.
@@ -61,16 +59,36 @@ public class JwtConfig {
 
     @Bean
     JwtDecoder jwtDecoder(RSAPublicKey publicKey) {
-        return NimbusJwtDecoder.withPublicKey(publicKey).build();
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(publicKey).build();
+        OAuth2TokenValidator<Jwt> validator = new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefault(),                                    // validates exp, nbf
+                new JwtIssuerValidator(properties.issuer()),                      // validates iss
+                new JwtClaimValidator<List<String>>(                              // validates aud
+                        "aud",
+                        aud -> aud != null && aud.contains(properties.audience())
+                )
+        );
+
+        decoder.setJwtValidator(validator);
+        return decoder;
+    }
+
+    /**
+     * The RSA JWK that signs access tokens. Exposed as a bean so {@code JwksController}
+     * can publish its public-only view at {@code /.well-known/jwks.json} — guaranteeing
+     * the {@code kid} stamped on issued tokens matches the {@code kid} verifiers see.
+     */
+    @Bean
+    RSAKey rsaJwk(RSAPublicKey publicKey, RSAPrivateKey privateKey) {
+        return new RSAKey.Builder(publicKey)
+                .privateKey(privateKey)
+                .keyID(properties.kid())
+                .build();
     }
 
     @Bean
-    JwtEncoder jwtEncoder(RSAPublicKey publicKey, RSAPrivateKey privateKey) {
-        RSAKey jwk = new RSAKey.Builder(publicKey)
-                .privateKey(privateKey)
-                .keyID(UUID.randomUUID().toString())
-                .build();
-        JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
+    JwtEncoder jwtEncoder(RSAKey rsaJwk) {
+        JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(rsaJwk));
         return new NimbusJwtEncoder(jwks);
     }
 

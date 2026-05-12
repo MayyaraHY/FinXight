@@ -1,9 +1,12 @@
-const API_URL = "http://127.0.0.1:8000/bilan";
+import { BACKEND_URL } from "@/lib/apiUrls";
+import { fetchAuthed } from "@/lib/apiClient";
+
+const API_URL = `${BACKEND_URL}/bilan`;
 
 
 // ===== GENERATE =====
 export async function generateBilan(uploadId: number) {
-  const res = await fetch(`${API_URL}/generate/${uploadId}`, {
+  const res = await fetchAuthed(`${API_URL}/generate/${uploadId}`, {
     method: "POST",
   });
 
@@ -14,9 +17,9 @@ export async function generateBilan(uploadId: number) {
 
 // ===== GET =====
 export async function getBilan(uploadId: number) {
-  const res = await fetch(`${API_URL}/${uploadId}`);
+  const res = await fetchAuthed(`${API_URL}/${uploadId}`);
 
   if (!res.ok) throw new Error("Failed to fetch bilan");
 
   return res.json();
-} 
+}

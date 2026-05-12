@@ -1,16 +1,20 @@
-const API_URL = "http://127.0.0.1:8000/accounts";
+import { BACKEND_URL } from "@/lib/apiUrls";
+import { fetchAuthed } from "@/lib/apiClient";
 
-import { 
-  Account, 
-  UpdateAccountResponse, 
-  DeleteAccountResponse, 
-  UpdateAccountPayload } from "@/models/account";
+const API_URL = `${BACKEND_URL}/accounts`;
+
+import {
+  Account,
+  UpdateAccountResponse,
+  DeleteAccountResponse,
+  UpdateAccountPayload,
+} from "@/models/account";
 
 // ===== READ =====
 
 // Get account by ID
 export async function getAccountById(accountId: number): Promise<Account> {
-  const res = await fetch(`${API_URL}/get_account_by_id/${accountId}`);
+  const res = await fetchAuthed(`${API_URL}/get_account_by_id/${accountId}`);
 
   if (!res.ok) throw new Error("Failed to fetch account");
 
@@ -19,7 +23,7 @@ export async function getAccountById(accountId: number): Promise<Account> {
 
 // Get account by code
 export async function getAccountByCode(code: string): Promise<Account> {
-  const res = await fetch(`${API_URL}/get_account_by_code_class/${code}`);
+  const res = await fetchAuthed(`${API_URL}/get_account_by_code_class/${code}`);
 
   if (!res.ok) throw new Error("Account code not found");
 
@@ -41,7 +45,7 @@ export async function getAccounts(
     query.append("upload_id", String(uploadId));
   }
 
-  const res = await fetch(`${API_URL}/get_all_accounts/?${query}`);
+  const res = await fetchAuthed(`${API_URL}/get_all_accounts/?${query}`);
 
   if (!res.ok) throw new Error("Failed to fetch accounts");
 
@@ -60,7 +64,7 @@ export async function searchAccounts(
     limit: String(limit),
   });
 
-  const res = await fetch(`${API_URL}/search/?${query}`);
+  const res = await fetchAuthed(`${API_URL}/search/?${query}`);
 
   if (!res.ok) throw new Error("Search failed");
 
@@ -79,7 +83,7 @@ export async function getAccountsByPrefix(
     limit: String(limit),
   });
 
-  const res = await fetch(`${API_URL}/by_code_prefix/?${query}`);
+  const res = await fetchAuthed(`${API_URL}/by_code_prefix/?${query}`);
 
   if (!res.ok) throw new Error("Failed to fetch accounts by prefix");
 
@@ -97,7 +101,7 @@ export async function getAccountsByUpload(
     limit: String(limit),
   });
 
-  const res = await fetch(`${API_URL}/by_upload/${uploadId}?${query}`);
+  const res = await fetchAuthed(`${API_URL}/by_upload/${uploadId}?${query}`);
 
   if (!res.ok) throw new Error("Failed to fetch accounts for upload");
 
@@ -107,13 +111,13 @@ export async function getAccountsByUpload(
 // ===== UPDATE =====
 function buildQueryParams(obj: Record<string, unknown>): URLSearchParams {
   const query = new URLSearchParams();
-  
+
   Object.entries(obj).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       query.append(key, String(value));
     }
   });
-  
+
   return query;
 }
 
@@ -122,19 +126,19 @@ export async function updateAccount(
   updates: UpdateAccountPayload
 ): Promise<UpdateAccountResponse> {
   const query = buildQueryParams(updates);
- 
-  const res = await fetch(`${API_URL}/update/${accountId}?${query}`, {
+
+  const res = await fetchAuthed(`${API_URL}/update/${accountId}?${query}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
   });
- 
+
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
     throw new Error(error.detail || "Failed to update account");
   }
- 
+
   return res.json();
 }
 
@@ -142,18 +146,18 @@ export async function updateAccount(
 export async function deleteAccount(
   accountId: number
 ): Promise<DeleteAccountResponse> {
-  const res = await fetch(`${API_URL}/delete/${accountId}`, {
+  const res = await fetchAuthed(`${API_URL}/delete/${accountId}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
     },
   });
- 
+
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
     throw new Error(error.detail || "Failed to delete account");
   }
- 
+
   return res.json();
 }
 
@@ -165,18 +169,18 @@ export async function deleteAccountsByUpload(
   const query = buildQueryParams({
     confirm,
   });
- 
-  const res = await fetch(`${API_URL}/delete_upload/${uploadId}?${query}`, {
+
+  const res = await fetchAuthed(`${API_URL}/delete_upload/${uploadId}?${query}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
     },
   });
- 
+
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
     throw new Error(error.detail || "Failed to delete accounts");
   }
- 
+
   return res.json();
 }

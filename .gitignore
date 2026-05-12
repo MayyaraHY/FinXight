@@ -107,3 +107,9 @@ logs/
 .DS_Store
 Thumbs.db
 
+#integration
+INTEGRATION_PROGRESS.md
+.env.example
+*.env.*
+jwt-contract.md
+

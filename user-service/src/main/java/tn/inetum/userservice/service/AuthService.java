@@ -285,6 +285,34 @@ public class AuthService {
     }
 
     // ================================================================
+    //  RESEND VERIFICATION EMAIL
+    // ================================================================
+
+    /**
+     * Issues a fresh email-verification token and re-sends the verification email.
+     *
+     * Always returns silently — same response whether the email exists or not
+     * (prevents user enumeration).  Already-verified users are ignored silently too.
+     */
+    @Transactional
+    public void resendVerificationEmail(String email, InetAddress ipAddress, String userAgent) {
+        userRepository.findByEmail(email.toLowerCase()).ifPresent(user -> {
+            // Silently skip already-verified accounts
+            if (user.isVerified()) return;
+
+            // Issue a new token (old ones remain valid until they expire — harmless)
+            String rawToken = UUID.randomUUID().toString();
+            EmailVerificationToken token = new EmailVerificationToken();
+            token.setUser(user);
+            token.setTokenHash(TokenService.sha256(rawToken));
+            token.setExpiresAt(OffsetDateTime.now().plusHours(VERIFY_TOKEN_EXPIRY_HOURS));
+            emailVerificationTokenRepository.save(token);
+
+            emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), rawToken);
+        });
+    }
+
+    // ================================================================
     //  VERIFY EMAIL
     // ================================================================
 

@@ -53,10 +53,7 @@ public class TokenService {
     //  JWT Access Token
     // ----------------------------------------------------------------
 
-    /**
-     * Creates a signed JWT containing the user's email (sub), UUID (uid),
-     * and list of role names. Expires after app.jwt.access-token-expiry seconds.
-     */
+
     public String mintAccessToken(User user) {
         Instant now = Instant.now();
 
@@ -65,11 +62,12 @@ public class TokenService {
                 .toList();
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("user-service")
+                .issuer(jwtProperties.issuer())
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(jwtProperties.accessTokenExpiry()))
-                .subject(user.getEmail())
-                .claim("uid", user.getId().toString())
+                .subject(user.getId().toString())
+                .audience(List.of(jwtProperties.audience()))
+                .claim("email", user.getEmail())
                 .claim("roles", roles)
                 .build();
 

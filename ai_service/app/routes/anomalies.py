@@ -6,11 +6,18 @@ from app.models.requests import AnomalyDetectRequest, AnomalyDetectResponse
 from app.core.gemini_client import ask_gemini
 from app.prompts.prompts import ANOMALY_DETECTION_PROMPT
 
+from fastapi import Depends
+from app.auth import CurrentUser, current_user
+
 logger = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(
+    prefix="/anomalies",   
+    tags=["Anomalies"],    
+    dependencies=[Depends(current_user)]
+)
 
 
-@router.post("/anomalies/detect", response_model=AnomalyDetectResponse)
+@router.post("/detect", response_model=AnomalyDetectResponse)
 def detect_anomalies(req: AnomalyDetectRequest):
     try:
         raw = ask_gemini(ANOMALY_DETECTION_PROMPT, context={"comptes": req.comptes[:100]})

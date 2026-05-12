@@ -16,6 +16,18 @@ class Settings(BaseSettings):
 
     PORT: int = 8001
 
+    # ----------------------------------------------------------------
+    # Service URLs — no defaults. Pydantic raises ValidationError at
+    # startup if either is missing, surfacing the misconfiguration
+    # immediately instead of producing a 500 on the first cross-service call.
+    # ----------------------------------------------------------------
+
+    # user-service: source of JWT signing keys (JWKS) and /auth/* endpoints.
+    USER_SERVICE_URL: str
+
+    # backend: source of financial data the LLM may reference for context.
+    BACKEND_URL: str
+
     # Optional: audit DB to log every AI request/response
     DATABASE_URL: str = ""
 

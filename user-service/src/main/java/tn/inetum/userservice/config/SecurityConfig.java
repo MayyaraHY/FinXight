@@ -10,16 +10,19 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
  * Security filter chain.
  *
  * <ul>
  *   <li>Stateless — no HTTP session; the access JWT carries identity on every request.</li>
- *   <li>CSRF disabled — there are no server-rendered forms; the only state-changing
- *       endpoint that uses a cookie is {@code /auth/refresh}, and that cookie is
- *       {@code SameSite=Strict}, which already blocks cross-site abuse.</li>
- *   <li>Public endpoints: {@code /auth/**} and Swagger.</li>
+ *   <li>CSRF disabled — no server-rendered forms; the only state-changing endpoint that
+ *       uses a cookie is {@code /auth/refresh}, and that cookie is {@code SameSite}
+ *       (configurable via {@code app.cookie.same-site}).</li>
+ *   <li>CORS wired in via {@link CorsConfigurationSource} so cross-origin browser calls
+ *       (frontend → this service) pass preflight.</li>
+ *   <li>Public endpoints: {@code /auth/**}, {@code /.well-known/**}, Swagger.</li>
  *   <li>Everything else requires a valid bearer JWT verified by {@link JwtDecoder}.</li>
  *   <li>Roles claim {@code "roles"} in the JWT becomes Spring authorities {@code ROLE_*}.</li>
  * </ul>
@@ -29,13 +32,20 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            CorsConfigurationSource corsConfigurationSource
+    ) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
+            // CORS must be wired in via Spring Security so preflight (OPTIONS) requests
+            // are handled BEFORE the auth filter rejects them as unauthenticated.
+            .cors(c -> c.configurationSource(corsConfigurationSource))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/auth/**",
+                    "/.well-known/**",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html"

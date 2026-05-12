@@ -11,3 +11,4 @@ fuzzywuzzy
 sentence-transformers
 groq
 httpx
+python-jose[cryptography]==3.3.0
