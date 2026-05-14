@@ -1,4 +1,0 @@
-package tn.inetum.userservice.service;
-
-public class AuthServiceTest {
-}
