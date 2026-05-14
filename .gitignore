@@ -48,6 +48,8 @@ blueprints/
 tests/
 INTEGRATION_PROGRESS.md
 jwt-contract.md
+REFACTORING_FIXES.md
+PROJECT_NOTES.txt
 
 # ── Frontend — Next.js ───────────────────────────────────────────────
 /node_modules
