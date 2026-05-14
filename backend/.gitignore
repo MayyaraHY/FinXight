@@ -1,39 +1,8 @@
-# Environment / secrets
-.env
-.env.*
-!.env.example
+# backend-specific — global rules are in the root .gitignore
 
-# Python
-*__pycache__/*
-*.py[cod]
-*.pyo
-*.pyd
-*.egg-info/
-.Python
-venv1/
-venv/
-.venv/
-*__pycache__
-*.pyc
-*.parsing.log
-*.log
-venv_ai/
-# IDE / editor
-.idea/
-.vscode/
-*.swp
-
-# Logs / runtime
-*.log
-parsing.log
+# Uploaded files (user data, never commit)
+app/uploads/
 
 # Build artifacts
 build/
 dist/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Uploads (user data)
-app/uploads/

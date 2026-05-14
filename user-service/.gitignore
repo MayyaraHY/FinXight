@@ -1,52 +1,16 @@
-HELP.md
+# user-service-specific — global rules are in the root .gitignore
+
+# Maven build output
 target/
-.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+.mvn/wrapper/maven-wrapper.jar
+HELP.md
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
-
-### Secrets / local config ###
-.env
-.env.*
-!.env.example
+# Spring Boot local secrets (application.properties covered by root)
 application-local.properties
 application-*-local.properties
-src/main/resources/keys/private.pem
+src/main/resources/keys/*.pem
 src/main/resources/keys/*.key
 *.p12
 *.jks
-
-### Logs ###
-*.log
-logs/
-
-### OS ###
-.DS_Store
-Thumbs.db
