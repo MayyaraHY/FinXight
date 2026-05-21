@@ -19,8 +19,8 @@ public class PictureStorageService {
 
     @Value("${app.userprofile.pictures-dir:userprofile/pictures}")
     private String picturesDir;
-    @Value("${app.frontend-url}")
-    private String frontendUrl;
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     public String store(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) return null;
@@ -39,7 +39,7 @@ public class PictureStorageService {
         Files.createDirectories(dest.getParent());
         file.transferTo(dest);
 
-        // Return a publicly accessible URL
-        return frontendUrl + "/userprofile/pictures/" + filename;
+        // Return a publicly accessible URL served by user-service itself
+        return baseUrl + "/userprofile/pictures/" + filename;
     }
 }

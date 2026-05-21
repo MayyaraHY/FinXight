@@ -35,6 +35,9 @@ export default function UploadDashboard() {
     displayName: "",
   });
 
+  // Tracks the name of the file currently being uploaded so the ghost card can display it.
+  const [uploadingFileName, setUploadingFileName] = useState<string | null>(null);
+
   // Validate file type - only CSV and Excel files allowed
   const isValidFileType = (file: File): boolean => {
     const validTypes = [
@@ -75,8 +78,11 @@ export default function UploadDashboard() {
   const handleConfirmUpload = async () => {
     if (displayNameInput.file) {
       const displayName = displayNameInput.displayName.trim() || undefined;
-      await uploadParse(displayNameInput.file, displayName);
+      // Capture the display label before clearing the modal state.
+      setUploadingFileName(displayName || displayNameInput.file.name);
       setDisplayNameInput({ isOpen: false, file: null, displayName: "" });
+      await uploadParse(displayNameInput.file, displayName);
+      setUploadingFileName(null);
     }
   };
 
@@ -205,7 +211,7 @@ export default function UploadDashboard() {
 
         {/* Cards Section */}
         <ComponentCard title="Uploaded Files">
-          {uploads.length === 0 ? (
+          {uploads.length === 0 && uploadProgress === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <svg className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -214,6 +220,32 @@ export default function UploadDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Ghost card — shown only while an upload is in progress */}
+              {uploadProgress > 0 && (
+                <div className="flex flex-col p-4 border-2 border-dashed border-brand-300 dark:border-brand-700 rounded-lg bg-brand-50/40 dark:bg-brand-900/10">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate text-sm">
+                        {uploadingFileName ?? "Uploading…"}
+                      </h3>
+                      <p className="text-xs text-brand-500 dark:text-brand-400 mt-1">
+                        Uploading &amp; parsing…
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold text-brand-600 dark:text-brand-400 ml-2 flex-shrink-0">
+                      {uploadProgress}%
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-brand-500 transition-all duration-300 rounded-full"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Existing upload cards — never show the progress bar */}
               {[...uploads].reverse().map((u) => (
                 <div
                   key={u.id}
@@ -221,34 +253,24 @@ export default function UploadDashboard() {
                   className="flex flex-col p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-lg hover:border-brand-500 dark:hover:border-brand-500 transition-all bg-white dark:bg-gray-800 cursor-pointer relative"
                 >
                   {/* File Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 dark:text-white truncate text-sm" title={u.display_filename || u.filename}>
-                          {u.display_filename || u.filename}
-                        </h3>
-                        {u.display_filename && (
-                          <p className="text-xs text-gray-400 dark:text-gray-500 truncate" title={u.filename}>
-                            ({u.filename})
-                          </p>
-                        )}
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {new Date(u.created_at).toLocaleDateString()}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate text-sm" title={u.display_filename || u.filename}>
+                        {u.display_filename || u.filename}
+                      </h3>
+                      {u.display_filename && (
+                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate" title={u.filename}>
+                          ({u.filename})
                         </p>
-                      </div>
+                      )}
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {new Date(u.created_at).toLocaleDateString()}
+                      </p>
                     </div>
-
-                  {/* Parsing Progress Bar */}
-                  {uploadProgress > 0 && (
-                    <div className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden mt-2">
-                      <div 
-                        className="h-full bg-brand-500 transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      ></div>
-                    </div>
-                  )}
+                  </div>
 
                   {/* Delete Button */}
-                  <div className="mt-4 flex justify-end">
+                  <div className="mt-auto flex justify-end pt-4">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

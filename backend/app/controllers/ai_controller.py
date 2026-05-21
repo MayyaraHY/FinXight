@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -31,6 +31,7 @@ def chat(
     request: ChatRequest,
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(current_user),
+    authorization: str | None = Header(default=None),
 ):
     """
     Stateless Q&A: context (accounts + bilan totals) is rebuilt from DB on every call.
@@ -66,7 +67,10 @@ def chat(
     }
 
     try:
-        response = ai_chat(request.message, context=context)
+        # Forward the incoming JWT to the AI service so its JWT-protected
+        # routes accept the call (the AI service runs its own current_user
+        # dependency against the same JWKS).
+        response = ai_chat(request.message, context=context, auth_header=authorization)
         return {"success": True, "response": response}
     except ValueError as e:
         # Map AI-service errors to meaningful HTTP codes for the frontend.

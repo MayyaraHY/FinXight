@@ -1,0 +1,150 @@
+{
+  "compte_resultat_tunisien": {
+    "lines": [
+      {
+        "line_id": 1,
+        "label": "Revenus",
+        "type": "computed",
+        "comptes": ["701", "702", "703", "704", "705", "706", "707", "708", "-709"]
+      },
+      {
+        "line_id": 2,
+        "label": "Autres produits d'exploitation",
+        "type": "computed",
+        "comptes": ["731", "732", "733", "734", "735", "738", "739", "74", "781", "-79"]
+      },
+      {
+        "line_id": 3,
+        "label": "Production immobilisée",
+        "type": "computed",
+        "comptes": ["72"]
+      },
+      {
+        "line_id": 4,
+        "label": "Total des produits d'exploitation",
+        "type": "formula",
+        "formula": [1, 2, 3]
+      },
+      {
+        "line_id": 5,
+        "label": "Variation des stocks des produits finis et des en-cours",
+        "type": "stock_variation",
+        "comptes": ["71"]
+      },
+      {
+        "line_id": 6,
+        "label": "Achats de marchandises consommés",
+        "type": "computed",
+        "comptes_permanent": ["6031"],
+        "comptes_intermittent": ["601", "-6031", "6061"],
+        "fallback_permanent": ["603"]
+      },
+      {
+        "line_id": 7,
+        "label": "Achats d'approvisionnements consommés",
+        "type": "computed",
+        "comptes_permanent": ["6032"],
+        "comptes_intermittent": ["602", "-6032", "6062"]
+      },
+      {
+        "line_id": 8,
+        "label": "Charges de personnel",
+        "type": "computed",
+        "comptes": ["64"]
+      },
+      {
+        "line_id": 9,
+        "label": "Dotations aux amortissements et aux provisions",
+        "type": "computed",
+        "comptes": ["681", "-6861"]
+      },
+      {
+        "line_id": 10,
+        "label": "Autres charges d'exploitation",
+        "type": "computed",
+        "comptes": ["606", "61", "62", "63", "-636", "66"]
+      },
+      {
+        "line_id": 11,
+        "label": "Total des charges d'exploitation",
+        "type": "formula",
+        "formula": [5, 6, 7, 8, 9, 10]
+      },
+      {
+        "line_id": 12,
+        "label": "Résultat d'exploitation",
+        "type": "formula",
+        "formula": [4, "-", 11]
+      },
+      {
+        "line_id": 13,
+        "label": "Charges financières nettes",
+        "type": "computed",
+        "comptes": ["65", "6865", "-75", "6861"]
+      },
+      {
+        "line_id": 14,
+        "label": "Produits des placements",
+        "type": "computed",
+        "comptes": ["75", "7866", "-65", "-6866"]
+      },
+      {
+        "line_id": 15,
+        "label": "Autres gains ordinaires",
+        "type": "computed",
+        "comptes": ["736"]
+      },
+      {
+        "line_id": 16,
+        "label": "Autres pertes ordinaires",
+        "type": "computed",
+        "comptes": ["636"]
+      },
+      {
+        "line_id": 17,
+        "label": "Résultat des activités ordinaires avant impôt",
+        "type": "formula",
+        "formula": [12, "-", 13, "+", 14, "+", 15, "-", 16]
+      },
+      {
+        "line_id": 18,
+        "label": "Impôts sur les bénéfices",
+        "type": "computed",
+        "comptes": ["691"]
+      },
+      {
+        "line_id": 19,
+        "label": "Résultat des activités ordinaires après impôt",
+        "type": "formula",
+        "formula": [17, "-", 18]
+      },
+      {
+        "line_id": 20,
+        "label": "Éléments extraordinaires (Gains/Pertes)",
+        "type": "computed",
+        "comptes": ["77", "-67", "-697"],
+        "can_be_negative": true
+      },
+      {
+        "line_id": 21,
+        "label": "Résultat net de l'exercice",
+        "type": "formula",
+        "formula": [19, "+", 20],
+        "check_account": ["131", "-135"]
+      },
+      {
+        "line_id": 22,
+        "label": "Effet des modifications comptables (net d'impôt)",
+        "type": "computed",
+        "comptes": ["128"],
+        "can_be_negative": true
+      },
+      {
+        "line_id": 23,
+        "label": "Résultat après modifications comptables",
+        "type": "formula",
+        "formula": [21, "+", 22]
+      }
+    ]
+  }
+}

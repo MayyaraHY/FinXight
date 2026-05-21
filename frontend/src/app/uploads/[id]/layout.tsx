@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
@@ -11,6 +12,7 @@ import React from "react";
 const TAB_ITEMS = [
   { label: "Comptes", segment: "accounts" },
   { label: "Bilan", segment: "bilan" },
+  { label: "Compte de Résultat", segment: "cr" },
   { label: "Anomalies", segment: "anomalies" },
   { label: "Chat IA", segment: "chat" },
 ];
@@ -32,6 +34,7 @@ export default function UploadLayout({
     : "lg:ml-[90px]";
 
   return (
+    <AuthGuard>
     <div className="min-h-screen xl:flex">
       <AppSidebar />
       <Backdrop />
@@ -66,5 +69,6 @@ export default function UploadLayout({
         <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
       </div>
     </div>
+    </AuthGuard>
   );
 }

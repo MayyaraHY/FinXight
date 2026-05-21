@@ -5,6 +5,8 @@ import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import { useSidebar } from "@/context/SidebarContext";
 import UploadDashboard from "./components/uploadDashboard";
+import { AuthGuard } from "@/components/auth/AuthGuard";
+
 
 export default function Page() {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
@@ -16,6 +18,7 @@ export default function Page() {
     : "lg:ml-[90px]";
 
   return (
+    <AuthGuard>
     <div className="min-h-screen xl:flex">
       <AppSidebar />
       <Backdrop />
@@ -28,5 +31,6 @@ export default function Page() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 }

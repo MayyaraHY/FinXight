@@ -17,6 +17,7 @@ interface InputProps {
   success?: boolean;
   error?: boolean;
   hint?: string; // Optional hint text
+  required?: boolean; 
 }
 
 const Input: FC<InputProps> = ({
@@ -34,6 +35,7 @@ const Input: FC<InputProps> = ({
   disabled = false,
   success = false,
   error = false,
+  required = false,
   hint,
 }) => {
   // Determine input styles based on state (disabled, success, error)
@@ -57,6 +59,7 @@ const Input: FC<InputProps> = ({
         id={id}
         name={name}
         placeholder={placeholder}
+        required={required}
         // Use controlled value when supplied; fall back to defaultValue otherwise.
         {...(value !== undefined ? { value } : { defaultValue })}
         onChange={onChange}

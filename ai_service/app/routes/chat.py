@@ -13,7 +13,7 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=ChatResponse)
+@router.post("", response_model=ChatResponse)
 def chat(req: ChatRequest):
     try:
         reply = ask_gemini(req.message, context=req.context)

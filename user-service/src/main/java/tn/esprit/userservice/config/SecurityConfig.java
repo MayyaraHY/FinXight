@@ -46,6 +46,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/auth/**",
                     "/.well-known/**",
+                    "/userprofile/pictures/**",   // public — browsers can't send auth headers for <img>
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html"

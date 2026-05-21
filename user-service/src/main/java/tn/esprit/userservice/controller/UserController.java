@@ -28,7 +28,7 @@ import java.util.UUID;
  * Endpoints for the currently logged-in user to manage their own account.
  * All routes require a valid JWT (enforced by SecurityConfig).
  *
- * The user's UUID is extracted from the JWT "uid" claim — never from the request body.
+ * The user's UUID is extracted from the JWT "sub" claim — never from the request body.
  * This means users can only ever act on their own account.
  */
 @Tag(name = "User Profile", description = "View and manage the logged-in user's own account")
@@ -106,6 +106,6 @@ public class UserController {
     // ----------------------------------------------------------------
 
     private UUID extractUserId(Jwt jwt) {
-        return UUID.fromString(jwt.getClaimAsString("uid"));
+        return UUID.fromString(jwt.getSubject());
     }
 }

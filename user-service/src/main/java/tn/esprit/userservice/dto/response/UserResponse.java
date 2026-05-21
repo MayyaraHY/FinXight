@@ -32,16 +32,16 @@ public record UserResponse(
 
         return new UserResponse(
                 user.getId(),
-                user.getEmail(),
                 user.getFirstName(),
                 user.getLastName(),
+                user.getEmail(),
                 user.getPhone(),
                 user.getAddress(),
                 user.getPosition(),
                 user.getPictureUrl(),
                 user.isActive(),
                 user.isVerified(),
-                user.getRoles().stream().map(ur -> ur.getRole().getName().name()).toList(),
+                roleNames,
                 user.getCreatedAt()
         );
     }

@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getBilan, generateBilan } from "@/services/bilanService";
 import { formatCurrency } from "@/utils/formatters";
+import Button from "@/components/ui/button/Button";
+
+// ===== TYPES =====
 
 interface BreakdownItem {
   phase: string;
@@ -65,12 +68,10 @@ interface BilanData {
   analysis?: string;
 }
 
-// ===== TYPE DEFINITIONS =====
 type ItemRecord = Record<string, unknown>;
 
-// ===== HELPER FUNCTIONS =====
+// ===== HELPERS =====
 
-// Helper to check if item is a valid account item (has amount)
 function isValidItem(item: unknown): item is SectionItem {
   return (
     item !== null &&
@@ -80,7 +81,6 @@ function isValidItem(item: unknown): item is SectionItem {
   );
 }
 
-// Helper to render items, skipping empty containers
 function renderItemsHelper(
   items: ItemRecord,
   expandedItems: Set<string>,
@@ -88,10 +88,8 @@ function renderItemsHelper(
 ): React.ReactNode[] {
   return Object.entries(items)
     .map(([key, item]) => {
-      // Skip if not an object
       if (!item || typeof item !== "object") return null;
 
-      // If it's a valid account item, render it
       if (isValidItem(item)) {
         return (
           <ExpandableRow
@@ -105,7 +103,6 @@ function renderItemsHelper(
         );
       }
 
-      // If it's a container (has nested items), recurse through them
       const hasValidChildren = Object.values(item).some(isValidItem);
       if (hasValidChildren) {
         return (
@@ -127,13 +124,13 @@ function renderItemsHelper(
         );
       }
 
-      // Skip empty containers
       return null;
     })
     .filter(Boolean);
 }
 
-// ===== MAIN COMPONENT =====
+// ===== PAGE =====
+
 export default function BilanPage() {
   const params = useParams();
   const uploadId = Number(params.id);
@@ -146,14 +143,12 @@ export default function BilanPage() {
 
   const loadBilan = useCallback(async () => {
     try {
-      const res = (await getBilan(uploadId)) as unknown;
-      const bilanRes = res as BilanResponse;
-
-      if (!bilanRes.success) {
-        const generateRes = (await generateBilan(uploadId)) as unknown;
-        setBilanData((generateRes as BilanResponse).data);
+      const res = (await getBilan(uploadId)) as BilanResponse;
+      if (!res.success) {
+        const generated = (await generateBilan(uploadId)) as BilanResponse;
+        setBilanData(generated.data);
       } else {
-        setBilanData(bilanRes.data);
+        setBilanData(res.data);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load bilan");
@@ -165,16 +160,17 @@ export default function BilanPage() {
   const handleRegenerate = async () => {
     setRegenerating(true);
     try {
-      const res = (await generateBilan(uploadId)) as unknown;
-      const bilanRes = res as BilanResponse;
-      if (bilanRes.success) {
-        setBilanData(bilanRes.data);
+      const res = (await generateBilan(uploadId)) as BilanResponse;
+      if (res.success) {
+        setBilanData(res.data);
         setError(null);
       } else {
-        setError(bilanRes.message || "Failed to regenerate bilan");
+        setError(res.message || "Failed to regenerate bilan");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to regenerate bilan");
+      setError(
+        err instanceof Error ? err.message : "Failed to regenerate bilan"
+      );
     } finally {
       setRegenerating(false);
     }
@@ -185,163 +181,209 @@ export default function BilanPage() {
   }, [loadBilan]);
 
   const toggleExpanded = (key: string) => {
-    const newSet = new Set(expandedItems);
-    if (newSet.has(key)) {
-      newSet.delete(key);
-    } else {
-      newSet.add(key);
-    }
-    setExpandedItems(newSet);
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
   };
 
-  // Helper to render items with proper typing
   const renderItems = (items: ItemRecord) =>
     renderItemsHelper(items, expandedItems, toggleExpanded);
 
-  if (loading) return <p className="p-6 text-center">Loading bilan...</p>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Chargement du bilan…
+        </p>
+      </div>
+    );
+
   if (error)
-    return <p className="p-6 text-center text-red-600">Error: {error}</p>;
+    return (
+      <div className="rounded-2xl border border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/15 p-5">
+        <p className="text-sm font-medium text-error-700 dark:text-error-400">
+          {error}
+        </p>
+      </div>
+    );
+
   if (!bilanData)
-    return <p className="p-6 text-center">No bilan data found</p>;
+    return (
+      <p className="py-20 text-center text-sm text-gray-500 dark:text-gray-400">
+        Aucune donnée disponible
+      </p>
+    );
+
+  const isBalanced = Math.abs(bilanData.totals.difference) < 1;
 
   return (
-    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Bilan (Balance Sheet)
+    <div className="space-y-6">
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Bilan Comptable
           </h1>
-          <div className="flex justify-between items-center">
-            <button
-              onClick={handleRegenerate}
-              disabled={regenerating}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition font-medium"
-            >
-              {regenerating ? "Regenerating..." : "Regenerate Bilan"}
-            </button>
-          </div>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+            État de la situation financière
+          </p>
+        </div>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+              isBalanced
+                ? "bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-400"
+                : "bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-400"
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isBalanced ? "bg-success-500" : "bg-error-500"
+              }`}
+            />
+            {isBalanced
+              ? "Équilibré"
+              : `Écart : ${formatCurrency(bilanData.totals.difference)}`}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRegenerate}
+            disabled={regenerating}
+          >
+            {regenerating ? "Recalcul…" : "Recalculer"}
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Metric Cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <MetricCard
+          label="Total Actif"
+          value={bilanData.totals.actif.total_actif}
+          accent="blue"
+        />
+        <MetricCard
+          label="Total Passif"
+          value={bilanData.totals.passif.total_passif}
+          accent="neutral"
+        />
+        <MetricCard
+          label="Capitaux Propres"
+          value={bilanData.totals.passif.capitaux_propres}
+          accent="brand"
+        />
+      </div>
+
+      {/* ── AI Analysis ── */}
+      {bilanData.analysis && (
+        <div className="rounded-2xl border border-blue-light-200 bg-blue-light-50 dark:border-blue-light-500/30 dark:bg-blue-light-500/15 p-5">
+          <p className="text-xs font-semibold text-blue-light-600 dark:text-blue-light-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+            <span>✦</span> Analyse IA
+          </p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+            {bilanData.analysis}
+          </p>
+        </div>
+      )}
+
+      {/* ── Two-column layout ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* ACTIF */}
+        <div className="space-y-4">
+          <ColumnLabel>Actif</ColumnLabel>
+          <SectionCard
+            title="Actifs Non-Courants"
+            total={bilanData.totals.actif.actifs_non_courants}
+          >
+            {renderItems(bilanData.bilan.actifs.actifs_non_courants)}
+          </SectionCard>
+          <SectionCard
+            title="Actifs Courants"
+            total={bilanData.totals.actif.actifs_courants}
+          >
+            {renderItems(bilanData.bilan.actifs.actifs_courants)}
+          </SectionCard>
+          {/* Actif total footer */}
+          <TotalFooter
+            label="Total Actif"
+            value={bilanData.totals.actif.total_actif}
+          />
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <SummaryCard
-            title="Total Actif"
-            amount={bilanData.totals.actif.total_actif}
-            variant="primary"
-          />
-          <SummaryCard
-            title="Total Passif"
-            amount={bilanData.totals.passif.total_passif}
-            variant="secondary"
-          />
-          <SummaryCard
+        {/* PASSIF */}
+        <div className="space-y-4">
+          <ColumnLabel>Capitaux Propres &amp; Passif</ColumnLabel>
+          <SectionCard
             title="Capitaux Propres"
-            amount={bilanData.totals.passif.capitaux_propres}
-            variant="info"
+            total={bilanData.totals.passif.capitaux_propres}
+          >
+            {renderItems(
+              bilanData.bilan["capitaux propres et passifs"]["capitaux propres"]
+            )}
+          </SectionCard>
+          <SectionCard
+            title="Passifs Non-Courants"
+            total={bilanData.totals.passif.passifs_non_courants}
+          >
+            {renderItems(
+              bilanData.bilan["capitaux propres et passifs"].passifs[
+                "passifs non courant"
+              ]
+            )}
+          </SectionCard>
+          <SectionCard
+            title="Passifs Courants"
+            total={bilanData.totals.passif.passifs_courants}
+          >
+            {renderItems(
+              bilanData.bilan["capitaux propres et passifs"].passifs[
+                "passifs courant"
+              ]
+            )}
+          </SectionCard>
+          {/* Passif total footer */}
+          <TotalFooter
+            label="Total Passif"
+            value={bilanData.totals.passif.total_passif}
           />
-        </div>
-
-        {/* AI Analysis */}
-        {bilanData.analysis && (
-          <div className="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <span className="text-blue-500">✦</span> Analyse IA
-            </h2>
-            <div className="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-sm leading-relaxed">
-              {bilanData.analysis}
-            </div>
-          </div>
-        )}
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* ACTIFS */}
-          <div>
-            {/* Non-Current Assets */}
-            <SectionCard
-              title="Actifs Non-Courants"
-              total={bilanData.totals.actif.actifs_non_courants}
-            >
-              {renderItems(bilanData.bilan.actifs.actifs_non_courants)}
-            </SectionCard>
-
-            {/* Current Assets */}
-            <SectionCard
-              title="Actifs Courants"
-              total={bilanData.totals.actif.actifs_courants}
-              className="mt-6"
-            >
-              {renderItems(bilanData.bilan.actifs.actifs_courants)}
-            </SectionCard>
-          </div>
-
-          {/* PASSIFS & EQUITY */}
-          <div>
-            {/* Equity */}
-            <SectionCard
-              title="Capitaux Propres"
-              total={bilanData.totals.passif.capitaux_propres}
-            >
-              {renderItems(
-                bilanData.bilan["capitaux propres et passifs"]["capitaux propres"]
-              )}
-            </SectionCard>
-
-            <SectionCard
-              title="Passifs Non-Courants"
-              total={bilanData.totals.passif.passifs_non_courants}
-              className="mt-6"
-            >
-              {renderItems(
-                bilanData.bilan["capitaux propres et passifs"].passifs[
-                  "passifs non courant"
-                ]
-              )}
-            </SectionCard>
-
-            {/* Current Liabilities */}
-            <SectionCard
-              title="Passifs Courants"
-              total={bilanData.totals.passif.passifs_courants}
-              className="mt-6"
-            >
-              {renderItems(
-                bilanData.bilan["capitaux propres et passifs"].passifs[
-                  "passifs courant"
-                ]
-              )}
-            </SectionCard>
-          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ========== COMPONENTS ==========
+// ===== SUB-COMPONENTS =====
 
-interface SummaryCardProps {
-  title: string;
-  amount: number;
-  variant: "primary" | "secondary" | "info";
+function ColumnLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+      {children}
+    </p>
+  );
 }
 
-function SummaryCard({ title, amount, variant }: SummaryCardProps) {
-  const variantStyles = {
-    primary: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
-    secondary:
-      "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800",
-    info: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
-  };
+interface MetricCardProps {
+  label: string;
+  value: number;
+  accent: "blue" | "neutral" | "brand";
+}
+
+function MetricCard({ label, value, accent }: MetricCardProps) {
+  const bar = {
+    blue: "bg-blue-light-500",
+    neutral: "bg-gray-400",
+    brand: "bg-brand-500",
+  }[accent];
 
   return (
-    <div
-      className={`${variantStyles[variant]} border-l-4 rounded-lg p-4`}
-    >
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{title}</p>
-      <p className="text-2xl font-bold text-gray-900 dark:text-white">
-        {formatCurrency(amount)}
+    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-5">
+      <div className={`w-8 h-1 rounded-full ${bar} mb-4`} />
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</p>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+        {formatCurrency(value)}
       </p>
     </div>
   );
@@ -351,34 +393,35 @@ interface SectionCardProps {
   title: string;
   total: number;
   children: React.ReactNode;
-  className?: string;
 }
 
-function SectionCard({
-  title,
-  total,
-  children,
-  className,
-}: SectionCardProps) {
+function SectionCard({ title, total, children }: SectionCardProps) {
   return (
-    <div
-      className={`bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden ${
-        className || ""
-      }`}
-    >
-      <div className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {title}
-          </h3>
-          <span className="text-lg font-bold text-gray-900 dark:text-white">
-            {formatCurrency(total)}
-          </span>
-        </div>
+    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+          {title}
+        </h3>
+        <span className="text-sm font-bold text-gray-900 dark:text-white tabular-nums">
+          {formatCurrency(total)}
+        </span>
       </div>
-      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="divide-y divide-gray-100 dark:divide-gray-800">
         {children}
       </div>
+    </div>
+  );
+}
+
+function TotalFooter({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-5 py-3 flex justify-between items-center">
+      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide text-xs">
+        {label}
+      </span>
+      <span className="text-base font-bold text-gray-900 dark:text-white tabular-nums">
+        {formatCurrency(value)}
+      </span>
     </div>
   );
 }
@@ -400,65 +443,64 @@ function ExpandableRow({
 }: ExpandableRowProps) {
   return (
     <React.Fragment>
-      <div
+      <button
         onClick={onToggle}
-        className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition"
+        className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group"
       >
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <span
-              className={`text-gray-400 transition ${
-                expanded ? "rotate-90" : ""
-              }`}
-            >
-              ▶
-            </span>
-            <span className="font-medium text-gray-900 dark:text-white">
-              {label}
-            </span>
-          </div>
-          <span className="font-semibold text-gray-900 dark:text-white">
-            {formatCurrency(amount)}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <svg
+            className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform ${
+              expanded ? "rotate-90" : ""
+            }`}
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span className="text-sm text-gray-700 dark:text-gray-300 truncate group-hover:text-gray-900 dark:group-hover:text-white">
+            {label}
           </span>
         </div>
-      </div>
+        <span className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums ml-4 flex-shrink-0">
+          {formatCurrency(amount)}
+        </span>
+      </button>
 
-      {/* Breakdown Details */}
       {expanded && (
-        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/30">
+        <div className="px-5 py-3 bg-gray-50/70 dark:bg-white/[0.015] border-t border-gray-100 dark:border-gray-800">
           {breakdown.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400 italic">
-              No breakdown details available
+            <p className="text-xs text-gray-400 dark:text-gray-500 italic">
+              Aucun détail disponible
             </p>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-xs">
               <thead>
-                <tr className="text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-600">
-                  <th className="text-left py-2 font-semibold">Compte</th>
-                  <th className="text-left py-2 font-semibold">Description</th>
-                  <th className="text-right py-2 font-semibold">Montant</th>
+                <tr className="text-gray-400 dark:text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                  <th className="text-left pb-2 font-medium">Compte</th>
+                  <th className="text-left pb-2 font-medium">Libellé</th>
+                  <th className="text-right pb-2 font-medium">Montant</th>
                 </tr>
               </thead>
               <tbody>
                 {breakdown.map((item, idx) => (
                   <tr
                     key={idx}
-                    className="border-b border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600/30"
+                    className="border-b border-gray-100 dark:border-gray-800/60 last:border-0"
                   >
-                    <td className="py-2 text-gray-900 dark:text-gray-300">
+                    <td className="py-1.5 font-mono text-gray-600 dark:text-gray-400">
                       {item.account}
                     </td>
-                    <td className="py-2 text-gray-700 dark:text-gray-400">
-                      {item.label ? (
-                        item.label
-                      ) : (
-                        <span className="italic text-gray-500 dark:text-gray-500">
-                          (no label)
-                        </span>
+                    <td className="py-1.5 text-gray-600 dark:text-gray-400 pr-4">
+                      {item.label ?? (
+                        <span className="italic text-gray-400">—</span>
                       )}
                     </td>
-                    <td className="py-2 text-right text-gray-900 dark:text-white font-medium">
-                      {formatCurrency(item.raw_amount || 0)}
+                    <td className="py-1.5 text-right tabular-nums text-gray-800 dark:text-gray-200">
+                      {formatCurrency(item.raw_amount ?? 0)}
                     </td>
                   </tr>
                 ))}
