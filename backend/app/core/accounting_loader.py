@@ -1,5 +1,7 @@
 import json
 import logging
+import re
+import unicodedata
 from pathlib import Path
 from typing import Dict, Optional, List
 
@@ -114,120 +116,70 @@ class AccountingRulesLoader:
     def get_account_category(self, account_code: str) -> Optional[Dict]:
         """
         Look up which category an account code belongs to.
-        Recursively searches the rules tree for matching account codes.
-        Handles special cases like negation (-251) and side indicators (401 DR).
-        
-        Args:
-            account_code: The account code to look up
-                         Examples: "411", "221", "101"
-            
-        Returns:
-            dict with keys:
-            - label: Category name (e.g., "Clients et comptes rattachés")
-            - code: The input account code
-            - node_path: Path in rules tree (for debugging)
-            
-            Or None if not found.
-            
-        Example:
-            >>> loader.get_account_category("411")
-            {
-                "label": "Clients et comptes rattachés",
-                "code": "411",
-                "node_path": "actifs.actifs_courants.clients_et_comptes_rattaches"
-            }
-            
-            >>> loader.get_account_category("999")
-            None  # Not found
+
+        Matching rule (Step 0 fix — prevents false positives):
+          - Match only when ``account_code.startswith(rule_prefix)``.
+          - Collect ALL matching candidates across the whole tree.
+          - Return the LONGEST (most specific) prefix match.
+
+        This prevents e.g. rule prefix "26" from winning over "264" for account
+        "26430000", and prevents rule "53" from matching account "5".
         """
         rules = self.load_rules()
-        
-        def find_category(obj, code, path=""):
-            """
-            Recursive search through rules tree.
-            
-            ✅ FIX 3: Proper check for "comptes_*" keys using any().startswith().
-            This correctly identifies category nodes regardless of which
-            "comptes_*" fields they contain.
-            
-            Args:
-                obj: Current object in recursion (dict, list, or primitive)
-                code: Account code to find
-                path: Current path in tree (for debugging)
-                
-            Returns:
-                dict with match info, or None if not found
-            """
-            if isinstance(obj, dict):
-                # ✅ FIX 3: Check if this node is a category
-                # Old: "comptes" in obj  ← BROKEN (exact key match only)
-                # New: any(k.startswith("comptes") for k in obj)  ← FIXED (pattern match)
-                has_comptes = any(k.startswith("comptes") for k in obj)
-                
-                # If it's a category node with account lists
-                if "label" in obj and has_comptes:
-                    # Collect all account specifications from all comptes_* fields
-                    all_accounts = (
-                        obj.get("comptes_valeurs_brutes", []) +
-                        obj.get("comptes_amortissements_provisions", []) +
-                        obj.get("comptes_valeurs_nettes", []) +
-                        obj.get("comptes_affectation", [])
-                    )
-                    
-                    # Check if our code matches any account in this category
-                    for entry in all_accounts:
-                        # Normalize entry: remove negation (-), parentheses, spaces
-                        clean = entry.replace("(", "").replace(")", "").replace("-", "").strip()
-                        
-                        # Remove side indicators (DR/CR) if present
-                        # E.g., "401 DR" becomes "401"
-                        if " " in clean:
-                            clean = clean.split()[0]
-                        
-                        # Match rules:
-                        # - code.startswith(clean): "411" matches "41" (parent category)
-                        # - clean.startswith(code): "41" matches "411" (child lookup)
-                        if code.startswith(clean) or clean.startswith(code):
-                            logger.debug(
-                                f"Found: code={code} in category={obj['label']} "
-                                f"(entry={entry}, clean={clean})"
-                            )
-                            return {
-                                "label": obj["label"],
-                                "code": code,
-                                "node_path": path
-                            }
-                
-                # Recurse into child nodes
-                for key, value in obj.items():
-                    # Skip special fields (not category nodes)
-                    if key not in ["label", "comptes_valeurs_brutes", 
-                                   "comptes_amortissements_provisions",
-                                   "comptes_valeurs_nettes", 
-                                   "comptes_affectation", "note"]:
-                        new_path = f"{path}.{key}" if path else key
-                        result = find_category(value, code, new_path)
-                        if result:
-                            return result
-            
-            elif isinstance(obj, list):
-                # Recurse into list items
-                for i, item in enumerate(obj):
-                    new_path = f"{path}[{i}]"
-                    result = find_category(item, code, new_path)
-                    if result:
-                        return result
-            
+
+        # (prefix_string, label, node_path)
+        candidates: List[tuple] = []
+
+        _SKIP_KEYS = frozenset({
+            "label", "note", "_source", "_remarque",
+            "comptes_valeurs_brutes", "comptes_amortissements_provisions",
+            "comptes_valeurs_nettes", "comptes_affectation",
+        })
+
+        def walk(obj, path: str = "") -> None:
+            if not isinstance(obj, dict):
+                return
+
+            has_comptes = any(k.startswith("comptes") for k in obj)
+
+            if "label" in obj and has_comptes:
+                all_entries = (
+                    obj.get("comptes_valeurs_brutes", []) +
+                    obj.get("comptes_amortissements_provisions", []) +
+                    obj.get("comptes_valeurs_nettes", []) +
+                    obj.get("comptes_affectation", [])
+                )
+                for entry in all_entries:
+                    # Strip sign prefix (-), parentheses, side indicator (DR/CR)
+                    clean = entry.replace("(", "").replace(")", "").replace("-", "").strip()
+                    if " " in clean:
+                        clean = clean.split()[0]
+
+                    # ONE-DIRECTION MATCH: account code must start with rule prefix.
+                    # The old bidirectional "clean.startswith(code)" caused false positives
+                    # (e.g. prefix "53" matched account "5", prefix "26" beat "264").
+                    if account_code.startswith(clean):
+                        candidates.append((clean, obj["label"], path))
+
+            for key, value in obj.items():
+                if key in _SKIP_KEYS:
+                    continue
+                new_path = f"{path}.{key}" if path else key
+                walk(value, new_path)
+
+        walk(rules)
+
+        if not candidates:
+            logger.debug(f"No category found for account code: {account_code}")
             return None
-        
-        result = find_category(rules, account_code)
-        
-        if result:
-            logger.info(f"✓ Found category for account {account_code}: {result['label']}")
-        else:
-            logger.warning(f"⚠ No category found for account code: {account_code}")
-        
-        return result
+
+        # Longest prefix = most specific rule wins
+        best_prefix, best_label, best_path = max(candidates, key=lambda c: len(c[0]))
+        logger.debug(
+            f"Account {account_code} → '{best_label}' via prefix '{best_prefix}' "
+            f"(from {len(candidates)} candidate(s))"
+        )
+        return {"label": best_label, "code": account_code, "node_path": best_path}
     
     def get_accounts_by_category(self, category_path: str) -> List[str]:
         """
@@ -307,3 +259,62 @@ class AccountingRulesLoader:
         
         extract_accounts(rules)
         return sorted(list(accounts))
+
+    # =========================================================================
+    # LABEL NORMALISATION (Step 3)
+    # =========================================================================
+
+    @staticmethod
+    def normalize_label(s: str) -> str:
+        """
+        Case-fold + accent-strip + collapse whitespace so that
+        "Immobilisations financières" == "immobilisations financieres".
+        Used by reconciliation to compare source-file Rubrique strings against
+        rule category labels.
+        """
+        if not s:
+            return ""
+        # Lowercase
+        s = s.strip().lower()
+        # Remove accents via Unicode decomposition
+        s = unicodedata.normalize("NFD", s)
+        s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+        # Collapse whitespace
+        s = re.sub(r"\s+", " ", s).strip()
+        return s
+
+    def build_label_index(self) -> Dict[str, str]:
+        """
+        Return a cached dict mapping normalize_label(category_label) → node_path
+        for every leaf node in the rules tree.
+
+        Used by reconciliation as a fallback: when an account has no rule match
+        but does have a source Rubrique, we look up its Rubrique in this index to
+        find the target node path (marked UNVERIFIED in the warning).
+        """
+        if hasattr(self, "_label_index_cache"):
+            return self._label_index_cache  # type: ignore[return-value]
+
+        rules = self.load_rules()
+        index: Dict[str, str] = {}
+
+        def walk(obj: Dict, path: str = "") -> None:
+            if not isinstance(obj, dict):
+                return
+            has_comptes = any(k.startswith("comptes") for k in obj)
+            if "label" in obj and has_comptes:
+                key = self.normalize_label(obj["label"])
+                if key and key not in index:
+                    index[key] = path
+            _skip = frozenset({"label", "note", "_source", "_remarque",
+                               "comptes_valeurs_brutes", "comptes_amortissements_provisions",
+                               "comptes_valeurs_nettes", "comptes_affectation"})
+            for k, v in obj.items():
+                if k not in _skip:
+                    new_path = f"{path}.{k}" if path else k
+                    walk(v, new_path)
+
+        walk(rules)
+        self._label_index_cache = index  # type: ignore[attr-defined]
+        logger.info(f"Label index built: {len(index)} entries")
+        return index

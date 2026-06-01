@@ -4,8 +4,10 @@ from sqlalchemy.orm import Session
 import logging
 
 from app.models.account import Account
+from app.models.upload import Upload
 from app.repositories.bilan_repository import BilanRepository
 from app.core.accounting_loader import AccountingRulesLoader
+from app.core.reconciliation import reconcile_all, build_data_quality
 from app.services.balance import signed_balance
 
 logger = logging.getLogger(__name__)
@@ -408,31 +410,49 @@ class BilanService:
             # 1. Load accounts from DB
             accounts = self.load_accounts(upload_id)
 
+            # 1b. Check whether the source file had a Rubrique column
+            upload = self.db.query(Upload).filter(Upload.id == upload_id).first()
+            has_rubrique_column = bool(upload and getattr(upload, "has_rubrique_column", False))
+
             # 2. Load rules (singleton — cached after first load)
             rules = self.rules_loader.load_rules()
             tree  = rules["bilan_comptable_tunisien"]
 
-            # 3. Apply rules to accounts
+            # 3. Per-line reconciliation: classify every account via rules, compare
+            #    to source Rubrique, collect discrepancy/unmapped warnings.
+            #    INVARIANT: this step never changes how amounts are summed —
+            #    process_tree still drives the math independently via the same rules.
+            recon_results = reconcile_all(accounts, self.rules_loader)
+            data_quality  = build_data_quality(recon_results, has_rubrique_column)
+
+            discrepancy_count = data_quality["discrepancy_count"]
+            unmapped_count    = data_quality["unmapped_count"]
+            if discrepancy_count or unmapped_count:
+                logger.info(
+                    f"Reconciliation: {discrepancy_count} discrepancy, "
+                    f"{unmapped_count} unmapped out of {len(accounts)} accounts."
+                )
+
+            # 4. Apply rules to accounts (unchanged math — rules are the authority)
             result = self.process_tree(tree, accounts)
 
-            # 3b. Read-only diagnostic: flag accounts counted in multiple sections
+            # 4b. Read-only diagnostic: flag accounts counted in multiple sections
             self._log_account_collisions(result)
 
-            # 4. Compute section totals.
-            #    Per the official SCE maquette, "Résultat de l'exercice" is populated
-            #    directly from accounts 131 (CR) / 135 (DR) by process_tree above —
-            #    NOT by injecting the CR engine's computed net result. So we do not
-            #    pass cr_net_result here. Callers that want a post-closing view can
-            #    still pass it explicitly to compute_totals().
+            # 5. Compute section totals.
             totals = self.compute_totals(result)
 
-            final_result = {"bilan": result, "totals": totals}
+            final_result = {
+                "bilan":        result,
+                "totals":       totals,
+                "data_quality": data_quality,
+            }
 
-            # 5. Persist to DB
+            # 6. Persist to DB
             self.repo.update(upload_id, final_result)
             logger.info(f"Bilan saved for upload {upload_id}")
 
-            # 6. AI interpretation (non-blocking — failure does not abort)
+            # 7. AI interpretation (non-blocking — failure does not abort)
             try:
                 from app.ai.ai_service_client import analyze_bilan
                 final_result["analysis"] = analyze_bilan(totals)

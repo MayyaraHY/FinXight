@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -25,6 +25,10 @@ class Upload(Base):
     company_id   = Column(Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True, index=True)
     period_year  = Column(Integer, nullable=True)   # e.g. 2024
     period_month = Column(Integer, nullable=True)
+
+    # True when the source file contained a "Rubrique" column. Reconciliation
+    # warnings are only meaningful when this flag is set.
+    has_rubrique_column = Column(Boolean, nullable=False, server_default="false")
 
     accounts = relationship(
         "Account",

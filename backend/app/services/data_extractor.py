@@ -50,14 +50,15 @@ def extract_data(df, column_mapping):
             f"Available columns: {df.columns.tolist()}"
         )
     
-    # Convert numeric columns (handle French format: 1 000,00 → 1000.00)
-    # FIXED: Added solde_final_debit and solde_final_credit
+    # Convert numeric columns (handle French format: 1 000,00 → 1000.00).
+    # "rubrique" is intentionally NOT here — it is a text category label,
+    # preserved as-is and saved to accounts.source_rubrique.
     numeric_cols = [
         "debit", "credit",
         "solde_debit", "solde_credit",
         "solde_final",  # Legacy column
-        "solde_final_debit", "solde_final_credit",  # Final balance columns
-        "opening_debit", "opening_credit",          # Opening balances (now parsed too)
+        "solde_final_debit", "solde_final_credit",
+        "opening_debit", "opening_credit",
     ]
     
     for col in numeric_cols:

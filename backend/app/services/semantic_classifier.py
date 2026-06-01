@@ -182,6 +182,17 @@ ENRICHED_COLUMN_MAPPING = {
         "must_contain_keywords": ["fin", "final"],  # Must have one of these
     },
     
+    # ============ SOURCE-FILE CLASSIFICATION (ERP rubrique / regroupement) ============
+    "rubrique": {
+        "keywords": [
+            "rubrique", "regroupement", "classification", "categorie",
+            "category", "classe bilan", "poste", "nature",
+        ],
+        "description": "bilan category classification rubrique regroupement accounting category label",
+        "expected_content": {"type": "text", "avg_length": 25, "numeric_ratio": 0.0},
+        "priority": 6,
+    },
+
     # ============ SIGNED SINGLE BALANCE (e.g. "Solde Final" in simple trial balances) ============
     "solde_final": {
         "keywords": [

@@ -34,4 +34,9 @@ class Account(Base):
     opening_debit = Column(Numeric(20, 2), nullable=True)
     opening_credit = Column(Numeric(20, 2), nullable=True)
 
+    # Rubrique from the source file (e.g. Sage/ERP export classification).
+    # Persisted as-is; never used for amount routing (rules win). Used only
+    # for per-line reconciliation warnings (see app/core/reconciliation.py).
+    source_rubrique = Column(String(255), nullable=True)
+
     created_at = Column(DateTime, server_default=func.now())

@@ -33,6 +33,29 @@ interface SectionItem {
   amount_details: AmountDetails;
 }
 
+// ── Reconciliation / data-quality types ──────────────────────────────────────
+
+type ReconciliationStatus = "ok" | "discrepancy" | "unmapped";
+
+interface ReconciliationLine {
+  code: string;
+  label: string;
+  category: string | null;
+  source_rubrique: string | null;
+  status: ReconciliationStatus;
+  warning: string | null;
+}
+
+interface DataQuality {
+  rubrique_present: boolean;
+  discrepancy_count: number;
+  unmapped_count: number;
+  flagged_lines: ReconciliationLine[];
+  lines: ReconciliationLine[];
+}
+
+// ── Core data types ───────────────────────────────────────────────────────────
+
 interface BilanResponse {
   success: boolean;
   message?: string;
@@ -66,9 +89,14 @@ interface BilanData {
       total_passif: number;
     };
     difference: number;
+    balanced?: boolean;
   };
+  data_quality?: DataQuality;
   analysis?: string;
 }
+
+// Map account_code → reconciliation line (for O(1) lookup in breakdown tables)
+type ReconMap = Map<string, ReconciliationLine>;
 
 type ItemRecord = Record<string, unknown>;
 
@@ -86,7 +114,8 @@ function isValidItem(item: unknown): item is SectionItem {
 function renderItemsHelper(
   items: ItemRecord,
   expandedItems: Set<string>,
-  toggleExpanded: (key: string) => void
+  toggleExpanded: (key: string) => void,
+  reconMap: ReconMap
 ): React.ReactNode[] {
   return Object.entries(items)
     .map(([key, item]) => {
@@ -101,6 +130,7 @@ function renderItemsHelper(
             breakdown={item.amount_details?.breakdown || []}
             expanded={expandedItems.has(key)}
             onToggle={() => toggleExpanded(key)}
+            reconMap={reconMap}
           />
         );
       }
@@ -119,6 +149,7 @@ function renderItemsHelper(
                   breakdown={subItem.amount_details?.breakdown || []}
                   expanded={expandedItems.has(subKey)}
                   onToggle={() => toggleExpanded(subKey)}
+                  reconMap={reconMap}
                 />
               );
             })}
@@ -143,6 +174,13 @@ export default function BilanPage() {
   const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isOpen: exportOpen, openModal: openExport, closeModal: closeExport } = useModal();
+
+  // Build account-code → reconciliation-line lookup from data_quality.lines
+  const reconMap: ReconMap = React.useMemo(() => {
+    const map = new Map<string, ReconciliationLine>();
+    bilanData?.data_quality?.lines?.forEach((l) => map.set(l.code, l));
+    return map;
+  }, [bilanData]);
 
   const loadBilan = useCallback(async () => {
     try {
@@ -192,7 +230,7 @@ export default function BilanPage() {
   };
 
   const renderItems = (items: ItemRecord) =>
-    renderItemsHelper(items, expandedItems, toggleExpanded);
+    renderItemsHelper(items, expandedItems, toggleExpanded, reconMap);
 
   if (loading)
     return (
@@ -305,6 +343,11 @@ export default function BilanPage() {
             {bilanData.analysis}
           </p>
         </div>
+      )}
+
+      {/* ── Data Quality Banner ── */}
+      {bilanData.data_quality && bilanData.data_quality.rubrique_present && (
+        <DataQualityBanner dq={bilanData.data_quality} />
       )}
 
       {/* ── Two-column layout ── */}
@@ -450,6 +493,7 @@ interface ExpandableRowProps {
   breakdown: BreakdownItem[];
   expanded: boolean;
   onToggle: () => void;
+  reconMap: ReconMap;
 }
 
 function ExpandableRow({
@@ -458,7 +502,14 @@ function ExpandableRow({
   breakdown,
   expanded,
   onToggle,
+  reconMap,
 }: ExpandableRowProps) {
+  // Check if any account in this section has a reconciliation flag
+  const sectionFlags = breakdown
+    .map((b) => reconMap.get(b.account))
+    .filter((r): r is ReconciliationLine => !!r && r.status !== "ok");
+  const hasSectionFlag = sectionFlags.length > 0;
+
   return (
     <React.Fragment>
       <button
@@ -482,6 +533,15 @@ function ExpandableRow({
           <span className="text-sm text-gray-700 dark:text-gray-300 truncate group-hover:text-gray-900 dark:group-hover:text-white">
             {label}
           </span>
+          {/* Section-level flag badge */}
+          {hasSectionFlag && (
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-400 flex-shrink-0"
+              title={`${sectionFlags.length} compte(s) avec incohérence de classification`}
+            >
+              ⚠ {sectionFlags.length}
+            </span>
+          )}
         </div>
         <span className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums ml-4 flex-shrink-0">
           {formatCurrency(amount)}
@@ -500,33 +560,183 @@ function ExpandableRow({
                 <tr className="text-gray-400 dark:text-gray-500 border-b border-gray-200 dark:border-gray-700">
                   <th className="text-left pb-2 font-medium">Compte</th>
                   <th className="text-left pb-2 font-medium">Libellé</th>
+                  {/* Show Rubrique column only when at least one row has it */}
+                  {breakdown.some((b) => reconMap.get(b.account)?.source_rubrique) && (
+                    <th className="text-left pb-2 font-medium">Rubrique source</th>
+                  )}
                   <th className="text-right pb-2 font-medium">Montant</th>
                 </tr>
               </thead>
               <tbody>
-                {breakdown.map((item, idx) => (
-                  <tr
-                    key={idx}
-                    className="border-b border-gray-100 dark:border-gray-800/60 last:border-0"
-                  >
-                    <td className="py-1.5 font-mono text-gray-600 dark:text-gray-400">
-                      {item.account}
-                    </td>
-                    <td className="py-1.5 text-gray-600 dark:text-gray-400 pr-4">
-                      {item.label ?? (
-                        <span className="italic text-gray-400">—</span>
+                {breakdown.map((item, idx) => {
+                  const recon = reconMap.get(item.account);
+                  const isDiscrepancy = recon?.status === "discrepancy";
+                  const isUnmapped = recon?.status === "unmapped";
+                  const showRubriqueCol = breakdown.some(
+                    (b) => reconMap.get(b.account)?.source_rubrique
+                  );
+
+                  return (
+                    <tr
+                      key={idx}
+                      className={`border-b border-gray-100 dark:border-gray-800/60 last:border-0 ${
+                        isDiscrepancy
+                          ? "bg-error-50/40 dark:bg-error-500/5"
+                          : isUnmapped
+                          ? "bg-warning-50/40 dark:bg-warning-500/5"
+                          : ""
+                      }`}
+                    >
+                      {/* Account code + status icon */}
+                      <td className="py-1.5 font-mono text-gray-600 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          {item.account}
+                          {isDiscrepancy && (
+                            <span
+                              title={recon?.warning ?? "Incohérence de classification"}
+                              className="cursor-help text-error-500 dark:text-error-400"
+                            >
+                              <svg className="w-3 h-3 inline" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                          {isUnmapped && (
+                            <span
+                              title={recon?.warning ?? "Compte non répertorié dans les règles"}
+                              className="cursor-help text-warning-500 dark:text-warning-400"
+                            >
+                              <svg className="w-3 h-3 inline" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                        </span>
+                      </td>
+
+                      {/* Label */}
+                      <td className="py-1.5 text-gray-600 dark:text-gray-400 pr-3">
+                        {item.label ?? <span className="italic text-gray-400">—</span>}
+                      </td>
+
+                      {/* Rubrique source (conditional column) */}
+                      {showRubriqueCol && (
+                        <td className="py-1.5 pr-3">
+                          {recon?.source_rubrique ? (
+                            <span
+                              className={`inline-block max-w-[160px] truncate text-[10px] px-1.5 py-0.5 rounded ${
+                                isDiscrepancy
+                                  ? "bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-300"
+                                  : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                              }`}
+                              title={
+                                isDiscrepancy
+                                  ? `Source: "${recon.source_rubrique}" → règles: "${recon.category}"`
+                                  : recon.source_rubrique
+                              }
+                            >
+                              {recon.source_rubrique}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300 dark:text-gray-700">—</span>
+                          )}
+                        </td>
                       )}
-                    </td>
-                    <td className="py-1.5 text-right tabular-nums text-gray-800 dark:text-gray-200">
-                      {formatCurrency(item.raw_amount ?? 0)}
-                    </td>
-                  </tr>
-                ))}
+
+                      {/* Amount */}
+                      <td className="py-1.5 text-right tabular-nums text-gray-800 dark:text-gray-200">
+                        {formatCurrency(item.raw_amount ?? 0)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
         </div>
       )}
     </React.Fragment>
+  );
+}
+
+// ===== DATA QUALITY BANNER =====
+
+function DataQualityBanner({ dq }: { dq: DataQuality }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const total = dq.discrepancy_count + dq.unmapped_count;
+
+  if (total === 0) return null;
+
+  return (
+    <div className="rounded-2xl border border-warning-200 bg-warning-50 dark:border-warning-500/30 dark:bg-warning-500/10 overflow-hidden">
+      {/* Summary bar */}
+      <button
+        onClick={() => setExpanded((p) => !p)}
+        className="w-full flex items-start gap-3 p-4 text-left"
+      >
+        <svg className="w-4 h-4 mt-0.5 text-warning-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+        </svg>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-warning-700 dark:text-warning-400">
+            {dq.discrepancy_count > 0 && (
+              <span>{dq.discrepancy_count} compte{dq.discrepancy_count > 1 ? "s" : ""} avec rubrique incohérente</span>
+            )}
+            {dq.discrepancy_count > 0 && dq.unmapped_count > 0 && <span> · </span>}
+            {dq.unmapped_count > 0 && (
+              <span>{dq.unmapped_count} compte{dq.unmapped_count > 1 ? "s" : ""} non répertorié{dq.unmapped_count > 1 ? "s" : ""}</span>
+            )}
+          </p>
+          <p className="text-xs text-warning-600/70 dark:text-warning-400/70 mt-0.5">
+            Les montants sont calculés selon les règles SCE — les rubriques du fichier source sont affichées à titre indicatif.
+            {dq.flagged_lines.length > 0 && !expanded && (
+              <span className="ml-1 underline cursor-pointer">Voir le détail ({dq.flagged_lines.length})</span>
+            )}
+          </p>
+        </div>
+        <svg
+          className={`w-4 h-4 text-warning-500 flex-shrink-0 transition-transform mt-0.5 ${expanded ? "rotate-180" : ""}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Flagged accounts detail */}
+      {expanded && dq.flagged_lines.length > 0 && (
+        <div className="border-t border-warning-200 dark:border-warning-500/20 px-4 pb-4">
+          <div className="mt-3 space-y-1 max-h-64 overflow-y-auto">
+            {dq.flagged_lines.map((line) => (
+              <div
+                key={line.code}
+                className={`flex items-start gap-2 text-xs p-2 rounded-lg ${
+                  line.status === "discrepancy"
+                    ? "bg-error-50 dark:bg-error-500/10"
+                    : "bg-warning-50 dark:bg-warning-500/10"
+                }`}
+              >
+                <span
+                  className={`mt-0.5 flex-shrink-0 font-mono ${
+                    line.status === "discrepancy"
+                      ? "text-error-600 dark:text-error-400"
+                      : "text-warning-600 dark:text-warning-400"
+                  }`}
+                >
+                  {line.code}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-gray-700 dark:text-gray-300 truncate">
+                    {line.label}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400 mt-0.5 break-words">
+                    {line.warning}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
