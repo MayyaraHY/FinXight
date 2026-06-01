@@ -37,7 +37,7 @@
         "type": "computed",
         "comptes_permanent": ["6031"],
         "comptes_intermittent": ["601", "-6031", "6061"],
-        "fallback_permanent": ["603"]
+        "fallback_permanent": ["603", "-6032"]
       },
       {
         "line_id": 7,

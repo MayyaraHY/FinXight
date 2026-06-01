@@ -79,7 +79,16 @@ class BilanService:
 
         DR filter: keep only accounts with a debit (positive) balance.
         CR filter: keep only accounts with a credit (negative) balance.
+
+        B4/R6: a zero balance belongs to NEITHER side. Many account prefixes appear
+        in two sections distinguished only by DR vs CR (e.g. 532 is "liquidités"
+        when debit and "concours bancaires" when credit). With signed balances a
+        non-zero account passes exactly one side, but a zero balance would pass both
+        and be listed in two sections. Excluding zero here keeps each account in a
+        single section (it contributes 0 either way, so no total changes).
         """
+        if side in ("DR", "CR") and amount == 0:
+            return False
         if side == "DR" and amount < 0:
             return False
         if side == "CR" and amount > 0:
@@ -209,9 +218,13 @@ class BilanService:
                 })
 
         # ── FINAL AMOUNT ──────────────────────────────────────────────────────
-        # Gross/depreciation path: used for asset sections with amortization.
-        # Net-only path: used for sections with no gross/amort (affectation, nettes).
-        final_amount = (brut - amort) if (brut != 0 or amort != 0) else net
+        # B2: always additive. Each phase already carries its own sign:
+        #   brut  - gross asset values
+        #   amort - accumulated depreciation/provisions (subtracted)
+        #   net   - direct net values + affectation (passif) entries
+        # The previous "(brut - amort) if … else net" silently DROPPED the net part
+        # of any node that had both gross/amort AND net/affectation entries.
+        final_amount = brut - amort + net
 
         return {
             "amount": float(final_amount),
@@ -288,6 +301,9 @@ class BilanService:
     # =====================================================
     # TOTALS
     # =====================================================
+    # Tolerance (in currency units) under which actif/passif are considered balanced.
+    BALANCE_TOLERANCE = 1.0
+
     def compute_totals(self, result: Dict) -> Dict:
         """Sum only leaf nodes (nodes that have an 'amount' key)."""
 
@@ -300,24 +316,44 @@ class BilanService:
                     total += sum_leaf_nodes(v)
             return total
 
-        actifs = result.get("actifs", {})
-        actifs_non_courants = sum_leaf_nodes(actifs.get("actifs_non_courants", {}))
-        actifs_courants     = sum_leaf_nodes(actifs.get("actifs_courants", {}))
+        # B6: the rule tree is keyed by exact French section names. A typo/rename in
+        # bilan_rules.json would make a whole section silently sum to 0, so warn loudly
+        # when an expected section node is missing instead of returning a wrong total.
+        def require(node: Dict, key: str, ctx: str) -> Dict:
+            child = node.get(key, {})
+            if not child:
+                logger.warning(
+                    f"Bilan rules: expected section '{key}' not found under {ctx}. "
+                    f"This section will total 0 — check bilan_rules.json keys."
+                )
+            return child
+
+        actifs = require(result, "actifs", "root")
+        actifs_non_courants = sum_leaf_nodes(require(actifs, "actifs_non_courants", "actifs"))
+        actifs_courants     = sum_leaf_nodes(require(actifs, "actifs_courants", "actifs"))
         total_actif         = actifs_non_courants + actifs_courants
 
-        passif_root          = result.get("capitaux propres et passifs", {})
-        capitaux_propres     = sum_leaf_nodes(passif_root.get("capitaux propres", {}))
-        passifs              = passif_root.get("passifs", {})
-        passifs_non_courants = sum_leaf_nodes(passifs.get("passifs non courant", {}))
-        passifs_courants     = sum_leaf_nodes(passifs.get("passifs courant", {}))
+        passif_root          = require(result, "capitaux propres et passifs", "root")
+        capitaux_propres     = sum_leaf_nodes(require(passif_root, "capitaux propres", "passif_root"))
+        passifs              = require(passif_root, "passifs", "passif_root")
+        passifs_non_courants = sum_leaf_nodes(require(passifs, "passifs non courant", "passifs"))
+        passifs_courants     = sum_leaf_nodes(require(passifs, "passifs courant", "passifs"))
         total_passif         = capitaux_propres + passifs_non_courants + passifs_courants
 
         difference = total_actif - total_passif
+        balanced   = abs(difference) < self.BALANCE_TOLERANCE
 
         logger.info(
             f"Bilan totals — Actif: {total_actif:,.2f} | "
-            f"Passif: {total_passif:,.2f} | Diff: {difference:,.2f}"
+            f"Passif: {total_passif:,.2f} | Diff: {difference:,.2f} | "
+            f"Balanced: {balanced}"
         )
+        if not balanced:
+            logger.warning(
+                f"Bilan does NOT balance (actif - passif = {difference:,.2f}). "
+                f"For a pre-closing trial balance this normally equals the unclosed "
+                f"net result (classes 6/7); otherwise check rule coverage."
+            )
 
         return {
             "actif": {
@@ -332,6 +368,7 @@ class BilanService:
                 "total_passif":         total_passif,
             },
             "difference": difference,
+            "balanced":   balanced,
         }
 
     # =====================================================

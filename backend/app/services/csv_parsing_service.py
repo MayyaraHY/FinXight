@@ -10,7 +10,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def parse_csv(file, upload_id):
+def parse_csv(file, upload_id, return_meta=False):
+    """
+    Parse an uploaded CSV into validated account rows.
+
+    Args:
+        file: binary file-like object positioned at the start.
+        upload_id: id used for parse logging.
+        return_meta: when True, return ``(validated_data, meta)`` where ``meta`` holds
+            ``column_mapping``, ``confidence_scores``, ``encoding`` and ``delimiter``.
+            This lets callers (e.g. the column-mapping preview) get the classification
+            result WITHOUT running the whole pipeline — and the Gemini fallback — twice.
+    """
     # Step 1: Detect encoding and delimiter
     encoding = detect_encoding(file)
     delimiter = detect_delimiter(file)
@@ -63,5 +74,14 @@ def parse_csv(file, upload_id):
 
     # Step 8: Log parsing details
     log_parsing(upload_id, encoding, delimiter, column_mapping, confidence_scores)
+
+    if return_meta:
+        meta = {
+            "column_mapping": column_mapping,
+            "confidence_scores": confidence_scores,
+            "encoding": encoding,
+            "delimiter": delimiter,
+        }
+        return validated_data, meta
 
     return validated_data

@@ -308,51 +308,20 @@ def preview_mapped_columns(db, upload_id: int, rows: int = 10):
 
         logger.info(f"Previewing mapped columns for upload {upload_id}: {upload.filename}")
 
-        # Open file and run classification pipeline (without saving)
+        # Run the full pipeline ONCE and capture the classification metadata.
+        # (Previously this ran parse_csv and then re-ran detect→prepare→classify a
+        #  second time — doubling CPU and the external Gemini fallback call.)
         with open(upload.file_path, "rb") as f:
-            # Run the full parse_csv pipeline which includes:
-            # - Encoding/delimiter detection
-            # - Header detection
-            # - DataFrame preparation (normalization)
-            # - Column classification with confidence scores
-            # - Data extraction
-            # - Validation
-            validated_data = parse_csv(f, upload_id)
+            validated_data, meta = parse_csv(f, upload_id, return_meta=True)
+
+        column_mapping = meta["column_mapping"]
+        confidence_scores = meta["confidence_scores"]
 
         # Extract final column names from validated data
         if validated_data:
             extracted_columns = list(validated_data[0].keys())
         else:
             extracted_columns = []
-
-        # Get column mapping and confidence scores from parsing
-        # We need to re-run just the classification part to capture these
-        with open(upload.file_path, "rb") as f:
-            from app.services.header_detector import detect_header
-            from app.services.column_classifier import classify_columns_smart
-            from app.services.preparation_service import prepare_dataframe
-            from app.utils.helpers import detect_encoding as util_detect_encoding
-            from app.utils.helpers import detect_delimiter as util_detect_delimiter
-            from app.utils.helpers import read_csv as util_read_csv
-
-            # Step 1: Detect encoding and delimiter
-            encoding = util_detect_encoding(f)
-            delimiter = util_detect_delimiter(f)
-
-            # Step 2: Read CSV
-            df = util_read_csv(f, encoding, delimiter)
-
-            # Step 3: Detect header and drop title/header rows
-            header, data_start = detect_header(df)
-            df.columns = header
-            if data_start > 0:
-                df = df.iloc[data_start:].reset_index(drop=True)
-
-            # Step 4: Prepare (normalize)
-            df = prepare_dataframe(df)
-
-            # Step 5: Classify columns
-            column_mapping, confidence_scores = classify_columns_smart(df.columns, df)
 
         # Identify low-confidence mappings
         warning_columns = [

@@ -56,7 +56,8 @@ def extract_data(df, column_mapping):
         "debit", "credit",
         "solde_debit", "solde_credit",
         "solde_final",  # Legacy column
-        "solde_final_debit", "solde_final_credit"  # NEW: Final balance columns
+        "solde_final_debit", "solde_final_credit",  # Final balance columns
+        "opening_debit", "opening_credit",          # Opening balances (now parsed too)
     ]
     
     for col in numeric_cols:
