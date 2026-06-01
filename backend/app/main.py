@@ -8,6 +8,7 @@ from app.controllers.bilan_controller import router as bilan_router
 from app.controllers.compte_resultat_controller import router as cr_router
 from app.controllers.ai_controller import router as ai_router
 from app.controllers.company_controller import router as company_router
+from app.controllers.export_controller import router as export_router
 from app.cors.cors_config import setup_cors
 from app.db.cnx import Base, engine
 
@@ -40,6 +41,7 @@ app.include_router(bilan_router)
 app.include_router(ai_router)
 app.include_router(cr_router)
 app.include_router(company_router)
+app.include_router(export_router)
 # ── Public health endpoints ───────────────────────────────────────────
 @app.get("/")
 def home():
