@@ -342,9 +342,11 @@ def preview_mapped_columns(db, upload_id: int, rows: int = 10):
             # Step 2: Read CSV
             df = util_read_csv(f, encoding, delimiter)
 
-            # Step 3: Detect header
-            header = detect_header(df)
+            # Step 3: Detect header and drop title/header rows
+            header, data_start = detect_header(df)
             df.columns = header
+            if data_start > 0:
+                df = df.iloc[data_start:].reset_index(drop=True)
 
             # Step 4: Prepare (normalize)
             df = prepare_dataframe(df)

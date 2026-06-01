@@ -97,6 +97,22 @@ def classify_columns_smart(
             if key in used_keys:
                 continue
 
+            # C2: enforce the constraints declared in ENRICHED_COLUMN_MAPPING.
+            # These were previously documented but never applied, letting e.g.
+            # "solde fin dbt" fuzzy-match the generic "debit" field.
+            must_contain = config.get("must_contain_keywords")
+            if must_contain and not any(kw in col_normalized for kw in must_contain):
+                logger.debug(
+                    f"  Skip '{key}' for '{col}': missing required keyword {must_contain}"
+                )
+                continue
+            must_exclude = config.get("must_exclude_keywords")
+            if must_exclude and any(kw in col_normalized for kw in must_exclude):
+                logger.debug(
+                    f"  Skip '{key}' for '{col}': contains excluded keyword {must_exclude}"
+                )
+                continue
+
             # 1. SEMANTIC SCORE (50 points max)
             semantic_score = semantic_matcher.get_semantic_similarity(col_normalized, config["description"])
             semantic_score = (semantic_score / 100.0) * 50  # Normalize to 0-50

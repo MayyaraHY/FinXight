@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -21,6 +21,10 @@ class Upload(Base):
     display_filename = Column(String, nullable=True)  # Custom display name (optional, defaults to filename)
     status = Column(String, default="uploaded")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    company_id   = Column(Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True, index=True)
+    period_year  = Column(Integer, nullable=True)   # e.g. 2024
+    period_month = Column(Integer, nullable=True)
 
     accounts = relationship(
         "Account",

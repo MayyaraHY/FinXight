@@ -19,10 +19,13 @@ def parse_csv(file, upload_id):
     df = read_csv(file, encoding, delimiter)
     logger.info(f"Raw columns after reading CSV: {df.columns.tolist()}")
 
-    # Step 3: Detect and clean header
-    header = detect_header(df)
+    # Step 3: Detect and clean header, then drop title/header rows from the data
+    header, data_start = detect_header(df)
     df.columns = header
-    
+    if data_start > 0:
+        df = df.iloc[data_start:].reset_index(drop=True)
+        logger.info(f"Dropped {data_start} title/header row(s); {len(df)} data rows remain")
+
     # Step 4: Prepare DataFrame (normalize all data before classification)
     # This will:
     # - Normalize column names (lowercase, remove accents, remove special chars)

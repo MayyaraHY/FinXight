@@ -1,6 +1,8 @@
 import pandas as pd
 import logging
 
+from app.utils.helpers import parse_french_number
+
 logger = logging.getLogger(__name__)
 
 def extract_data(df, column_mapping):
@@ -17,7 +19,16 @@ def extract_data(df, column_mapping):
             reverse_mapping[mapped].append(original)
     
     logger.info(f"Reverse mapping: {reverse_mapping}")
-    
+
+    # C3: surface duplicate mappings instead of dropping them silently
+    for mapped, originals in reverse_mapping.items():
+        if len(originals) > 1:
+            logger.warning(
+                f"Multiple source columns mapped to '{mapped}': {originals}. "
+                f"Keeping the first ('{originals[0]}') and ignoring the rest — "
+                f"review the column classification for this file."
+            )
+
     # Rename only the mapped columns (drop duplicate mappings, keep first)
     rename_dict = {}
     seen_keys = set()
@@ -51,16 +62,25 @@ def extract_data(df, column_mapping):
     for col in numeric_cols:
         if col in df.columns:
             try:
-                df[col] = (
-                    df[col]
-                    .astype(str)
-                    .str.replace(" ", "")
-                    .str.replace(",", ".")
-                    .str.replace(r"[^\d.\-]", "", regex=True)
-                )
-                # Convert to numeric and fill NaN/None with 0
-                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-                logger.info(f"Converted column '{col}' to numeric (NaN filled with 0)")
+                original = df[col].astype(str)
+                # parse_french_number returns None only for non-empty unparseable values
+                parsed = df[col].apply(parse_french_number)
+
+                # Log real (non-empty) values we failed to parse BEFORE zeroing them,
+                # so corrupted data is visible instead of silently becoming 0.
+                stripped = original.str.strip().str.lower()
+                non_empty = ~stripped.isin(["", "nan", "none", "null"])
+                failed_mask = parsed.isna() & non_empty
+                n_failed = int(failed_mask.sum())
+                if n_failed:
+                    samples = original[failed_mask].unique().tolist()[:5]
+                    logger.warning(
+                        f"Column '{col}': {n_failed} non-empty value(s) could not be "
+                        f"parsed as numbers and were set to 0. Samples: {samples}"
+                    )
+
+                df[col] = pd.to_numeric(parsed.fillna(0), errors="coerce").fillna(0)
+                logger.info(f"Converted column '{col}' to numeric via parse_french_number")
             except Exception as e:
                 logger.warning(f"Could not convert '{col}': {e}")
     

@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
-from app.db.base import Base
+from app.db.cnx import Base
+
 
 class Company(Base):
     __tablename__ = "companies"

@@ -2,7 +2,9 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from app.models.company import Company
 
+
 class CompanyRepository:
+
     def __init__(self, db: Session):
         self.db = db
 
@@ -14,7 +16,12 @@ class CompanyRepository:
         return company
 
     def get_by_user(self, user_id: UUID) -> list[Company]:
-        return self.db.query(Company).filter(Company.user_id == user_id).all()
+        return (
+            self.db.query(Company)
+            .filter(Company.user_id == user_id)
+            .order_by(Company.created_at.desc())
+            .all()
+        )
 
     def get_by_id(self, company_id: int, user_id: UUID) -> Company | None:
         return (

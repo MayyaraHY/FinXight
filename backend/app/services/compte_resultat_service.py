@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.models.account import Account
 from app.repositories.compte_resultat_repository import CompteResultatRepository
+from app.services.balance import signed_balance
 
 logger = logging.getLogger(__name__)
 
@@ -52,32 +53,19 @@ class CompteResultatService:
     # BALANCE EXTRACTION  (same logic as BilanService)
     # =====================================================
     def get_balance(self, acc: Account) -> Decimal:
-        # 1. Legacy signed net balance
-        if acc.solde_final is not None:
-            return Decimal(str(acc.solde_final))
-
-        # 2. Sage X3 "Solde fin Dbt" / "Solde fin Cdt" — both columns store
-        #    absolute values; which side carries the amount identifies account type.
-        #    Rules use sign prefixes ("-709", "+701") to handle direction, so we
-        #    return the absolute value here (credit is NOT negated).
-        if acc.solde_final_debit:
-            return Decimal(str(acc.solde_final_debit))
-        if acc.solde_final_credit:
-            return Decimal(str(acc.solde_final_credit))
-
-        # 3. Period balances (older export format)
-        if acc.solde_debit:
-            return Decimal(str(acc.solde_debit))
-        if acc.solde_credit:
-            return -Decimal(str(acc.solde_credit))
-
-        # 4. Raw movements (last resort)
-        if acc.debit:
-            return Decimal(str(acc.debit))
-        if acc.credit:
-            return -Decimal(str(acc.credit))
-
-        return Decimal("0")
+        # MAGNITUDE convention for the income statement.
+        #
+        # The CR rules (cr_rules.json) were authored around each account
+        # contributing its natural positive magnitude, with explicit "-" prefixes
+        # for contra accounts (e.g. "-709" subtracts rebates from revenue). We
+        # therefore take the absolute value of the canonical signed balance, which
+        # makes the result IDENTICAL across every CSV layout (previously a single
+        # "solde_final" column returned a signed value — so revenues came out
+        # negative on those files and every CR total was wrong; R1).
+        #
+        # NOTE: stock variation (line 5) deliberately bypasses this and keeps the
+        # signed value — see compute_line() — because its sign is meaningful (R2).
+        return abs(signed_balance(acc))
 
     # =====================================================
     # ACCOUNT MATCHING BY PREFIX
@@ -85,9 +73,12 @@ class CompteResultatService:
     def sum_by_prefix(self, accounts: List[Account], prefix: str) -> Decimal:
         """Sum balances of all accounts whose code starts with prefix."""
         return sum(
-            self.get_balance(acc)
-            for acc in accounts
-            if acc.account_code.startswith(prefix)
+            (
+                self.get_balance(acc)
+                for acc in accounts
+                if acc.account_code.startswith(prefix)
+            ),
+            Decimal("0"),
         )
 
     # =====================================================
@@ -125,26 +116,24 @@ class CompteResultatService:
             comptes = rule.get("comptes", [])
             return self.compute_from_comptes(comptes, accounts)
 
-        # --- Stock variation: net debit-credit of compte 71 ---
+        # --- Stock variation: SIGNED net debit-credit of compte 71 (R2) ---
+        #     A stock variation can legitimately be positive or negative, so we
+        #     keep the signed balance here instead of the magnitude used elsewhere.
         if line_type == "stock_variation":
             prefix = rule["comptes"][0]
-            return self.sum_by_prefix(accounts, prefix)
+            return sum(
+                (
+                    signed_balance(acc)
+                    for acc in accounts
+                    if acc.account_code.startswith(prefix)
+                ),
+                Decimal("0"),
+            )
 
-        # --- Inventory-method-sensitive lines (L6, L7) ---
-        if line_type == "computed" and "comptes_permanent" in rule:
-            if self.inventory_method == "permanent":
-                comptes = rule.get("comptes_permanent", [])
-                # Fallback to full 603 if sub-account not found
-                result = self.compute_from_comptes(comptes, accounts)
-                if result == 0 and "fallback_permanent" in rule:
-                    result = self.compute_from_comptes(
-                        rule["fallback_permanent"], accounts
-                    )
-                return result
-            else:
-                return self.compute_from_comptes(
-                    rule.get("comptes_intermittent", []), accounts
-                )
+        # NOTE: inventory-method lines (L6/L7, which carry "comptes_permanent") are
+        # handled directly in compute_all_lines() before compute_line() is reached.
+        # The previous duplicate branch here was unreachable (the "computed" check
+        # above always returned first) and has been removed.
 
         # --- Formula lines: sum/subtract already-computed lines ---
         if line_type == "formula":

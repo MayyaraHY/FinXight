@@ -1,9 +1,83 @@
 import chardet
 import pandas as pd
 import io
+import re
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def parse_french_number(value):
+    """
+    Parse a number from common French / accounting CSV formats into a float.
+
+    Handles:
+      - space / NBSP / thin-space thousands separators:  "1 000,00"
+      - French decimal comma:                            "3769520,318" -> 3769520.318
+      - dot-thousands + comma-decimal:                   "1.000,00"    -> 1000.00
+      - anglo thousands + dot-decimal:                   "1,000.00"    -> 1000.00
+      - plain dot decimal:                               "15334.624"   -> 15334.624
+      - accounting parentheses negatives:                "(1 000)"     -> -1000.0
+      - trailing-minus accounting notation:              "1000-"       -> -1000.0
+      - leading minus / plus:                            "-13900000"   -> -13900000.0
+
+    Returns:
+        float on success.
+        0.0 for empty / NaN-like input.
+        None when the value is non-empty but cannot be parsed (so the caller can
+        log it instead of silently coercing real data to 0).
+    """
+    if value is None:
+        return 0.0
+
+    s = str(value).strip()
+    if s == "" or s.lower() in ("nan", "none", "null"):
+        return 0.0
+
+    negative = False
+
+    # Accounting parentheses, e.g. "(1 234,56)" -> negative
+    if s.startswith("(") and s.endswith(")"):
+        negative = True
+        s = s[1:-1].strip()
+
+    # Trailing / leading sign
+    if s.endswith("-"):
+        negative = True
+        s = s[:-1].strip()
+    if s.startswith("-"):
+        negative = True
+        s = s[1:].strip()
+    elif s.startswith("+"):
+        s = s[1:].strip()
+
+    # Drop common currency markers that sometimes trail the amount
+    for token in ("DT", "TND", "€", "dt", "tnd"):
+        s = s.replace(token, "")
+
+    # Remove every whitespace char (space, NBSP \xa0, thin spaces) used for grouping
+    s = re.sub(r"\s", "", s)
+
+    if s == "":
+        return None
+
+    # Decide which symbol is the decimal separator
+    if "," in s and "." in s:
+        # The right-most of the two is the decimal separator; the other groups thousands
+        if s.rfind(",") > s.rfind("."):
+            s = s.replace(".", "").replace(",", ".")   # 1.000,00 -> 1000.00
+        else:
+            s = s.replace(",", "")                       # 1,000.00 -> 1000.00
+    elif "," in s:
+        s = s.replace(",", ".")                          # French decimal comma
+    # else: only "." (or none) -> already a valid decimal form
+
+    try:
+        result = float(s)
+    except ValueError:
+        return None
+
+    return -result if negative else result
 
 def detect_encoding(file):
     """

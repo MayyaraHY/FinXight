@@ -6,6 +6,7 @@ import logging
 from app.models.account import Account
 from app.repositories.bilan_repository import BilanRepository
 from app.core.accounting_loader import AccountingRulesLoader
+from app.services.balance import signed_balance
 
 logger = logging.getLogger(__name__)
 
@@ -35,31 +36,12 @@ class BilanService:
     # BALANCE EXTRACTION
     # =====================================================
     def get_balance(self, acc: Account) -> Decimal:
-        # 1. Signed net balance (most common format)
-        if acc.solde_final is not None:
-            return Decimal(str(acc.solde_final))
-
-        # 2. Sage X3 split debit/credit columns (absolute values)
-        #    Rules handle direction via sign prefixes ("-109", "101"), so
-        #    we return the value as-is without negating the credit side.
-        if acc.solde_final_debit:
-            return Decimal(str(acc.solde_final_debit))
-        if acc.solde_final_credit:
-            return Decimal(str(acc.solde_final_credit))
-
-        # 3. Period balances (older export format)
-        if acc.solde_debit:
-            return Decimal(str(acc.solde_debit))
-        if acc.solde_credit:
-            return -Decimal(str(acc.solde_credit))
-
-        # 4. Raw movements (last resort)
-        if acc.debit:
-            return Decimal(str(acc.debit))
-        if acc.credit:
-            return -Decimal(str(acc.credit))
-
-        return Decimal("0")
+        # Canonical signed balance (debit - credit), uniform across all CSV
+        # formats. See app/services/balance.py. This makes the DR/CR side filters
+        # and the affectation negation behave correctly for BOTH the single
+        # signed-column files and the Sage split-column files (previously the
+        # split path returned absolute values, breaking the passif side filters).
+        return signed_balance(acc)
 
     # =====================================================
     # RULE NORMALIZATION
@@ -265,6 +247,45 @@ class BilanService:
         return result
 
     # =====================================================
+    # DIAGNOSTIC: account used in more than one leaf node
+    # =====================================================
+    def _log_account_collisions(self, result: Dict) -> Dict[str, List[str]]:
+        """
+        Read-only diagnostic for the prefix-matching over-match risk (B4/R6):
+        prefix rules use ``startswith`` with no "most-specific wins" guarantee, so an
+        account code can be consumed by more than one section (e.g. a broad ``53`` rule
+        and a narrow ``532`` rule). This logs any such account so cross-section double
+        counting is visible. It does NOT change any computed amount.
+        """
+        from collections import defaultdict
+
+        account_nodes: Dict[str, List[str]] = defaultdict(list)
+
+        def walk(node: Dict, path: str = "") -> None:
+            for key, value in node.items():
+                if not isinstance(value, dict):
+                    continue
+                cur = f"{path}.{key}" if path else key
+                if "used_accounts" in value:
+                    for code in value.get("used_accounts", []):
+                        account_nodes[code].append(cur)
+                else:
+                    walk(value, cur)
+
+        walk(result)
+        collisions = {c: nodes for c, nodes in account_nodes.items() if len(nodes) > 1}
+
+        if collisions:
+            logger.warning(
+                "Account-to-node collisions (account counted in >1 section): %s",
+                dict(list(collisions.items())[:20]),
+            )
+        else:
+            logger.info("No account-to-node collisions detected.")
+
+        return collisions
+
+    # =====================================================
     # TOTALS
     # =====================================================
     def compute_totals(self, result: Dict) -> Dict:
@@ -338,6 +359,9 @@ class BilanService:
 
             # 3. Apply rules to accounts
             result = self.process_tree(tree, accounts)
+
+            # 3b. Read-only diagnostic: flag accounts counted in multiple sections
+            self._log_account_collisions(result)
 
             # 4. Compute section totals
             totals = self.compute_totals(result)
