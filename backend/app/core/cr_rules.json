@@ -1,4 +1,6 @@
 {
+  "_source": "Plan de regroupement des comptes de l'état de résultat selon le modèle autorisé — Maquette SCE tunisienne (PDF officiel, sous-section 2). Toute modification doit citer la page source.",
+  "_remarque": "Les comptes de charges sont présentés nets des transferts des charges concernés.",
   "compte_resultat_tunisien": {
     "lines": [
       {
@@ -11,7 +13,8 @@
         "line_id": 2,
         "label": "Autres produits d'exploitation",
         "type": "computed",
-        "comptes": ["731", "732", "733", "734", "735", "738", "739", "74", "781", "-79"]
+        "comptes": ["731", "732", "733", "734", "735", "738", "739", "74", "781", "-79"],
+        "note": "Relatif aux produits provenant de la mise de pertes ou charges à la charge de tiers (remboursement d'assurance, etc.)"
       },
       {
         "line_id": 3,
@@ -27,9 +30,10 @@
       },
       {
         "line_id": 5,
-        "label": "Variation des stocks des produits finis et des en-cours",
+        "label": "Variation des stocks des produits finis et des en-cours (en + ou en -)",
         "type": "stock_variation",
-        "comptes": ["71"]
+        "comptes": ["71"],
+        "note": "± 71. Moins lorsque le stock final > au stock initial de produits finis et en-cours."
       },
       {
         "line_id": 6,
@@ -37,14 +41,16 @@
         "type": "computed",
         "comptes_permanent": ["6031"],
         "comptes_intermittent": ["601", "-6031", "6061"],
-        "fallback_permanent": ["603", "-6032"]
+        "fallback_permanent": ["603", "-6032"],
+        "note": "Permanent: 603 (variation des stocks de marchandises, sous-compte 6031). Intermittent: 60 (y compris quote-part 606 assimilable aux achats de marchandises) ± 603. 606 Quote-part = achat d'emballages et marchandises non stockées."
       },
       {
         "line_id": 7,
         "label": "Achats d'approvisionnements consommés",
         "type": "computed",
         "comptes_permanent": ["6032"],
-        "comptes_intermittent": ["602", "-6032", "6062"]
+        "comptes_intermittent": ["602", "-6032", "6062"],
+        "note": "Permanent: 603 (variation des stocks d'approvisionnements, sous-compte 6032). Intermittent: 60 (y compris quote-part 606 assimilable aux achats d'approvisionnement) ± 603. 606 Quote-part = achat de matières, emballages et fournitures de production (intrants) non stockées."
       },
       {
         "line_id": 8,
@@ -56,13 +62,15 @@
         "line_id": 9,
         "label": "Dotations aux amortissements et aux provisions",
         "type": "computed",
-        "comptes": ["681", "-6861"]
+        "comptes": ["681", "-6861"],
+        "note": "681 sauf 6861 (Résorption des autres actifs non courants de nature financière — reclassé en ligne 13)."
       },
       {
         "line_id": 10,
         "label": "Autres charges d'exploitation",
         "type": "computed",
-        "comptes": ["606", "61", "62", "63", "-636", "66"]
+        "comptes": ["606", "61", "62", "63", "-636", "66"],
+        "note": "606 non rattachés aux achats (fournitures de bureau, d'entretien, énergie, matières consommables non stockées, etc. comptabilisées au 606 et non rattachées aux achats) + 61 + 62 + 63 (autres que 636) + 66."
       },
       {
         "line_id": 11,
@@ -74,19 +82,22 @@
         "line_id": 12,
         "label": "Résultat d'exploitation",
         "type": "formula",
-        "formula": [4, "-", 11]
+        "formula": [4, "-", 11],
+        "note": "Le solde peut être négatif."
       },
       {
         "line_id": 13,
         "label": "Charges financières nettes",
         "type": "computed",
-        "comptes": ["65", "6865", "-75", "6861"]
+        "comptes": ["65", "6865", "6861"],
+        "note": "(65) + (6865) liés au financement des activités de l'entreprise et différences de change liées aux activités (autres que celles liées aux placements) + 6861 Résorption des autres actifs non courants de nature financière. Les comptes 75 sont entièrement attribués à la ligne 14 (Produits des placements) pour éviter le double-comptage; le PDF officiel sépare 65/75 entre financement et placements via sous-comptes, qui ne sont pas distinguables ici."
       },
       {
         "line_id": 14,
         "label": "Produits des placements",
         "type": "computed",
-        "comptes": ["75", "7866", "-65", "-6866"]
+        "comptes": ["75", "7866", "-6866"],
+        "note": "(75 + 7866) - (6866) liés aux activités de placements courants et à long terme. Les comptes 65 sont entièrement attribués à la ligne 13 (cf. note L13)."
       },
       {
         "line_id": 15,
@@ -108,7 +119,7 @@
       },
       {
         "line_id": 18,
-        "label": "Impôts sur les bénéfices",
+        "label": "Impôts sur les bénéfices calculés sur le résultat des activités ordinaires",
         "type": "computed",
         "comptes": ["691"]
       },
@@ -123,21 +134,24 @@
         "label": "Éléments extraordinaires (Gains/Pertes)",
         "type": "computed",
         "comptes": ["77", "-67", "-697"],
-        "can_be_negative": true
+        "can_be_negative": true,
+        "note": "77 - 67 ± (697). 697 = impôt sur les éléments extraordinaires."
       },
       {
         "line_id": 21,
         "label": "Résultat net de l'exercice",
         "type": "formula",
         "formula": [19, "+", 20],
-        "check_account": ["131", "-135"]
+        "check_account": ["131", "-135"],
+        "note": "Doit correspondre au compte 13 (131 bénéfice CR ou 135 perte DR). Un écart > 1 DT indique soit un solde pré-clôture (131/135 non encore mis à jour) soit une lacune de règle."
       },
       {
         "line_id": 22,
         "label": "Effet des modifications comptables (net d'impôt)",
         "type": "computed",
         "comptes": ["128"],
-        "can_be_negative": true
+        "can_be_negative": true,
+        "note": "± 128."
       },
       {
         "line_id": 23,

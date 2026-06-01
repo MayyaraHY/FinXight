@@ -304,8 +304,18 @@ class BilanService:
     # Tolerance (in currency units) under which actif/passif are considered balanced.
     BALANCE_TOLERANCE = 1.0
 
-    def compute_totals(self, result: Dict) -> Dict:
-        """Sum only leaf nodes (nodes that have an 'amount' key)."""
+    def compute_totals(self, result: Dict, cr_net_result: Optional[float] = None) -> Dict:
+        """
+        Sum only leaf nodes (nodes that have an 'amount' key).
+
+        Per the SCE maquette, "Résultat de l'exercice" is a regular leaf (accounts
+        131/135) already summed by sum_leaf_nodes — the standard, default behaviour.
+
+        cr_net_result (optional, OFF by default): override that pulls the CR engine's
+            computed net result into capitaux propres instead of relying on 131/135.
+            Useful only if the trial balance is pre-closing AND you trust the CR
+            calculation more than the ledger. Not used by the default workflow.
+        """
 
         def sum_leaf_nodes(node: Dict) -> float:
             total = 0.0
@@ -335,6 +345,14 @@ class BilanService:
 
         passif_root          = require(result, "capitaux propres et passifs", "root")
         capitaux_propres     = sum_leaf_nodes(require(passif_root, "capitaux propres", "passif_root"))
+
+        # Inject CR net result into capitaux propres when the trial balance is
+        # pre-closing (account 131 = 0). The net result is part of equity even
+        # before the annual closing entry hits the ledger.
+        if cr_net_result is not None:
+            capitaux_propres += cr_net_result
+            logger.info(f"CR net result {cr_net_result:,.2f} injected into capitaux propres.")
+
         passifs              = require(passif_root, "passifs", "passif_root")
         passifs_non_courants = sum_leaf_nodes(require(passifs, "passifs non courant", "passifs"))
         passifs_courants     = sum_leaf_nodes(require(passifs, "passifs courant", "passifs"))
@@ -400,7 +418,12 @@ class BilanService:
             # 3b. Read-only diagnostic: flag accounts counted in multiple sections
             self._log_account_collisions(result)
 
-            # 4. Compute section totals
+            # 4. Compute section totals.
+            #    Per the official SCE maquette, "Résultat de l'exercice" is populated
+            #    directly from accounts 131 (CR) / 135 (DR) by process_tree above —
+            #    NOT by injecting the CR engine's computed net result. So we do not
+            #    pass cr_net_result here. Callers that want a post-closing view can
+            #    still pass it explicitly to compute_totals().
             totals = self.compute_totals(result)
 
             final_result = {"bilan": result, "totals": totals}
