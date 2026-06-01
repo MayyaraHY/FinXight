@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { getBilan, generateBilan } from "@/services/bilanService";
 import { formatCurrency } from "@/utils/formatters";
 import Button from "@/components/ui/button/Button";
+import ExportModal from "@/components/export/ExportModal";
+import { useModal } from "@/hooks/useModal";
 
 // ===== TYPES =====
 
@@ -140,6 +142,7 @@ export default function BilanPage() {
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isOpen: exportOpen, openModal: openExport, closeModal: closeExport } = useModal();
 
   const loadBilan = useCallback(async () => {
     try {
@@ -250,6 +253,13 @@ export default function BilanPage() {
           <Button
             variant="outline"
             size="sm"
+            onClick={openExport}
+          >
+            Exporter .xlsx
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleRegenerate}
             disabled={regenerating}
           >
@@ -257,6 +267,14 @@ export default function BilanPage() {
           </Button>
         </div>
       </div>
+
+      {/* ── Export Modal ── */}
+      <ExportModal
+        isOpen={exportOpen}
+        onClose={closeExport}
+        uploadId={uploadId}
+        available={{ bilan: true, cr: false }}
+      />
 
       {/* ── Metric Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

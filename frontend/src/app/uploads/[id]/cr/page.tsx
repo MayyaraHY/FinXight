@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { generateCR, getCR } from "@/services/compteResultatService";
 import { formatCurrency } from "@/utils/formatters";
 import Button from "@/components/ui/button/Button";
+import ExportModal from "@/components/export/ExportModal";
+import { useModal } from "@/hooks/useModal";
 
 // ── Constants ──
 
@@ -66,6 +68,7 @@ export default function CompteResultatPage() {
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isOpen: exportOpen, openModal: openExport, closeModal: closeExport } = useModal();
 
   const loadCR = useCallback(async () => {
     try {
@@ -177,6 +180,13 @@ export default function CompteResultatPage() {
             )}
           </div>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={openExport}
+          >
+            Exporter .xlsx
+          </Button>
+          <Button
             variant="primary"
             size="sm"
             onClick={handleRegenerate}
@@ -186,6 +196,14 @@ export default function CompteResultatPage() {
           </Button>
         </div>
       </div>
+
+      {/* ── Export Modal ── */}
+      <ExportModal
+        isOpen={exportOpen}
+        onClose={closeExport}
+        uploadId={uploadId}
+        available={{ bilan: false, cr: true }}
+      />
 
       {/* ── Metric cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
