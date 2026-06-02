@@ -7,10 +7,89 @@ import ComponentCard from "@/components/common/ComponentCard";
 import Alert from "@/components/ui/alert/Alert";
 
 import { getAccountsByUpload, updateAccount, deleteAccount } from "@/services/accountService";
+import { getBilan } from "@/services/bilanService";
 import { getUpload } from "@/services/UploadService";
 import { Account } from "@/models/account";
 import { Upload } from "@/models/Upload";
 import { formatCurrency } from "@/utils/formatters";
+
+// ===== RECONCILIATION TYPES (from bilan data_quality) =====
+
+type ReconStatus = "ok" | "discrepancy" | "unmapped";
+
+interface ReconLine {
+  code: string;
+  label: string | null;
+  category: string | null;
+  source_rubrique: string | null;
+  status: ReconStatus;
+  warning: string | null;
+}
+
+type ReconMap = Map<string, ReconLine>;
+
+// ===== STATUS FILTER =====
+
+type StatusFilter = "all" | "ok" | "discrepancy" | "unmapped";
+
+// ===== STATUS BADGE =====
+
+function StatusBadge({ status, warning }: { status: ReconStatus; warning: string | null }) {
+  const config: Record<ReconStatus, { label: string; cls: string }> = {
+    ok: {
+      label: "OK",
+      cls: "bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-400",
+    },
+    discrepancy: {
+      label: "Incohérence",
+      cls: "bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-400",
+    },
+    unmapped: {
+      label: "Non répertorié",
+      cls: "bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400",
+    },
+  };
+
+  const { label, cls } = config[status];
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium whitespace-nowrap ${cls} ${
+        warning ? "cursor-help" : ""
+      }`}
+      title={warning ?? undefined}
+    >
+      {status === "discrepancy" && (
+        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+        </svg>
+      )}
+      {status === "unmapped" && (
+        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+        </svg>
+      )}
+      {status === "ok" && (
+        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      )}
+      {label}
+    </span>
+  );
+}
+
+// ===== ROW BG BY STATUS =====
+
+function rowBg(status: ReconStatus | undefined): string {
+  if (status === "discrepancy")
+    return "bg-error-50/30 dark:bg-error-500/5 hover:bg-error-50/60 dark:hover:bg-error-500/10";
+  if (status === "unmapped")
+    return "bg-warning-50/30 dark:bg-warning-500/5 hover:bg-warning-50/60 dark:hover:bg-warning-500/10";
+  return "hover:bg-gray-50 dark:hover:bg-gray-800";
+}
+
+// ===== PAGE =====
 
 export default function UploadDetailsPage() {
   const params = useParams();
@@ -18,20 +97,23 @@ export default function UploadDetailsPage() {
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [upload, setUpload] = useState<Upload | null>(null);
+  const [reconMap, setReconMap] = useState<ReconMap>(new Map());
+  const [hasRecon, setHasRecon] = useState(false);   // bilan data_quality available
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // 🔍 Filters
   const [search, setSearch] = useState("");
   const [prefix, setPrefix] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   // ✏️ EDIT & DELETE
   const [editingCell, setEditingCell] = useState<{ accountId: number; field: string } | null>(null);
   const [editValue, setEditValue] = useState<string>("");
-  const [contextMenu, setContextMenu] = useState<{ 
-    accountId: number; 
-    x: number; 
-    y: number; 
+  const [contextMenu, setContextMenu] = useState<{
+    accountId: number;
+    x: number;
+    y: number;
     code: string;
     label: string;
   } | null>(null);
@@ -52,9 +134,22 @@ export default function UploadDetailsPage() {
         ]);
         setUpload(uploadRes);
         setAccounts(accountsRes.data || []);
+
+        // Try to load bilan reconciliation data (non-blocking — bilan may not exist yet)
+        try {
+          const bilanRes = await getBilan(uploadId);
+          const lines: ReconLine[] = bilanRes?.data?.data_quality?.lines ?? [];
+          if (lines.length > 0) {
+            const map = new Map<string, ReconLine>();
+            lines.forEach((l) => map.set(l.code, l));
+            setReconMap(map);
+            setHasRecon(true);
+          }
+        } catch {
+          // Bilan not generated yet — reconciliation columns stay hidden
+        }
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to load data";
+        const message = err instanceof Error ? err.message : "Failed to load data";
         setError(message);
       } finally {
         setLoading(false);
@@ -69,56 +164,56 @@ export default function UploadDetailsPage() {
     return accounts.filter((acc) => {
       const matchesSearch =
         acc.account_code.toLowerCase().includes(search.toLowerCase()) ||
-        (acc.label ?? "").toLowerCase().includes(search.toLowerCase());
+        (acc.label ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (acc.source_rubrique ?? "").toLowerCase().includes(search.toLowerCase());
 
-      const matchesPrefix = prefix
-        ? acc.account_code.startsWith(prefix)
-        : true;
+      const matchesPrefix = prefix ? acc.account_code.startsWith(prefix) : true;
 
-      return matchesSearch && matchesPrefix;
+      const recon = reconMap.get(acc.account_code);
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "ok" && (!recon || recon.status === "ok")) ||
+        (statusFilter === "discrepancy" && recon?.status === "discrepancy") ||
+        (statusFilter === "unmapped" && recon?.status === "unmapped");
+
+      return matchesSearch && matchesPrefix && matchesStatus;
     });
-  }, [accounts, search, prefix]);
+  }, [accounts, search, prefix, statusFilter, reconMap]);
 
   // ===== TOTALS =====
-  const totalDebit = filteredAccounts.reduce(
-    (sum, acc) => sum + (acc.debit ?? 0),
-    0
-  );
-
-  const totalCredit = filteredAccounts.reduce(
-    (sum, acc) => sum + (acc.credit ?? 0),
-    0
-  );
-
-  const totalSoldeFinalDebit = filteredAccounts.reduce(
-    (sum, acc) => sum + (acc.solde_final_debit ?? 0),
-    0
-  );
-
-  const totalSoldeFinalCredit = filteredAccounts.reduce(
-    (sum, acc) => sum + (acc.solde_final_credit ?? 0),
-    0
-  );
-
+  const totalDebit = filteredAccounts.reduce((sum, acc) => sum + (acc.debit ?? 0), 0);
+  const totalCredit = filteredAccounts.reduce((sum, acc) => sum + (acc.credit ?? 0), 0);
+  const totalSoldeFinalDebit = filteredAccounts.reduce((sum, acc) => sum + (acc.solde_final_debit ?? 0), 0);
+  const totalSoldeFinalCredit = filteredAccounts.reduce((sum, acc) => sum + (acc.solde_final_credit ?? 0), 0);
   const difference = totalDebit - totalCredit;
 
   // ===== DETECT ACTIVE COLUMNS =====
-  const activeColumns = useMemo(() => {
-    const cols: { [key: string]: boolean } = {
-      opening_debit: filteredAccounts.some((acc) => acc.opening_debit !== null && acc.opening_debit !== undefined),
-      opening_credit: filteredAccounts.some((acc) => acc.opening_credit !== null && acc.opening_credit !== undefined),
-      debit: filteredAccounts.some((acc) => acc.debit !== null && acc.debit !== undefined),
-      credit: filteredAccounts.some((acc) => acc.credit !== null && acc.credit !== undefined),
-      solde_debit: filteredAccounts.some((acc) => acc.solde_debit !== null && acc.solde_debit !== undefined),
-      solde_credit: filteredAccounts.some((acc) => acc.solde_credit !== null && acc.solde_credit !== undefined),
-      solde_final_debit: filteredAccounts.some((acc) => acc.solde_final_debit !== null && acc.solde_final_debit !== undefined),
-      solde_final_credit: filteredAccounts.some((acc) => acc.solde_final_credit !== null && acc.solde_final_credit !== undefined),
-      solde_final: filteredAccounts.some((acc) => acc.solde_final !== null && acc.solde_final !== undefined),
-    };
-    return cols;
-  }, [filteredAccounts]);
+  const activeColumns = useMemo(() => ({
+    source_rubrique: accounts.some((acc) => !!acc.source_rubrique),
+    opening_debit: filteredAccounts.some((acc) => acc.opening_debit !== null && acc.opening_debit !== undefined),
+    opening_credit: filteredAccounts.some((acc) => acc.opening_credit !== null && acc.opening_credit !== undefined),
+    debit: filteredAccounts.some((acc) => acc.debit !== null && acc.debit !== undefined),
+    credit: filteredAccounts.some((acc) => acc.credit !== null && acc.credit !== undefined),
+    solde_debit: filteredAccounts.some((acc) => acc.solde_debit !== null && acc.solde_debit !== undefined),
+    solde_credit: filteredAccounts.some((acc) => acc.solde_credit !== null && acc.solde_credit !== undefined),
+    solde_final_debit: filteredAccounts.some((acc) => acc.solde_final_debit !== null && acc.solde_final_debit !== undefined),
+    solde_final_credit: filteredAccounts.some((acc) => acc.solde_final_credit !== null && acc.solde_final_credit !== undefined),
+    solde_final: filteredAccounts.some((acc) => acc.solde_final !== null && acc.solde_final !== undefined),
+  }), [accounts, filteredAccounts]);
 
-  // ✏️ EDIT & DELETE HANDLERS
+  // ===== WARNING COUNTS (for the summary bar) =====
+  const warnCounts = useMemo(() => {
+    let discrepancy = 0;
+    let unmapped = 0;
+    accounts.forEach((acc) => {
+      const r = reconMap.get(acc.account_code);
+      if (r?.status === "discrepancy") discrepancy++;
+      else if (r?.status === "unmapped") unmapped++;
+    });
+    return { discrepancy, unmapped };
+  }, [accounts, reconMap]);
+
+  // ✏️ EDIT HANDLERS
   const handleCellDoubleClick = (accountId: number, field: string, value: unknown) => {
     setEditingCell({ accountId, field });
     setEditValue(String(value || ""));
@@ -131,32 +226,19 @@ export default function UploadDetailsPage() {
 
   const handleSaveEdit = async () => {
     if (!editingCell) return;
-    
     try {
       const updates: Record<string, string | number | null> = {};
       const numericFields = ["debit", "credit", "solde_debit", "solde_credit", "solde_final_debit", "solde_final_credit", "solde_final", "opening_debit", "opening_credit"];
-      
-      if (numericFields.includes(editingCell.field)) {
-        // Convert to number for numeric fields
-        updates[editingCell.field] = editValue === "" ? null : parseFloat(editValue);
-      } else {
-        // Keep as string for text fields
-        updates[editingCell.field] = editValue === "" ? null : editValue;
-      }
-      
-      await updateAccount(editingCell.accountId, updates);
-      
-      // Update local state
-      const newValue = numericFields.includes(editingCell.field) 
+      updates[editingCell.field] = numericFields.includes(editingCell.field)
         ? (editValue === "" ? null : parseFloat(editValue))
         : (editValue === "" ? null : editValue);
-      
-      setAccounts(accounts.map(acc => 
-        acc.id === editingCell.accountId 
-          ? { ...acc, [editingCell.field]: newValue }
-          : acc
+      await updateAccount(editingCell.accountId, updates);
+      const newValue = numericFields.includes(editingCell.field)
+        ? (editValue === "" ? null : parseFloat(editValue))
+        : (editValue === "" ? null : editValue);
+      setAccounts(accounts.map((acc) =>
+        acc.id === editingCell.accountId ? { ...acc, [editingCell.field]: newValue } : acc
       ));
-      
       setEditingCell(null);
       setEditValue("");
     } catch (err) {
@@ -166,10 +248,9 @@ export default function UploadDetailsPage() {
 
   const handleDeleteAccount = async () => {
     if (!deleteConfirm) return;
-    
     try {
       await deleteAccount(deleteConfirm.accountId);
-      setAccounts(accounts.filter(acc => acc.id !== deleteConfirm.accountId));
+      setAccounts(accounts.filter((acc) => acc.id !== deleteConfirm.accountId));
       setDeleteConfirm(null);
       setContextMenu(null);
     } catch (err) {
@@ -178,116 +259,130 @@ export default function UploadDetailsPage() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSaveEdit();
-    } else if (e.key === "Escape") {
-      setEditingCell(null);
-      setEditValue("");
-    }
+    if (e.key === "Enter") handleSaveEdit();
+    else if (e.key === "Escape") { setEditingCell(null); setEditValue(""); }
   };
 
+  // ===== RENDER =====
   return (
     <div>
-      <ComponentCard title={`Accounts - ${upload?.display_filename || upload?.filename || "Loading..."}`}>
+      <ComponentCard title={`Accounts — ${upload?.display_filename || upload?.filename || "Loading…"}`}>
 
-        {/* 🔄 Loading */}
         {loading && (
           <div className="flex justify-center py-10">
-            <div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full"></div>
+            <div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full" />
           </div>
         )}
 
-        {/* ❌ Error */}
-        {error && (
-          <Alert
-            variant="error"
-            title="Error"
-            message={error}
-            showLink={false}
-          />
-        )}
+        {error && <Alert variant="error" title="Error" message={error} showLink={false} />}
 
-        {/* ✅ Content */}
         {!loading && !error && (
           <div className="space-y-4">
 
-            {/* 🔍 Filters */}
-            <div className="flex flex-col md:flex-row gap-4">
-              
-              {/* Search */}
+            {/* ── Reconciliation warning bar ── */}
+            {hasRecon && (warnCounts.discrepancy > 0 || warnCounts.unmapped > 0) && (
+              <div className="rounded-xl border border-warning-200 bg-warning-50 dark:border-warning-500/30 dark:bg-warning-500/10 px-4 py-3 flex flex-wrap items-center gap-3 text-sm">
+                <svg className="w-4 h-4 text-warning-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <span className="text-warning-700 dark:text-warning-400 font-medium">
+                  Anomalies de classification détectées :
+                </span>
+                {warnCounts.discrepancy > 0 && (
+                  <button
+                    onClick={() => setStatusFilter("discrepancy")}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-400 hover:opacity-80 transition-opacity"
+                  >
+                    {warnCounts.discrepancy} incohérence{warnCounts.discrepancy > 1 ? "s" : ""}
+                  </button>
+                )}
+                {warnCounts.unmapped > 0 && (
+                  <button
+                    onClick={() => setStatusFilter("unmapped")}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-400 hover:opacity-80 transition-opacity"
+                  >
+                    {warnCounts.unmapped} non répertorié{warnCounts.unmapped > 1 ? "s" : ""}
+                  </button>
+                )}
+                <span className="text-xs text-warning-600/70 dark:text-warning-400/60 ml-auto">
+                  Cliquez sur un badge pour filtrer · Les montants sont calculés selon les règles SCE
+                </span>
+              </div>
+            )}
+
+            {/* ── Filters ── */}
+            <div className="flex flex-col md:flex-row gap-3">
               <input
                 type="text"
-                placeholder="Search by code or label..."
+                placeholder="Rechercher par code, libellé ou rubrique…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="px-3 py-2 border rounded-lg w-full md:w-1/2 dark:bg-gray-800 dark:border-gray-700"
+                className="px-3 py-2 border rounded-lg w-full md:w-1/2 dark:bg-gray-800 dark:border-gray-700 text-sm"
               />
-
-              {/* Prefix Filter */}
               <input
                 type="text"
-                placeholder="Filter by prefix (e.g. 1, 401)"
+                placeholder="Filtrer par préfixe (ex : 1, 401)"
                 value={prefix}
                 onChange={(e) => setPrefix(e.target.value)}
-                className="px-3 py-2 border rounded-lg w-full md:w-1/3 dark:bg-gray-800 dark:border-gray-700"
+                className="px-3 py-2 border rounded-lg w-full md:w-1/4 dark:bg-gray-800 dark:border-gray-700 text-sm"
               />
+              {/* Status filter — only shown when reconciliation data exists */}
+              {hasRecon && (
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                  className="px-3 py-2 border rounded-lg w-full md:w-auto dark:bg-gray-800 dark:border-gray-700 text-sm"
+                >
+                  <option value="all">Tous les statuts</option>
+                  <option value="ok">✓ OK</option>
+                  <option value="discrepancy">⚠ Incohérence</option>
+                  <option value="unmapped">ℹ Non répertorié</option>
+                </select>
+              )}
             </div>
 
-            {/* 📊 Totals */}
+            {/* ── Totals ── */}
             <div className="space-y-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm font-medium">
                 {activeColumns.debit && (
                   <div className="flex justify-between">
-                    <span>Total Debit:</span>
+                    <span>Total Débit :</span>
                     <span>{formatCurrency(totalDebit)}</span>
                   </div>
                 )}
                 {activeColumns.credit && (
                   <div className="flex justify-between">
-                    <span>Total Credit:</span>
+                    <span>Total Crédit :</span>
                     <span>{formatCurrency(totalCredit)}</span>
                   </div>
                 )}
                 {(activeColumns.debit || activeColumns.credit) && (
-                  <div
-                    className={
-                      difference !== 0
-                        ? "flex justify-between text-red-500 font-semibold"
-                        : "flex justify-between text-green-500"
-                    }
-                  >
-                    <span>Difference:</span>
+                  <div className={difference !== 0 ? "flex justify-between text-red-500 font-semibold" : "flex justify-between text-green-500"}>
+                    <span>Différence :</span>
                     <span>{formatCurrency(difference)}</span>
                   </div>
                 )}
               </div>
-
               {(activeColumns.solde_final_debit || activeColumns.solde_final_credit || activeColumns.solde_final) && (
                 <div className="border-t border-gray-300 dark:border-gray-600 pt-3 mt-3">
-                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-semibold">Final Balances</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-semibold">Soldes finaux</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm font-medium">
                     {activeColumns.solde_final_debit && (
                       <div className="flex justify-between">
-                        <span>Solde Fin Débit:</span>
+                        <span>Solde Fin Dbt :</span>
                         <span>{formatCurrency(totalSoldeFinalDebit)}</span>
                       </div>
                     )}
                     {activeColumns.solde_final_credit && (
                       <div className="flex justify-between">
-                        <span>Solde Fin Crédit:</span>
+                        <span>Solde Fin Cdt :</span>
                         <span>{formatCurrency(totalSoldeFinalCredit)}</span>
                       </div>
                     )}
                     {(activeColumns.solde_final_debit || activeColumns.solde_final_credit) && (
-                      <div
-                        className={
-                          totalSoldeFinalDebit !== totalSoldeFinalCredit
-                            ? "flex justify-between text-red-500 font-semibold"
-                            : "flex justify-between text-green-500"
-                        }
-                      >
-                        <span>Status:</span>
-                        <span>{totalSoldeFinalDebit === totalSoldeFinalCredit ? "✓ Balanced" : "✗ Unbalanced"}</span>
+                      <div className={totalSoldeFinalDebit !== totalSoldeFinalCredit ? "flex justify-between text-red-500 font-semibold" : "flex justify-between text-green-500"}>
+                        <span>Statut :</span>
+                        <span>{totalSoldeFinalDebit === totalSoldeFinalCredit ? "✓ Équilibré" : "✗ Déséquilibré"}</span>
                       </div>
                     )}
                   </div>
@@ -295,263 +390,220 @@ export default function UploadDetailsPage() {
               )}
             </div>
 
-            {/* 📋 Table */}
+            {/* ── Count ── */}
+            <p className="text-xs text-gray-400 dark:text-gray-500 text-right">
+              {filteredAccounts.length} compte{filteredAccounts.length !== 1 ? "s" : ""} affiché{filteredAccounts.length !== 1 ? "s" : ""}
+              {statusFilter !== "all" && (
+                <button
+                  onClick={() => setStatusFilter("all")}
+                  className="ml-2 underline hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  Effacer le filtre
+                </button>
+              )}
+            </p>
+
+            {/* ── Table ── */}
             <div className="overflow-auto max-h-[600px] border border-gray-200 dark:border-gray-700 rounded-lg">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
+                <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
                   <tr>
                     <th className="px-3 py-2 text-left">Code</th>
-                    <th className="px-3 py-2 text-left">Label</th>
-                    {activeColumns.opening_debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Opening Debit</th>}
-                    {activeColumns.opening_credit && <th className="px-3 py-2 text-right">Opening Credit</th>}
-                    {activeColumns.debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Debit</th>}
-                    {activeColumns.credit && <th className="px-3 py-2 text-right">Credit</th>}
-                    {activeColumns.solde_debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Solde Pér Dbt</th>}
-                    {activeColumns.solde_credit && <th className="px-3 py-2 text-right">Solde Pér Cdt</th>}
-                    {activeColumns.solde_final_debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Solde Fin Dbt</th>}
-                    {activeColumns.solde_final_credit && <th className="px-3 py-2 text-right">Solde Fin Cdt</th>}
-                    {activeColumns.solde_final && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Solde Final</th>}
+                    <th className="px-3 py-2 text-left">Libellé</th>
+
+                    {/* Rubrique source — shown when any row has a value */}
+                    {activeColumns.source_rubrique && (
+                      <th className="px-3 py-2 text-left border-l border-gray-300 dark:border-gray-600 whitespace-nowrap">
+                        Rubrique source
+                      </th>
+                    )}
+
+                    {/* Reconciliation status — shown when bilan data_quality loaded */}
+                    {hasRecon && (
+                      <th className="px-3 py-2 text-left border-l border-gray-300 dark:border-gray-600 whitespace-nowrap">
+                        Statut SCE
+                      </th>
+                    )}
+
+                    {activeColumns.opening_debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 whitespace-nowrap">Ouv. Dbt</th>}
+                    {activeColumns.opening_credit && <th className="px-3 py-2 text-right whitespace-nowrap">Ouv. Cdt</th>}
+                    {activeColumns.debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600">Débit</th>}
+                    {activeColumns.credit && <th className="px-3 py-2 text-right">Crédit</th>}
+                    {activeColumns.solde_debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 whitespace-nowrap">Solde Pér Dbt</th>}
+                    {activeColumns.solde_credit && <th className="px-3 py-2 text-right whitespace-nowrap">Solde Pér Cdt</th>}
+                    {activeColumns.solde_final_debit && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 whitespace-nowrap">Solde Fin Dbt</th>}
+                    {activeColumns.solde_final_credit && <th className="px-3 py-2 text-right whitespace-nowrap">Solde Fin Cdt</th>}
+                    {activeColumns.solde_final && <th className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 whitespace-nowrap">Solde Final</th>}
                   </tr>
                 </thead>
 
                 <tbody>
-                  {filteredAccounts.map((acc) => (
-                    <tr
-                      key={acc.id}
-                      className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      onContextMenu={(e) => handleRightClick(e, acc.id, acc.account_code, acc.label || "")}
-                    >
-                      <td 
-                        className="px-3 py-2 font-medium cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                        onDoubleClick={() => handleCellDoubleClick(acc.id, "account_code", acc.account_code)}
+                  {filteredAccounts.map((acc) => {
+                    const recon = reconMap.get(acc.account_code);
+                    return (
+                      <tr
+                        key={acc.id}
+                        className={`border-b border-gray-200 dark:border-gray-700 transition-colors ${rowBg(recon?.status)}`}
+                        onContextMenu={(e) => handleRightClick(e, acc.id, acc.account_code, acc.label || "")}
                       >
-                        {editingCell?.accountId === acc.id && editingCell.field === "account_code" ? (
-                          <input
-                            autoFocus
-                            type="text"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            onBlur={handleSaveEdit}
-                            className="w-full px-2 py-1 border border-blue-500 rounded"
-                          />
-                        ) : (
-                          acc.account_code
+                        {/* Code */}
+                        <td
+                          className="px-3 py-2 font-mono font-medium cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30"
+                          onDoubleClick={() => handleCellDoubleClick(acc.id, "account_code", acc.account_code)}
+                        >
+                          {editingCell?.accountId === acc.id && editingCell.field === "account_code" ? (
+                            <input autoFocus type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded" />
+                          ) : (
+                            acc.account_code
+                          )}
+                        </td>
+
+                        {/* Label */}
+                        <td
+                          className="px-3 py-2 cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30"
+                          onDoubleClick={() => handleCellDoubleClick(acc.id, "label", acc.label || "")}
+                        >
+                          {editingCell?.accountId === acc.id && editingCell.field === "label" ? (
+                            <input autoFocus type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded" />
+                          ) : (
+                            <span className="text-gray-700 dark:text-gray-300">{acc.label || "—"}</span>
+                          )}
+                        </td>
+
+                        {/* Rubrique source */}
+                        {activeColumns.source_rubrique && (
+                          <td className="px-3 py-2 border-l border-gray-200 dark:border-gray-700">
+                            {acc.source_rubrique ? (
+                              <span
+                                className={`inline-block max-w-[200px] truncate text-xs px-2 py-0.5 rounded ${
+                                  recon?.status === "discrepancy"
+                                    ? "bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-300 font-medium"
+                                    : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                                }`}
+                                title={
+                                  recon?.status === "discrepancy" && recon.category
+                                    ? `Source : "${acc.source_rubrique}" → SCE : "${recon.category}"`
+                                    : acc.source_rubrique
+                                }
+                              >
+                                {acc.source_rubrique}
+                              </span>
+                            ) : (
+                              <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                            )}
+                          </td>
                         )}
-                      </td>
-                      <td 
-                        className="px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                        onDoubleClick={() => handleCellDoubleClick(acc.id, "label", acc.label || "")}
-                      >
-                        {editingCell?.accountId === acc.id && editingCell.field === "label" ? (
-                          <input
-                            autoFocus
-                            type="text"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            onBlur={handleSaveEdit}
-                            className="w-full px-2 py-1 border border-blue-500 rounded"
-                          />
-                        ) : (
-                          acc.label || "-"
+
+                        {/* Statut SCE */}
+                        {hasRecon && (
+                          <td className="px-3 py-2 border-l border-gray-200 dark:border-gray-700">
+                            {recon ? (
+                              <StatusBadge status={recon.status} warning={recon.warning} />
+                            ) : (
+                              <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                            )}
+                          </td>
                         )}
-                      </td>
-                      {activeColumns.opening_debit && (
-                        <td 
-                          className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                          onDoubleClick={() => handleCellDoubleClick(acc.id, "opening_debit", acc.opening_debit)}
-                        >
-                          {editingCell?.accountId === acc.id && editingCell.field === "opening_debit" ? (
-                            <input
-                              autoFocus
-                              type="number"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              onBlur={handleSaveEdit}
-                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
-                            />
-                          ) : (
-                            formatCurrency(acc.opening_debit)
-                          )}
-                        </td>
-                      )}
-                      {activeColumns.opening_credit && (
-                        <td 
-                          className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                          onDoubleClick={() => handleCellDoubleClick(acc.id, "opening_credit", acc.opening_credit)}
-                        >
-                          {editingCell?.accountId === acc.id && editingCell.field === "opening_credit" ? (
-                            <input
-                              autoFocus
-                              type="number"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              onBlur={handleSaveEdit}
-                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
-                            />
-                          ) : (
-                            formatCurrency(acc.opening_credit)
-                          )}
-                        </td>
-                      )}
-                      {activeColumns.debit && (
-                        <td 
-                          className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                          onDoubleClick={() => handleCellDoubleClick(acc.id, "debit", acc.debit)}
-                        >
-                          {editingCell?.accountId === acc.id && editingCell.field === "debit" ? (
-                            <input
-                              autoFocus
-                              type="number"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              onBlur={handleSaveEdit}
-                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
-                            />
-                          ) : (
-                            formatCurrency(acc.debit)
-                          )}
-                        </td>
-                      )}
-                      {activeColumns.credit && (
-                        <td 
-                          className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                          onDoubleClick={() => handleCellDoubleClick(acc.id, "credit", acc.credit)}
-                        >
-                          {editingCell?.accountId === acc.id && editingCell.field === "credit" ? (
-                            <input
-                              autoFocus
-                              type="number"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              onBlur={handleSaveEdit}
-                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
-                            />
-                          ) : (
-                            formatCurrency(acc.credit)
-                          )}
-                        </td>
-                      )}
-                      {activeColumns.solde_debit && (
-                        <td 
-                          className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                          onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_debit", acc.solde_debit)}
-                        >
-                          {editingCell?.accountId === acc.id && editingCell.field === "solde_debit" ? (
-                            <input
-                              autoFocus
-                              type="number"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              onBlur={handleSaveEdit}
-                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
-                            />
-                          ) : (
-                            formatCurrency(acc.solde_debit)
-                          )}
-                        </td>
-                      )}
-                      {activeColumns.solde_credit && (
-                        <td 
-                          className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                          onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_credit", acc.solde_credit)}
-                        >
-                          {editingCell?.accountId === acc.id && editingCell.field === "solde_credit" ? (
-                            <input
-                              autoFocus
-                              type="number"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              onBlur={handleSaveEdit}
-                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
-                            />
-                          ) : (
-                            formatCurrency(acc.solde_credit)
-                          )}
-                        </td>
-                      )}
-                      {activeColumns.solde_final_debit && (
-                        <td 
-                          className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                          onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_final_debit", acc.solde_final_debit)}
-                        >
-                          {editingCell?.accountId === acc.id && editingCell.field === "solde_final_debit" ? (
-                            <input
-                              autoFocus
-                              type="number"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              onBlur={handleSaveEdit}
-                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
-                            />
-                          ) : (
-                            formatCurrency(acc.solde_final_debit)
-                          )}
-                        </td>
-                      )}
-                      {activeColumns.solde_final_credit && (
-                        <td 
-                          className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                          onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_final_credit", acc.solde_final_credit)}
-                        >
-                          {editingCell?.accountId === acc.id && editingCell.field === "solde_final_credit" ? (
-                            <input
-                              autoFocus
-                              type="number"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              onBlur={handleSaveEdit}
-                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
-                            />
-                          ) : (
-                            formatCurrency(acc.solde_final_credit)
-                          )}
-                        </td>
-                      )}
-                      {activeColumns.solde_final && (
-                        <td 
-                          className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                          onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_final", acc.solde_final)}
-                        >
-                          {editingCell?.accountId === acc.id && editingCell.field === "solde_final" ? (
-                            <input
-                              autoFocus
-                              type="number"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              onBlur={handleSaveEdit}
-                              className="w-full px-2 py-1 border border-blue-500 rounded text-right"
-                            />
-                          ) : (
-                            formatCurrency(acc.solde_final)
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  ))}
+
+                        {/* Numeric columns — unchanged from original */}
+                        {activeColumns.opening_debit && (
+                          <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30" onDoubleClick={() => handleCellDoubleClick(acc.id, "opening_debit", acc.opening_debit)}>
+                            {editingCell?.accountId === acc.id && editingCell.field === "opening_debit" ? (
+                              <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded text-right" />
+                            ) : formatCurrency(acc.opening_debit)}
+                          </td>
+                        )}
+                        {activeColumns.opening_credit && (
+                          <td className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30" onDoubleClick={() => handleCellDoubleClick(acc.id, "opening_credit", acc.opening_credit)}>
+                            {editingCell?.accountId === acc.id && editingCell.field === "opening_credit" ? (
+                              <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded text-right" />
+                            ) : formatCurrency(acc.opening_credit)}
+                          </td>
+                        )}
+                        {activeColumns.debit && (
+                          <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30" onDoubleClick={() => handleCellDoubleClick(acc.id, "debit", acc.debit)}>
+                            {editingCell?.accountId === acc.id && editingCell.field === "debit" ? (
+                              <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded text-right" />
+                            ) : formatCurrency(acc.debit)}
+                          </td>
+                        )}
+                        {activeColumns.credit && (
+                          <td className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30" onDoubleClick={() => handleCellDoubleClick(acc.id, "credit", acc.credit)}>
+                            {editingCell?.accountId === acc.id && editingCell.field === "credit" ? (
+                              <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded text-right" />
+                            ) : formatCurrency(acc.credit)}
+                          </td>
+                        )}
+                        {activeColumns.solde_debit && (
+                          <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30" onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_debit", acc.solde_debit)}>
+                            {editingCell?.accountId === acc.id && editingCell.field === "solde_debit" ? (
+                              <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded text-right" />
+                            ) : formatCurrency(acc.solde_debit)}
+                          </td>
+                        )}
+                        {activeColumns.solde_credit && (
+                          <td className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30" onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_credit", acc.solde_credit)}>
+                            {editingCell?.accountId === acc.id && editingCell.field === "solde_credit" ? (
+                              <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded text-right" />
+                            ) : formatCurrency(acc.solde_credit)}
+                          </td>
+                        )}
+                        {activeColumns.solde_final_debit && (
+                          <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30" onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_final_debit", acc.solde_final_debit)}>
+                            {editingCell?.accountId === acc.id && editingCell.field === "solde_final_debit" ? (
+                              <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded text-right" />
+                            ) : formatCurrency(acc.solde_final_debit)}
+                          </td>
+                        )}
+                        {activeColumns.solde_final_credit && (
+                          <td className="px-3 py-2 text-right cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30" onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_final_credit", acc.solde_final_credit)}>
+                            {editingCell?.accountId === acc.id && editingCell.field === "solde_final_credit" ? (
+                              <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded text-right" />
+                            ) : formatCurrency(acc.solde_final_credit)}
+                          </td>
+                        )}
+                        {activeColumns.solde_final && (
+                          <td className="px-3 py-2 text-right border-l border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30" onDoubleClick={() => handleCellDoubleClick(acc.id, "solde_final", acc.solde_final)}>
+                            {editingCell?.accountId === acc.id && editingCell.field === "solde_final" ? (
+                              <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded text-right" />
+                            ) : formatCurrency(acc.solde_final)}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 
               {filteredAccounts.length === 0 && (
-                <div className="text-center py-6 text-gray-500">
-                  No matching accounts
+                <div className="text-center py-6 text-gray-500 text-sm">
+                  Aucun compte trouvé
                 </div>
               )}
             </div>
+
+            {/* Legend (only when recon columns visible) */}
+            {hasRecon && (
+              <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400 pt-1">
+                <span className="font-medium">Légende :</span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-sm bg-success-100 dark:bg-success-500/20 border border-success-300 dark:border-success-500/30" />
+                  OK — classification conforme aux règles SCE
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-sm bg-warning-100 dark:bg-warning-500/20 border border-warning-300 dark:border-warning-500/30" />
+                  Non répertorié — compte absent des règles SCE
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-sm bg-error-100 dark:bg-error-500/20 border border-error-300 dark:border-error-500/30" />
+                  Incohérence — rubrique source ≠ règle SCE (règle appliquée)
+                </span>
+              </div>
+            )}
           </div>
         )}
 
-        {/* 🎯 Context Menu */}
+        {/* Context menu */}
         {contextMenu && (
           <div
             className="fixed bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-50"
@@ -560,44 +612,29 @@ export default function UploadDetailsPage() {
           >
             <button
               className="block w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
-              onClick={() => setDeleteConfirm({
-                isOpen: true,
-                accountId: contextMenu.accountId,
-                code: contextMenu.code,
-                label: contextMenu.label
-              })}
+              onClick={() => setDeleteConfirm({ isOpen: true, accountId: contextMenu.accountId, code: contextMenu.code, label: contextMenu.label })}
             >
-              Delete
+              Supprimer
             </button>
           </div>
         )}
 
-        {/* 🗑️ Delete Confirmation Modal */}
+        {/* Delete confirmation modal */}
         {deleteConfirm?.isOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Delete Account?
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Supprimer ce compte ?</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Are you sure you want to delete this account?
-                <br />
-                <strong>Code:</strong> {deleteConfirm.code}
-                <br />
-                <strong>Label:</strong> {deleteConfirm.label}
+                Cette action est irréversible.<br />
+                <strong>Code :</strong> {deleteConfirm.code}<br />
+                <strong>Libellé :</strong> {deleteConfirm.label}
               </p>
               <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setDeleteConfirm(null)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Cancel
+                <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                  Annuler
                 </button>
-                <button
-                  onClick={handleDeleteAccount}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
-                >
-                  Delete
+                <button onClick={handleDeleteAccount} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg">
+                  Supprimer
                 </button>
               </div>
             </div>

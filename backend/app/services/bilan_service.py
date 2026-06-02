@@ -418,12 +418,19 @@ class BilanService:
             rules = self.rules_loader.load_rules()
             tree  = rules["bilan_comptable_tunisien"]
 
-            # 3. Per-line reconciliation: classify every account via rules, compare
-            #    to source Rubrique, collect discrepancy/unmapped warnings.
-            #    INVARIANT: this step never changes how amounts are summed —
-            #    process_tree still drives the math independently via the same rules.
-            recon_results = reconcile_all(accounts, self.rules_loader)
-            data_quality  = build_data_quality(recon_results, has_rubrique_column)
+            # 3. Per-line reconciliation: only run when the source file actually had
+            #    a Rubrique column — there is nothing to reconcile without one.
+            if has_rubrique_column:
+                recon_results = reconcile_all(accounts, self.rules_loader)
+                data_quality  = build_data_quality(recon_results, has_rubrique_column)
+            else:
+                data_quality = {
+                    "rubrique_present":  False,
+                    "discrepancy_count": 0,
+                    "unmapped_count":    0,
+                    "flagged_lines":     [],
+                    "lines":             [],
+                }
 
             discrepancy_count = data_quality["discrepancy_count"]
             unmapped_count    = data_quality["unmapped_count"]

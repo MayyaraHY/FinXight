@@ -48,6 +48,7 @@ def account_to_dict(account):
         "upload_id": account.upload_id,
         "account_code": account.account_code,
         "label": account.label,
+        "source_rubrique": account.source_rubrique if account.source_rubrique else None,
         "debit": float(account.debit) if account.debit is not None else None,
         "credit": float(account.credit) if account.credit is not None else None,
         "solde_debit": float(account.solde_debit) if account.solde_debit is not None else None,

@@ -7,6 +7,7 @@ export type Account = {
 
   account_code: string;
   label?: string | null;
+  source_rubrique?: string | null;
 
   debit?: number | null;
   credit?: number | null;

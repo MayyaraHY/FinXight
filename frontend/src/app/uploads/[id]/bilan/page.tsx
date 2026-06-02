@@ -100,6 +100,14 @@ type ReconMap = Map<string, ReconciliationLine>;
 
 type ItemRecord = Record<string, unknown>;
 
+type ViewMode = "classes" | "structure";
+
+// Human-readable labels for non-leaf grouping nodes in the rule tree (the leaves
+// already carry their own `label`). Used by the "official structure" view.
+const GROUP_LABELS: Record<string, string> = {
+  actifs_immobilises: "Actifs immobilisés",
+};
+
 // ===== HELPERS =====
 
 function isValidItem(item: unknown): item is SectionItem {
@@ -109,6 +117,23 @@ function isValidItem(item: unknown): item is SectionItem {
     "amount" in item &&
     "label" in item
   );
+}
+
+// Fallback: turn a snake_case rule key into a readable title.
+function prettifyKey(key: string): string {
+  const text = key.replace(/_/g, " ").trim();
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+// Recursively sum the `amount` of every leaf under a (possibly nested) node.
+function sumLeafAmounts(node: ItemRecord): number {
+  return Object.values(node).reduce<number>((total, value) => {
+    if (isValidItem(value)) return total + value.amount;
+    if (value && typeof value === "object") {
+      return total + sumLeafAmounts(value as ItemRecord);
+    }
+    return total;
+  }, 0);
 }
 
 function renderItemsHelper(
@@ -169,16 +194,21 @@ export default function BilanPage() {
   const uploadId = Number(params.id);
 
   const [bilanData, setBilanData] = useState<BilanData | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("classes");
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isOpen: exportOpen, openModal: openExport, closeModal: closeExport } = useModal();
 
-  // Build account-code → reconciliation-line lookup from data_quality.lines
+  // Build account-code → reconciliation-line lookup from data_quality.lines.
+  // Only populate when the upload actually had a rubrique column; otherwise keep
+  // the map empty so no rubrique UI (column, icons, highlights) appears at all.
   const reconMap: ReconMap = React.useMemo(() => {
     const map = new Map<string, ReconciliationLine>();
-    bilanData?.data_quality?.lines?.forEach((l) => map.set(l.code, l));
+    if (bilanData?.data_quality?.rubrique_present) {
+      bilanData.data_quality.lines?.forEach((l) => map.set(l.code, l));
+    }
     return map;
   }, [bilanData]);
 
@@ -272,6 +302,29 @@ export default function BilanPage() {
           </p>
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
+          {/* View-mode toggle: classes breakdown vs official bilan structure */}
+          <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800/60">
+            <button
+              onClick={() => setViewMode("classes")}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                viewMode === "classes"
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              }`}
+            >
+              Par classes
+            </button>
+            <button
+              onClick={() => setViewMode("structure")}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                viewMode === "structure"
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              }`}
+            >
+              Structure officielle
+            </button>
+          </div>
           <span
             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
               isBalanced
@@ -351,67 +404,292 @@ export default function BilanPage() {
       )}
 
       {/* ── Two-column layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* ACTIF */}
-        <div className="space-y-4">
-          <ColumnLabel>Actif</ColumnLabel>
-          <SectionCard
-            title="Actifs Non-Courants"
-            total={bilanData.totals.actif.actifs_non_courants}
-          >
-            {renderItems(bilanData.bilan.actifs.actifs_non_courants)}
-          </SectionCard>
-          <SectionCard
-            title="Actifs Courants"
-            total={bilanData.totals.actif.actifs_courants}
-          >
-            {renderItems(bilanData.bilan.actifs.actifs_courants)}
-          </SectionCard>
-          {/* Actif total footer */}
-          <TotalFooter
-            label="Total Actif"
-            value={bilanData.totals.actif.total_actif}
-          />
-        </div>
+      {viewMode === "classes" ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* ACTIF */}
+          <div className="space-y-4">
+            <ColumnLabel>Actif</ColumnLabel>
+            <SectionCard
+              title="Actifs Non-Courants"
+              total={bilanData.totals.actif.actifs_non_courants}
+            >
+              {renderItems(bilanData.bilan.actifs.actifs_non_courants)}
+            </SectionCard>
+            <SectionCard
+              title="Actifs Courants"
+              total={bilanData.totals.actif.actifs_courants}
+            >
+              {renderItems(bilanData.bilan.actifs.actifs_courants)}
+            </SectionCard>
+            {/* Actif total footer */}
+            <TotalFooter
+              label="Total Actif"
+              value={bilanData.totals.actif.total_actif}
+            />
+          </div>
 
-        {/* PASSIF */}
-        <div className="space-y-4">
-          <ColumnLabel>Capitaux Propres &amp; Passif</ColumnLabel>
-          <SectionCard
-            title="Capitaux Propres"
-            total={bilanData.totals.passif.capitaux_propres}
-          >
-            {renderItems(
-              bilanData.bilan["capitaux propres et passifs"]["capitaux propres"]
-            )}
-          </SectionCard>
-          <SectionCard
-            title="Passifs Non-Courants"
-            total={bilanData.totals.passif.passifs_non_courants}
-          >
-            {renderItems(
-              bilanData.bilan["capitaux propres et passifs"].passifs[
-                "passifs non courant"
-              ]
-            )}
-          </SectionCard>
-          <SectionCard
-            title="Passifs Courants"
-            total={bilanData.totals.passif.passifs_courants}
-          >
-            {renderItems(
-              bilanData.bilan["capitaux propres et passifs"].passifs[
-                "passifs courant"
-              ]
-            )}
-          </SectionCard>
-          {/* Passif total footer */}
-          <TotalFooter
-            label="Total Passif"
-            value={bilanData.totals.passif.total_passif}
-          />
+          {/* PASSIF */}
+          <div className="space-y-4">
+            <ColumnLabel>Capitaux Propres &amp; Passif</ColumnLabel>
+            <SectionCard
+              title="Capitaux Propres"
+              total={bilanData.totals.passif.capitaux_propres}
+            >
+              {renderItems(
+                bilanData.bilan["capitaux propres et passifs"]["capitaux propres"]
+              )}
+            </SectionCard>
+            <SectionCard
+              title="Passifs Non-Courants"
+              total={bilanData.totals.passif.passifs_non_courants}
+            >
+              {renderItems(
+                bilanData.bilan["capitaux propres et passifs"].passifs[
+                  "passifs non courant"
+                ]
+              )}
+            </SectionCard>
+            <SectionCard
+              title="Passifs Courants"
+              total={bilanData.totals.passif.passifs_courants}
+            >
+              {renderItems(
+                bilanData.bilan["capitaux propres et passifs"].passifs[
+                  "passifs courant"
+                ]
+              )}
+            </SectionCard>
+            {/* Passif total footer */}
+            <TotalFooter
+              label="Total Passif"
+              value={bilanData.totals.passif.total_passif}
+            />
+          </div>
         </div>
+      ) : (
+        <StructureView bilanData={bilanData} />
+      )}
+    </div>
+  );
+}
+
+// ===== OFFICIAL STRUCTURE VIEW =====
+//
+// Mirrors the layout of the SCE maquette / bilan_rules.json: each asset leaf is
+// expanded into its gross value, its accumulated depreciation/provisions, and a
+// "Total <leaf>" subtotal; grouping nodes get their own header + subtotal; each
+// section closes with its statutory total. All amounts come from the same
+// `amount_details` the classes view uses — no recomputation here.
+
+function StructureView({ bilanData }: { bilanData: BilanData }) {
+  const { bilan, totals } = bilanData;
+  const passif = bilan["capitaux propres et passifs"];
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {/* ACTIF */}
+      <div className="space-y-4">
+        <ColumnLabel>Actif</ColumnLabel>
+        <StructureCard title="Actifs Non Courants">
+          {renderStructureNodes(bilan.actifs.actifs_non_courants, 0)}
+          <StructureSubtotal
+            label="Total des Actifs Non Courants"
+            value={totals.actif.actifs_non_courants}
+            level="section"
+          />
+        </StructureCard>
+        <StructureCard title="Actifs Courants">
+          {renderStructureNodes(bilan.actifs.actifs_courants, 0)}
+          <StructureSubtotal
+            label="Total des Actifs Courants"
+            value={totals.actif.actifs_courants}
+            level="section"
+          />
+        </StructureCard>
+        <TotalFooter label="Total des Actifs" value={totals.actif.total_actif} />
       </div>
+
+      {/* PASSIF */}
+      <div className="space-y-4">
+        <ColumnLabel>Capitaux Propres &amp; Passif</ColumnLabel>
+        <StructureCard title="Capitaux Propres">
+          {renderStructureNodes(passif["capitaux propres"], 0)}
+          <StructureSubtotal
+            label="Total des Capitaux Propres"
+            value={totals.passif.capitaux_propres}
+            level="section"
+          />
+        </StructureCard>
+        <StructureCard title="Passifs Non Courants">
+          {renderStructureNodes(passif.passifs["passifs non courant"], 0)}
+          <StructureSubtotal
+            label="Total des Passifs Non Courants"
+            value={totals.passif.passifs_non_courants}
+            level="section"
+          />
+        </StructureCard>
+        <StructureCard title="Passifs Courants">
+          {renderStructureNodes(passif.passifs["passifs courant"], 0)}
+          <StructureSubtotal
+            label="Total des Passifs Courants"
+            value={totals.passif.passifs_courants}
+            level="section"
+          />
+        </StructureCard>
+        <TotalFooter
+          label="Total des Capitaux Propres et Passifs"
+          value={totals.passif.total_passif}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Walk a (possibly nested) rule sub-tree and emit structure rows. Leaves render
+// gross/amort/subtotal lines; grouping nodes render a header, their children,
+// then a "Total <group>" subtotal.
+function renderStructureNodes(
+  nodes: ItemRecord,
+  indent: number
+): React.ReactNode[] {
+  return Object.entries(nodes).flatMap(([key, value]) => {
+    if (isValidItem(value)) {
+      return [<StructureLeaf key={key} item={value} indent={indent} />];
+    }
+    if (!value || typeof value !== "object") return [];
+
+    const group = value as ItemRecord;
+    const groupLabel = GROUP_LABELS[key] ?? prettifyKey(key);
+    return [
+      <StructureRow
+        key={`${key}__header`}
+        label={groupLabel}
+        indent={indent}
+        variant="groupHeader"
+      />,
+      ...renderStructureNodes(group, indent + 1),
+      <StructureSubtotal
+        key={`${key}__total`}
+        label={`Total ${groupLabel}`}
+        value={sumLeafAmounts(group)}
+        level="group"
+        indent={indent + 1}
+      />,
+    ];
+  });
+}
+
+function StructureCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden">
+      <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-white/[0.02]">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          {title}
+        </h3>
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+// A single leaf rendered the "official" way: when it has accumulated
+// depreciation/provisions, it splits into a gross line, an amortization line
+// (shown negative) and a "Total <leaf>" subtotal; otherwise a single net line.
+function StructureLeaf({ item, indent }: { item: SectionItem; indent: number }) {
+  const d = item.amount_details;
+  const hasAmort = !!d && Math.abs(d.amortissement) > 0.005;
+
+  if (!hasAmort) {
+    return <StructureRow label={item.label} value={item.amount} indent={indent} variant="line" />;
+  }
+
+  return (
+    <>
+      <StructureRow label={item.label} value={d.brut} indent={indent} variant="line" />
+      <StructureRow
+        label="Amortissements et provisions"
+        value={-d.amortissement}
+        indent={indent}
+        variant="line"
+      />
+      <StructureSubtotal label={`Total ${item.label}`} value={item.amount} level="leaf" indent={indent} />
+    </>
+  );
+}
+
+interface StructureRowProps {
+  label: string;
+  value?: number;
+  indent: number;
+  variant: "line" | "groupHeader";
+}
+
+function StructureRow({ label, value, indent, variant }: StructureRowProps) {
+  const padLeft = 20 + indent * 18;
+
+  if (variant === "groupHeader") {
+    return (
+      <div
+        className="py-2.5 pr-5 border-b border-gray-100 dark:border-gray-800"
+        style={{ paddingLeft: padLeft }}
+      >
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+          {label}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center justify-between py-2 pr-5 border-b border-gray-50 dark:border-gray-800/50"
+      style={{ paddingLeft: padLeft }}
+    >
+      <span className="text-sm text-gray-600 dark:text-gray-400">{label}</span>
+      <span className="text-sm text-gray-700 dark:text-gray-300 tabular-nums ml-4 flex-shrink-0">
+        {formatCurrency(value ?? 0)}
+      </span>
+    </div>
+  );
+}
+
+// Subtotal rows at three weights: leaf totals, group totals, and section totals.
+function StructureSubtotal({
+  label,
+  value,
+  level,
+  indent = 0,
+}: {
+  label: string;
+  value: number;
+  level: "leaf" | "group" | "section";
+  indent?: number;
+}) {
+  const padLeft = 20 + indent * 18;
+
+  const styles = {
+    leaf: "border-b border-gray-100 dark:border-gray-800 bg-gray-50/40 dark:bg-white/[0.01] text-gray-700 dark:text-gray-300 font-medium",
+    group:
+      "border-b border-gray-100 dark:border-gray-800 bg-gray-50/70 dark:bg-white/[0.02] text-gray-800 dark:text-gray-200 font-semibold",
+    section:
+      "border-t border-gray-200 dark:border-gray-700 bg-gray-100/70 dark:bg-white/[0.04] text-gray-900 dark:text-white font-bold uppercase tracking-wide",
+  }[level];
+
+  return (
+    <div
+      className={`flex items-center justify-between py-2.5 pr-5 ${styles}`}
+      style={{ paddingLeft: padLeft }}
+    >
+      <span className={level === "section" ? "text-xs" : "text-sm"}>{label}</span>
+      <span className="text-sm tabular-nums ml-4 flex-shrink-0">
+        {formatCurrency(value)}
+      </span>
     </div>
   );
 }
