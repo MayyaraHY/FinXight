@@ -9,6 +9,7 @@ import Alert from "@/components/ui/alert/Alert";
 import { getAccountsByUpload, updateAccount, deleteAccount } from "@/services/accountService";
 import { getBilan } from "@/services/bilanService";
 import { getUpload } from "@/services/UploadService";
+import { getValidationReport, ValidationLine } from "@/services/validationService";
 import { Account } from "@/models/account";
 import { Upload } from "@/models/Upload";
 import { formatCurrency } from "@/utils/formatters";
@@ -99,6 +100,8 @@ export default function UploadDetailsPage() {
   const [upload, setUpload] = useState<Upload | null>(null);
   const [reconMap, setReconMap] = useState<ReconMap>(new Map());
   const [hasRecon, setHasRecon] = useState(false);   // bilan data_quality available
+  // Map of account_code → ValidationLine for codes flagged invalid by PCGT check
+  const [invalidMap, setInvalidMap] = useState<Map<string, ValidationLine>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -148,6 +151,18 @@ export default function UploadDetailsPage() {
         } catch {
           // Bilan not generated yet — reconciliation columns stay hidden
         }
+
+        // Try to load PCGT validation report (non-blocking — may still be pending)
+        try {
+          const valRes = await getValidationReport(uploadId);
+          if (valRes.status === "done" && valRes.data?.lines?.length) {
+            const map = new Map<string, ValidationLine>();
+            valRes.data.lines.forEach((l) => map.set(l.source_code, l));
+            setInvalidMap(map);
+          }
+        } catch {
+          // Validation not yet run — badges simply won't appear
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load data";
         setError(message);
@@ -189,7 +204,7 @@ export default function UploadDetailsPage() {
 
   // ===== DETECT ACTIVE COLUMNS =====
   const activeColumns = useMemo(() => ({
-    source_rubrique: accounts.some((acc) => !!acc.source_rubrique),
+    source_rubrique: filteredAccounts.some((acc) => acc.source_rubrique),
     opening_debit: filteredAccounts.some((acc) => acc.opening_debit !== null && acc.opening_debit !== undefined),
     opening_credit: filteredAccounts.some((acc) => acc.opening_credit !== null && acc.opening_credit !== undefined),
     debit: filteredAccounts.some((acc) => acc.debit !== null && acc.debit !== undefined),
@@ -199,7 +214,7 @@ export default function UploadDetailsPage() {
     solde_final_debit: filteredAccounts.some((acc) => acc.solde_final_debit !== null && acc.solde_final_debit !== undefined),
     solde_final_credit: filteredAccounts.some((acc) => acc.solde_final_credit !== null && acc.solde_final_credit !== undefined),
     solde_final: filteredAccounts.some((acc) => acc.solde_final !== null && acc.solde_final !== undefined),
-  }), [accounts, filteredAccounts]);
+  }), [filteredAccounts]);
 
   // ===== WARNING COUNTS (for the summary bar) =====
   const warnCounts = useMemo(() => {
@@ -454,7 +469,25 @@ export default function UploadDetailsPage() {
                           {editingCell?.accountId === acc.id && editingCell.field === "account_code" ? (
                             <input autoFocus type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSaveEdit} className="w-full px-2 py-1 border border-blue-500 rounded" />
                           ) : (
-                            acc.account_code
+                            <span className="inline-flex items-center gap-1.5">
+                              {acc.account_code}
+                              {invalidMap.has(acc.account_code) && (() => {
+                                const inv = invalidMap.get(acc.account_code)!;
+                                const tip = inv.suggested_code
+                                  ? `Code absent du PCGT — suggestion : ${inv.suggested_code} (${inv.suggested_label ?? ""})`
+                                  : "Code absent du PCGT";
+                                return (
+                                  <span
+                                    title={tip}
+                                    className="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-medium
+                                               bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-400
+                                               cursor-help whitespace-nowrap"
+                                  >
+                                    ⚠ invalide
+                                  </span>
+                                );
+                              })()}
+                            </span>
                           )}
                         </td>
 

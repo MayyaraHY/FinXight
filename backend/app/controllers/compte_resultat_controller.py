@@ -40,7 +40,30 @@ def generate_cr(
 
 
 # =====================================================
-# 2. GET SAVED CR
+# 2. AI ANALYSIS (POST — separate from generation)
+# =====================================================
+@router.post("/analyze/{upload_id}")
+def analyze_cr(
+    upload_id: int,
+    db: Session = Depends(get_db),
+    user: CurrentUser = Depends(current_user),
+):
+    """
+    Run AI diagnosis on the already-saved CR without recalculating.
+    Returns {"cr_diagnosis": "..."} when warnings exist, {"cr_diagnosis": null} when clean.
+    """
+    logger.info("cr/analyze upload_id=%s by user_id=%s", upload_id, user.id)
+    assert_upload_owned(db, upload_id, user)
+    try:
+        service = CompteResultatService(db)
+        result = service.analyze(upload_id)
+        return {"success": True, "data": result}
+    except ValueError as e:
+        return {"success": False, "message": str(e)}
+
+
+# =====================================================
+# 3. GET SAVED CR
 # =====================================================
 @router.get("/{upload_id}")
 def get_cr(

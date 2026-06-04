@@ -449,25 +449,71 @@ class BilanService:
             # 5. Compute section totals.
             totals = self.compute_totals(result)
 
+            # 5b. Deterministic validation — runs before LLM, always present in response.
+            from app.core.bilan_validator import run_all_checks
+            detected_issues = run_all_checks(accounts, result, totals, rules)
+
             final_result = {
-                "bilan":        result,
-                "totals":       totals,
-                "data_quality": data_quality,
+                "bilan":           result,
+                "totals":          totals,
+                "data_quality":    data_quality,
+                "detected_issues": [i.to_dict() for i in detected_issues],
             }
 
             # 6. Persist to DB
             self.repo.update(upload_id, final_result)
             logger.info(f"Bilan saved for upload {upload_id}")
 
-            # 7. AI interpretation (non-blocking — failure does not abort)
-            try:
-                from app.ai.ai_service_client import analyze_bilan
-                final_result["analysis"] = analyze_bilan(totals)
-            except Exception as e:
-                logger.warning(f"AI interpretation skipped: {e}")
-
             return final_result
 
         except Exception as e:
             logger.error(f"Bilan calculation failed for upload {upload_id}: {e}", exc_info=True)
             raise
+
+    # =====================================================
+    # AI ANALYSIS — dedicated method called by /analyze endpoint
+    # =====================================================
+    def analyze(self, upload_id: int) -> dict:
+        """
+        Run AI analysis on the already-saved bilan.
+        Returns {"analysis": "..."} for balanced bilans,
+        {"imbalance_analysis": "..."} for unbalanced ones.
+        Raises ValueError with a French message on failure.
+        """
+        bilan = self.repo.get_by_upload_id(upload_id)
+        if not bilan or not bilan.data:
+            raise ValueError("Aucun bilan trouvé pour cet upload. Générez d'abord le bilan.")
+
+        totals   = bilan.data.get("totals", {})
+        balanced = totals.get("balanced", True)
+        # Use pre-computed issues from calculate_and_save — do NOT recompute.
+        detected_issues = bilan.data.get("detected_issues", [])
+
+        if balanced:
+            from app.ai.ai_service_client import analyze_bilan
+            analysis = analyze_bilan(totals)
+            result = {"analysis": analysis}
+        else:
+            from app.ai.groq_client import ask_groq, KnowledgeScope
+            from app.ai.prompts import BILAN_IMBALANCE_PROMPT
+            import json as _json
+
+            context = {
+                "difference":      totals.get("difference"),
+                "totals":          totals,
+                "detected_issues": detected_issues,
+            }
+            prompt = BILAN_IMBALANCE_PROMPT.replace(
+                "{difference}",     f"{totals.get('difference', 0):,.3f}"
+            ).replace(
+                "{detected_issues}", _json.dumps(detected_issues, ensure_ascii=False, indent=2)
+            )
+            imbalance_analysis = ask_groq(prompt, context=context, scope=KnowledgeScope.NONE)
+            result = {"imbalance_analysis": imbalance_analysis}
+
+        # Persist the analysis into the saved bilan data
+        updated_data = dict(bilan.data)
+        updated_data.update(result)
+        self.repo.update(upload_id, updated_data)
+
+        return result

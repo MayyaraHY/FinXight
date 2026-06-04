@@ -313,6 +313,56 @@ class CompteResultatService:
             raise
 
     # =====================================================
+    # AI ANALYSIS — dedicated method called by /analyze endpoint
+    # =====================================================
+    def analyze(self, upload_id: int) -> dict:
+        """
+        Run AI diagnosis on the already-saved CR.
+        Returns {"cr_diagnosis": "..."} when warnings exist,
+        {"cr_diagnosis": None} when the CR is clean.
+        Raises ValueError with a French message on failure.
+        """
+        cr = self.repo.get_by_upload_id(upload_id)
+        if not cr or not cr.data:
+            raise ValueError("Aucun compte de résultat trouvé. Générez d'abord le CR.")
+
+        warnings = cr.data.get("warnings", [])
+        if not warnings:
+            return {"cr_diagnosis": None}
+
+        from app.ai.groq_client import ask_groq, KnowledgeScope
+        from app.ai.prompts import CR_DIAGNOSIS_PROMPT
+        from app.models.account import Account
+
+        accounts = (
+            self.db.query(Account)
+            .filter(Account.upload_id == upload_id)
+            .all()
+        )
+        accounts_payload = [
+            {"code": a.account_code, "label": a.label, "solde": float(self.get_balance(a))}
+            for a in accounts[:100]
+        ]
+        import json as _json
+        context = {
+            "cr_lines": cr.data.get("lines", {}),
+            "totals":   cr.data.get("totals", {}),
+            "warnings": warnings,
+        }
+        prompt = CR_DIAGNOSIS_PROMPT.replace(
+            "{warnings}", _json.dumps(warnings, ensure_ascii=False, indent=2)
+        )
+        cr_diagnosis = ask_groq(prompt, context=context, scope=KnowledgeScope.NONE)
+        result = {"cr_diagnosis": cr_diagnosis}
+
+        # Persist into saved CR data
+        updated_data = dict(cr.data)
+        updated_data.update(result)
+        self.repo.update(upload_id, updated_data)
+
+        return result
+
+    # =====================================================
     # UPDATE (manual override from controller)
     # =====================================================
     def update_cr(self, upload_id: int, data: dict) -> dict:

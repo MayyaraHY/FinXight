@@ -9,6 +9,9 @@ python-multipart
 numpy
 chardet
 fuzzywuzzy
+rapidfuzz
+pypdf
+pdfplumber
 sentence-transformers
 groq
 httpx

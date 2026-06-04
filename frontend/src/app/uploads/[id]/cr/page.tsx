@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { generateCR, getCR } from "@/services/compteResultatService";
+import { generateCR, getCR, analyzeCR } from "@/services/compteResultatService";
 import { formatCurrency } from "@/utils/formatters";
 import Button from "@/components/ui/button/Button";
 import ExportModal from "@/components/export/ExportModal";
@@ -46,6 +46,7 @@ interface CRData {
   lines: Record<string, CRLine>;
   totals: CRTotals;
   warnings: string[];
+  cr_diagnosis?: string;
 }
 
 interface CRResponse {
@@ -67,6 +68,7 @@ export default function CompteResultatPage() {
     useState<InventoryMethod>("permanent");
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
+  const [diagnosing, setDiagnosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isOpen: exportOpen, openModal: openExport, closeModal: closeExport } = useModal();
 
@@ -109,6 +111,23 @@ export default function CompteResultatPage() {
       );
     } finally {
       setRegenerating(false);
+    }
+  };
+
+  const handleDiagnose = async () => {
+    setDiagnosing(true);
+    try {
+      const res = await analyzeCR(uploadId);
+      if (res.success) {
+        setCRData((prev) => prev ? { ...prev, ...res.data } : prev);
+        setError(null);
+      } else {
+        setError(res.message || "Diagnostic IA échoué");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Diagnostic IA échoué");
+    } finally {
+      setDiagnosing(false);
     }
   };
 
@@ -190,9 +209,24 @@ export default function CompteResultatPage() {
             variant="primary"
             size="sm"
             onClick={handleRegenerate}
-            disabled={regenerating}
+            disabled={regenerating || diagnosing}
           >
             {regenerating ? "Recalcul…" : "Recalculer"}
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleDiagnose}
+            disabled={diagnosing || regenerating}
+            className="bg-brand-600 hover:bg-brand-700 text-white border-brand-600 flex items-center gap-1.5"
+          >
+            {diagnosing ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                Analyse…
+              </>
+            ) : (
+              <>✦ Diagnostic IA</>
+            )}
           </Button>
         </div>
       </div>
@@ -240,6 +274,22 @@ export default function CompteResultatPage() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* ── AI CR Diagnosis ── */}
+      {crData.cr_diagnosis && (
+        <div className="rounded-2xl border border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/15 p-5">
+          <p className="text-xs font-semibold text-error-600 dark:text-error-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+            <span>⚠</span> Diagnostic IA — Erreurs du compte de résultat
+          </p>
+          <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed space-y-1">
+            {crData.cr_diagnosis?.split("\n").map((line, i) => (
+              <p key={i} dangerouslySetInnerHTML={{
+                __html: line.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+              }} />
+            ))}
+          </div>
         </div>
       )}
 

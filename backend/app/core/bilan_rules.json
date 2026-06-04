@@ -1,5 +1,15 @@
 {
   "_source": "Plan de regroupement de référence — Maquette SCE tunisienne (PDF officiel). Toute modification doit citer la page source.",
+  "_validation": {
+    "convention_signe": "credit stocké en negatif, debit en positif (debit - credit)",
+    "regle_classe4": "un compte 4x ne peut figurer côté actif ET passif que via suffixe (DR)/(CR). Ex: (422 DR) = actif seulement si solde débiteur; 422 CR = passif seulement si solde créditeur.",
+    "note": "Les placements de comptes ci-dessous sont intentionnels et validés. Ne pas modifier sans référence à la maquette SCE officielle.",
+    "exemples_convention": [
+      "(422 DR) côté actif = avance sur salaire versée (solde débiteur uniquement)",
+      "422 CR côté passif = rémunération à payer (solde créditeur uniquement)",
+      "421 côté actif = cas exceptionnel (acompte sur salaire versé = solde débiteur)"
+    ]
+  },
   "bilan_comptable_tunisien": {
     "actifs": {
       "actifs_non_courants": {
@@ -39,7 +49,7 @@
         "autres_actifs_courants": {
           "label": "Autres actifs courants",
           "comptes_valeurs_brutes": [
-            "409", "421", "(422 DR)", "(423 DR)", "426", "4287", "431", "(433 DR)",
+            "409", "(422 DR)", "(423 DR)", "426", "4287", "(431 DR)", "(433 DR)",
             "4341", "4342", "(4349 DR)", "4366", "(4368 DR)", "4387", "(441 DR)",
             "(442 DR)", "446", "(448 DR)", "452", "455", "(457 DR)", "4587", "(46 DR)", "471"
           ],
@@ -106,7 +116,7 @@
           "autres_passifs_courants": {
             "label": "Autres passifs courants",
             "comptes_affectation": [
-              "419", "422 CR", "423 CR", "425", "427", "4282", "4286", "432",
+              "419", "421", "422 CR", "423 CR", "425", "427", "4282", "4286", "432",
               "433 CR",
               "4343", "4349 CR", "435", "4365", "4367", "4368 CR", "437", "4382", "4386",
               "441 CR", "442 CR", "447", "448 CR", "453", "454", "457 CR", "4586",

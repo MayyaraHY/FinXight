@@ -39,7 +39,31 @@ def generate_bilan(
 
 
 # =====================================================
-# 2. FETCH SAVED BILAN (GET)
+# 2. AI ANALYSIS (POST — separate from generation)
+# =====================================================
+@router.post("/analyze/{upload_id}")
+def analyze_bilan(
+    upload_id: int,
+    db: Session = Depends(get_db),
+    user: CurrentUser = Depends(current_user),
+):
+    """
+    Run AI analysis on the already-saved bilan without recalculating.
+    Returns {"analysis": "..."} for balanced bilans,
+    {"imbalance_analysis": "..."} for unbalanced ones.
+    """
+    logger.info("bilan/analyze upload_id=%s by user_id=%s", upload_id, user.id)
+    assert_upload_owned(db, upload_id, user)
+    try:
+        service = BilanService(db)
+        result = service.analyze(upload_id)
+        return {"success": True, "data": result}
+    except ValueError as e:
+        return {"success": False, "message": str(e)}
+
+
+# =====================================================
+# 3. FETCH SAVED BILAN (GET)
 # =====================================================
 @router.get("/{upload_id}")
 def get_bilan(

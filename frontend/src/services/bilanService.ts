@@ -23,3 +23,14 @@ export async function getBilan(uploadId: number) {
 
   return res.json();
 }
+
+// ===== ANALYZE (AI only — does not recalculate) =====
+export async function analyzeBilan(uploadId: number) {
+  const res = await fetchAuthed(`${API_URL}/analyze/${uploadId}`, {
+    method: "POST",
+  });
+
+  if (!res.ok) throw new Error("Bilan analysis failed");
+
+  return res.json();
+}

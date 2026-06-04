@@ -20,3 +20,12 @@ export async function getCR(uploadId: number) {
   if (!res.ok) throw new Error("Failed to fetch compte de résultat");
   return res.json();
 }
+
+// ===== ANALYZE (AI only — does not recalculate) =====
+export async function analyzeCR(uploadId: number) {
+  const res = await fetchAuthed(`${API_URL}/analyze/${uploadId}`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("CR analysis failed");
+  return res.json();
+}

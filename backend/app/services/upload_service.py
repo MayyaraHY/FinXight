@@ -102,6 +102,11 @@ def parse_csv_file(db, upload_id: int, background_tasks=None):
             from app.ai.anomaly_service import run_anomaly_detection
             background_tasks.add_task(run_anomaly_detection, upload_id)
 
+            # ✅ Schedule PCGT account validation (non-blocking). Runs off the
+            #    request so per-account LLM fallbacks never add upload latency.
+            from app.services.validation_service import run_account_validation
+            background_tasks.add_task(run_account_validation, upload_id)
+
         # 📝 Prepare result
         parse_result = {
             "inserted": len(validated_data),
@@ -179,6 +184,10 @@ def upload_and_parse_document(
         if background_tasks is not None:
             from app.ai.anomaly_service import run_anomaly_detection
             background_tasks.add_task(run_anomaly_detection, upload.id)
+
+            # ✅ Schedule PCGT account validation (non-blocking).
+            from app.services.validation_service import run_account_validation
+            background_tasks.add_task(run_account_validation, upload.id)
 
         # 📊 Result
         return {

@@ -1,0 +1,313 @@
+=== NC 01 — Page 5 (Compensation prohibition (actif/passif netting not allowed)) ===
+5 
+La compensation entre les postes d'actif et de passif  ou entre des postes de charges et de produits 
+n'est pas admise à moins qu'elle ne soit autorisée par les normes comptables.  
+22. Les états financiers font habituellement l'objet de vérification externe. Il est important pour les 
+utilisateurs de distinguer entre les états financiers qui ont fait l'objet d'une vérification des autres.  
+Afin d'accroître leur utilité, la présentation et la publication des états financiers vérifiés doivent être 
+accompagnés de l'opinion de vérification les concernant.  
+Le Bilan  
+23. Le bilan fournit l'information sur la situation financière de l'entreprise et particulièrement sur les 
+ressources économiques qu'elle contrôle ainsi que sur les obligations et les effets des transactions, 
+événements et circonstances susceptibles de modifier les ressources et les obligations.  
+Les ressources économiques, obtenues ou contrôlées, correspondent aux actifs alors que les 
+obligations correspondent aux passifs qui, avec les capitaux propres constituent la structure financière 
+de l'entreprise.  
+Les éléments inclus dans le bilan sont par conséquent les actifs, les passifs et les capitaux propres. 
+Ces différents éléments sont définis dans le cadre conceptuel.  
+24. La classification de ces différents éléments par nature, par destination ou eu égard  à leur liquidité 
+et exigibilité facilite l'analyse. La classification la plus appropriée est celle qui aidera les utilisateurs à 
+évaluer la nature, les montants, la liquidité et la destination (ou fonction) des ressources disponibles 
+d'une part et le montant et les échéances des obligations d'autre part.  
+25. La présente norme fait, dans le bilan, d'une part une distinction entre les actifs courants et les 
+actifs non courants et d'autre part, elle fait la distinction entre les passifs non courants et les passifs 
+courants.  
+ Distinction courant / non courant  
+26. La présentation des actifs et des passifs dans le corps du bilan doit faire ressortir la distinction 
+entre éléments courants et éléments non courants. La distinction courant, non courant découle en 
+général de la destination ou de l'utilisation réelle de l'élément et rarement de sa nature.  
+Les développements qui suivent ont pour objet de guider les entreprises dans le classement des actifs 
+et des passifs.  
+ Dans les Actifs  
+27. Un actif doit être classé comme actif courant quand :  
+(a) il fait partie des  activités d'exploitation de l'entreprise et il est attendu qu'il soit réalisé ou 
+consommé dans le cours normal du cycle d'exploitation de l'entreprise ; ou  
+(b) il est détenu principalement, à des fins de placement ou pour une courte période, et il est at tendu 
+qu'il soit réalisé dans les douze mois à compter de la date de clôture.  
+Tous les autres actifs doivent être classés en tant qu'actifs non courants.  
+28. Il existe deux catégories différentes d'actifs courants, traduisant les deux parties de la définition. 
+La première représente une partie du fonds de roulement de l'entreprise qui est réalisée ou 
+consommée dans le cycle normal d'exploitation. La seconde re présente une catégorie des actifs 
+courants qui ne sont pas des actifs d'exploitation mais sont détenus à des fins de placement ou 
+d'investissement et il est attendu qu'ils soient réalisés dans les douze mois à compter de la date de 
+clôture.  
+Les actifs cou rants incluent les stocks et les comptes clients qui ne sont pas destinés à être réalisés 
+ou consommés dans les douze mois à compter de la date de clôture.  
+29. Le cycle d'exploitation d'une entreprise est le temps moyen entre l'acquisition des matières en trant 
+dans le processus et leur réalisation en trésorerie ou en un instrument aisément convertible en 
+trésorerie. Il est souvent difficile de définir avec précision le cycle d'exploitation d'une entreprise 
+particulière.
+
+=== NC 01 — Page 6 (Current vs non-current asset classification criteria) ===
+6 
+30. Pour les besoins de distinction  entre actifs courants et non courants, le cycle d'exploitation est 
+supposé être d'une année sauf, si pour des secteurs ou des activités particuliers, une période plus 
+longue est clairement plus appropriée.  
+31. Les actifs non courants sont par conséquent :  
+(a) les actifs qui sont destinés à être utilisés d'une manière continue pour les besoins des activités de 
+l'entreprise tels que les immobilisations corporelles, les immobilisations incorporelles ; et  
+(b) les actifs détenus à des fins de placement à lon g terme ou qui ne sont pas destinés à être réalisés 
+dans les douze mois à compter de la date de clôture.  
+ 
+ Dans les Passifs  
+32. Un passif doit être classé comme passif courant lorsque :  
+(a) il est attendu qu'il soit réglé par utilisation de la trésorerie provenant des éléments classés comme 
+actifs courants ; ou  
+(b) qu'il doit être payé dans les douze mois qui suivent la date de clôture.  
+Tous les autres passifs doivent être classés en tant que passifs non courants.  
+33. Les passifs courants peuvent être distingués de la même manière que les actifs courants. Certains 
+passifs courants, tels que les sommes dues aux fournisseurs ou les sommes à payer aux employés et 
+d'autres coûts d'exploitation , sont réglés en dehors des actifs courants. Ces passifs sont considérés 
+comme obligations pour des éléments formant le fonds de roulement utilisé dans le cycle 
+d'exploitation normal de l'entreprise.  
+De tels éléments d'exploitation sont classés comme pass ifs courants même s'ils doivent être réglés 
+dans un délai supérieur à douze mois à partir de la date de clôture.  
+34. D'autres passifs courants sont plus difficiles à définir, en termes de cycle d'exploitation courant, 
+bien qu'ils nécessitent d'être payés dans les douze mois à partir de la date de clôture. Il en est ainsi 
+par exemple, de la partie à moins d'un an des emprunts à long terme, des découverts bancaires, des 
+dividendes à régler, impôts sur les bénéfices, et autres dettes non commerciales. Les emp runts qui 
+fournissent le financement du fonds de roulement sur une base à long terme et qui ne doivent pas être 
+réglés dans les douze mois (ou le cycle d'exploitation courant, s'il est plus long), sont des passifs non 
+courants.  
+35. Le montant de toute obl igation qui a été exclu des passifs courants est présenté dans les passifs 
+non courants. Les informations justifiant cette présentation doivent être présentées dans les notes aux 
+états financiers.  
+ Cas du refinancement  
+36. Les passifs qui doivent être ré glés dans les douze mois à compter de la date de clôture sont 
+classés parmi les passifs non courants s'ils remplissent le conditions cumulatives suivantes :  
+(a) le terme initial de l'obligation était à l'origine pour une période supérieure à douze mois ;  
+(b) l'entreprise a l'intention de refinancer l'obligation sur une base à long terme ; et  
+(c) cette intention est matérialisée par un accord de refinancement ou de rééchelonnement de 
+paiement intervenant avant l'approbation des états financiers.  
+37. Plusieurs emprunts sont, en raison de leur nature, refinancés ou renouvelés ; Si un tel passif fait 
+partie du financement à long terme de l'entreprise, il doit être classé en tant que passif non courant, 
+même si la forme de l'accord est qu'un tel passif doit ê tre remboursé ou refinancé dans les douze 
+mois. Cependant, dans plusieurs circonstances, le refinancement n'est pas automatique, et il est 
+difficile de distinguer entre les passifs qui seraient refinancés "Ipso -Facto" et ceux qui nécessitent une 
+négociation avec le prêteur. Un passif qui ne peut pas être refinancé pourrait se traduire par une 
+utilisation significative de ressources courantes, et il serait inapproprié d'autoriser la classification en 
+éléments à long terme, en se basant sur la seule probabilité ou le jugement.  
+Pour cette raison, il est nécessaire que l'accord de financement soit en place, ce qui constitue une 
+preuve que le remboursement du passif en dehors des ressources existantes ne sera pas nécessaire.
+
+=== NC 01 — Page 7 (Non-current liability classification, bilan line items) ===
+7 
+L'existence d'un tel accord avant l'approbation des états financiers fournit l'évidence que la substance 
+du passif à la date de clôture était à long terme.  
+ Informations à présenter dans le corps du bilan  
+38. Dans le respect de l'importance significative et des prescriptions spécifiques édictées par les 
+normes comptables, les rubriques et postes suivants sont généralement présentés dans le corps du 
+bilan.    
+Aux Actifs    
+ 
+Actifs non courants    
+  
+Actifs imm obilisés (ainsi que les amortissements et 
+provisions y afférents)   
+  
+Immobilisations incorporelles    
+  
+Immobilisations corporelles    
+  
+Immobilisations financières    
+  
+Autres actifs non courants    
+ 
+Actifs courants    
+  
+Stocks    
+  
+Clients et comptes rattachés    
+  
+Placement à court terme et autres actifs financiers    
+  
+Autres actifs courants    
+  
+Liquidités et équivalents de liquidités  
+Aux Capitaux propres    
+  
+Capital social    
+  
+Réserves  
+  
+Autres capitaux propres    
+  
+Résultats reportés    
+  
+Résultat de l'exercice    
+Aux Passifs    
+  
+Passifs non courants    
+  
+Emprunts    
+  
+Autres passifs financiers non courants  
+  
+Provisions  
+ 
+Passifs courants    
+  
+Fournisseurs et comptes rattachés    
+  
+Autres passifs courants    
+  
+Autres passifs financiers    
+  
+Concours bancaires    
+  
+Provisions pour risques et charges courants
+
+=== NC 01 — Page 8 (CR structure: methode reference vs autorisee, separate disclosure rules) ===
+8 
+39. Quand des informations plus détaillées sont présentées dans les notes aux états financiers, elles 
+sont reliées au bilan au moyen d'un système de référenciation croisée.  
+40. Le modèle de présentation du bilan figure à l'annexe 1 de cette partie de la norm e. Chaque 
+entreprise adapte ce modèle en fonction de ses activités et de ses opérations tout en tenant compte 
+des principes généralement admis.  
+L'état de résultat  
+41. L'état de résultat fournit des renseignements sur la performance de l'entreprise.  
+L'information sur la performance est utile pour évaluer la rentabilité de l'entreprise et sa capacité à 
+générer des flux de trésorerie à partir des ressources qu'elle contrôle. Elle est aussi utile pour évaluer 
+l'efficacité avec laquelle l'entreprise a utilisé  ses ressources et sa capacité à employer des ressources 
+supplémentaires.  
+42. Une bonne présentation requiert :  
+• Que les résultats d'exploitation, des activités de placement et de financement soient divulgués.  
+• Que la destination ou la nature et le mo ntant des éléments des revenus et des charges, des gains et 
+des pertes provenant des activités ordinaires dont l'importance est telle que leur mention est utile pour 
+évaluer la performance de l'entreprise, soient mentionnés séparément.  
+• Que les éléments non récurrents soient présentés séparément.  
+• Que les éléments extraordinaires soient mentionnés séparément.  
+• Que les produits et les charges ayant des caractéristiques spécifiques, tels que les charges et 
+produits financiers, ou les impôts sur les bénéfices soient divulgués séparément.  
+• Que le résultat provenant d'un secteur d'activité abandonné ainsi que les produits et charges des 
+activités abandonnées soient présentés séparément.  
+43. Les produits et les charges sont présentés dans l'état de résult at par destination (présentation de 
+référence). La présentation en fonction de la provenance et de la nature des produits et des charges 
+est autorisée (présentation autorisée).  
+Les effets des modifications comptables, non pris en compte dans l'état de rés ultat, doivent figurer, au 
+bas de l'état de résultat.  
+ Méthode de référence  
+44. Selon cette méthode, les revenus et les charges sont présentés dans l'état de résultat selon leur 
+provenance ou destination.  
+45. Au cas où l'entreprise utilise la méthode de  référence, elle doit obligatoirement fournir l'information 
+sur la nature de ses charges dans les notes aux états financiers. Un modèle de présentation est fourni 
+à l'annexe 6.  
+46. La classification des charges se fait par rapport à leur destination en ta nt que coûts de ventes, 
+coûts de distribution ou coûts administratifs.  
+Cette présentation fournit une information plus pertinente aux utilisateurs que la classification par 
+nature.  
+La répartition des coûts sur les différentes fonctions pourrait être arbi traire et nécessite un effort de 
+jugement considérable.  
+La nomenclature proposée dans la partie organisation comptable de la présente norme ainsi que les 
+développements figurant aux paragraphes 47 et suivants visent à aider les entreprises dans cette 
+répartition.  
+47. Dans une entreprise de distribution, cette répartition peut se faire par appli cation de l'équation 
+suivante :
+
+=== NC 01 — Page 9 (Cost of sales formula: stocks + purchases - closing stocks) ===
+9 
+Stocks de marchandises au début de l'exercice    
++ achats de marchandises pendant l'exercice  
+ 
+= total des marchandises disponibles à la vente    
+- stocks de marchandises en fin de l'exercice    
+ 
+= Coûts des marchandises vendues.    
+Les coûts de distribution et d'administration sont déterminés par référence aux charges se rattachant 
+directement à ces fonctions. Les autres charges sont classées dans les autres charges d'exploitation.  
+48. Dans une entreprise de production, il est néces saire de disposer d'un système de calcul de coûts. 
+Généralement, ce genre d'entreprises disposent de tel système pour le besoin d'évaluation des stocks 
+des produits finis et des en cours de production.  
+49. Au cas où l'entreprise ne dispose pas de tel syst ème, celle -ci pourra déterminer le coût des 
+marchandises vendues comme suit :  
+ 
+ 1. Calcul du coût des matières premières consommées :    
+Stock initial des matières premières    
++ Achats de la période    
+- Stocks final des matières premières    
+ 
+= Matières premières consommées  
+ 2. Coût de la main-d’œuvre directe  
+Ce coût est aisément calculé dans les entreprises industrielles.  
+ 3. Les frais généraux de production sont affectés selon les clefs de répartition les plus 
+pertinentes. Cette affectation est faite selon la méthode dite de "l'imputation rationnelle". Si l'entreprise 
+est en sous activité, la quote -part de frais généraux non affectés aux coûts des ventes est présentée 
+dans les "autres charges d'exploitation". Une note expliquant le mode d'affectation des frais généraux 
+doit être présentée lorsqu'elle est utile à la compréhension des performances et que le montant de ces 
+frais est significatif.  
+ 4. La variation des stocks des travaux en cours est ajoutée ou retranchée aux éléments ci -
+dessus pour obtenir le coût des marchandises produites.  
+ 5. Détermination du coût des marchandises vendues :  
+Coût des marchandises produites    
++ Stock initial des produits finis    
+- Stock final des produits finis    
+ 
+= Coût des marchandises vendues   
+Les coûts de distribution et d'administration sont déterminés par référence aux charges se rattachant 
+directement à ces fonctions. Les autres charges sont classées dans les autres charges d'exploitation.  
+50. Quand la méthode de référence est utilisée, une  analyse détaillée doit être fournie dans l'état de 
+résultat sur les éléments suivants :  
+Produits d'exploitation  
+• Revenus (Ventes de marchandises et/ou ventes des produits ou de services fabriqués par 
+l'entreprise dans le cadre de ses activités centrales ou principales).  
+• Autres produits d'exploitation.
+
+=== NC 01 — Page 10 (CR line items by method, soldes intermediaires de gestion) ===
+10 
+Charges d'exploitation  
+• Coût des ventes (coûts rattachés aux revenus pris en compte).  
+• Coûts de distribution.  
+• Coûts administratifs.  
+• Autres charges d'exploitation.  
+Un modèle pour la présentation de l'état de Résultat figure à l'annexe 2 de la présente norme.  
+ Méthode autorisée  
+51. La méthode autorisée consiste essentiellement à classer les produits et les charges en fonction de 
+leur nature. La présentation selon ce tte méthode est autorisée pour tenir compte de la culture 
+comptable en vigueur, des spécificités sectorielles et organisationnelles et de la difficulté qu'auraient 
+les petites et moyennes entreprises à appliquer la méthode de référence.  
+52. Au cas où une entreprise utilise la méthode autorisée, elle est encouragée à publier dans ses 
+notes une répartition de ses charges par destination. Pour ce faire, elle peut utiliser le modèle figurant 
+à l'annexe 7. Cette opération vise à permettre aux entreprises de s'a dapter à la présentation par 
+destination.  
+53. Quand la méthode autorisée est utilisée, une analyse détaillée doit être fournie dans l'état de 
+résultat sur les éléments suivants :  
+Produits d'exploitation  
+• Ventes de marchandises et/ou ventes des produits fabriqués par l'entreprise.  
+• Autres produits d'exploitation.  
+Charges d'exploitation  
+• Variation des stocks des produits finis et des encours. 
+Matières premières et autres services et approvisionnements consommés.  
+• Charges de personnel.  
+• Dotations aux amortissements et provisions.  
+• Autres charges d'exploitation.  
+54. Un modèle de format pour la présentation de l'état de résultat autorisé figure à l'annexe 3 de cette 
+partie de la norme.  
+55. Des informations plus détaillées sont présentées dans les notes aux états financiers qui devraient 
+être reliées à l'état de résultat au moyen d'un système de référenciation croisée.  
+Soldes intermédiaires de gestion  
+56. Pour les besoins d'agrégation à l' échelle sectorielle ou nationale, les entreprises publient leurs 
+soldes intermédiaires dans les notes aux états financiers conformément au modèle figurant à l'annexe 
+8 de la présente norme.  
+La publication de ces soldes est utile pour les utilisateurs des états pour situer les données relatives à 
+l'entreprise et leur évolution par rapport aux données agrégées du même secteur ou à l'échelle 
+nationale.  
+La détermination de ces soldes est requise pour les entreprises qui présentent leurs résultats selon le 
+modèle de référence ainsi que celles qui utilisent le modèle autorisé.  
+L'état des flux de trésorerie  
+57. L'état des flux de trésorerie renseigne sur la manière avec laquelle l'entreprise a obtenu et 
+dépensé des liquidités à travers ses activités d'exploitation, de financement et d'investissement et à 
+travers d'autres facteurs affectant sa liquidité et sa solvabilité.  
+L'état des flux de trésorerie, lorsqu'il est utilisé de concert avec le reste des états financiers, fournit 
+des informations qui permettent aux utilisateurs d'évaluer la capacité de l'entreprise à générer des flux 
+de trésorerie positifs, d'évalu er sa capacité à honorer ses engagements, sa capacité à distribuer des 
+dividendes et à couvrir ses besoins de financement interne. Il lui permet aussi d'évaluer les origines

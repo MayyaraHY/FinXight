@@ -37,6 +37,20 @@ class ClassificationResult:
 
 
 # ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _labels_agree(norm_rubrique: str, norm_label: str) -> bool:
+    """
+    Return True when the rubrique and the rule label are semantically consistent.
+    Exact equality is a match; containment in either direction is also a match
+    (e.g. "amortissement des immobilisations incorporelles" contains
+    "immobilisations incorporelles", so they agree even though the strings differ).
+    """
+    return norm_rubrique == norm_label or norm_label in norm_rubrique or norm_rubrique in norm_label
+
+
+# ---------------------------------------------------------------------------
 # Core function
 # ---------------------------------------------------------------------------
 
@@ -65,7 +79,7 @@ def classify_and_reconcile(
         label = rule["label"]
         path  = rule["node_path"]
 
-        if rubrique and loader.normalize_label(rubrique) != loader.normalize_label(label):
+        if rubrique and not _labels_agree(loader.normalize_label(rubrique), loader.normalize_label(label)):
             warning = (
                 f"Compte {code} : règles SCE → '{label}', "
                 f"fichier source (Rubrique) → '{rubrique}'. Règles appliquées."
