@@ -1,0 +1,27 @@
+# Local Python virtualenvs (huge — never ship into the image)
+venv1/
+venv*/
+**/venv*/
+
+# Bytecode / caches
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Local env & secrets
+.env
+.env.*
+!.env.example
+
+# Dev artifacts
+tests/
+.pytest_cache/
+*.log
+parsing.log
+app/.claude/
+.git/
+.idea/
+
+# Runtime uploads (recreated in the image)
+app/uploads/*

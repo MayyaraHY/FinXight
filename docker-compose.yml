@@ -1,0 +1,117 @@
+# ─────────────────────────────────────────────────────────────────────
+# Financial engine — full stack
+#
+#   postgres      single server, two DBs (financial_db + userservice)
+#   user-service  Spring Boot   :8080  (JWT issuer / JWKS source)
+#   backend       FastAPI       :8000  (financial engine)
+#   ai-service    FastAPI       :8001  (Gemini-backed analysis)
+#   frontend      Next.js       :3000
+#
+# Server-to-server calls use docker service names (e.g. http://backend:8000).
+# Browser-facing NEXT_PUBLIC_* URLs use http://localhost:<port> because the
+# user's browser — not a container — makes those requests.
+#
+# 1. cp .env.example .env   and fill in GEMINI_API_KEY / GROQ_API_KEY
+# 2. docker compose up --build
+# ─────────────────────────────────────────────────────────────────────
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # No host port published by default — only the backend/user-service
+    # reach it over the internal network. Uncomment to inspect from the host.
+    # ports:
+    #   - "5432:5432"
+
+  user-service:
+    build:
+      context: ./user-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/userservice
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      FRONTEND_URL: http://localhost:3000
+      BASE_URL: http://localhost:8080
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      # Mail (override with your own SMTP creds in .env if needed)
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/v3/api-docs >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_NAME: Financial AI Engine
+      ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-admin}@postgres:5432/financial_db
+      UPLOAD_DIR: app/uploads
+      MAX_UPLOAD_SIZE_MB: 100
+      USER_SERVICE_URL: http://user-service:8080
+      AI_SERVICE_URL: http://ai-service:8001
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+    ports:
+      - "8000:8000"
+
+  ai-service:
+    build:
+      context: ./ai_service
+    restart: unless-stopped
+    environment:
+      APP_NAME: Financial AI Service
+      PORT: 8001
+      USER_SERVICE_URL: http://user-service:8080
+      BACKEND_URL: http://backend:8000
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?set GEMINI_API_KEY in .env}
+      GEMINI_MODEL_NAME: ${GEMINI_MODEL_NAME:-gemini-flash-lite-latest}
+      GEMINI_FALLBACK_MODELS: ${GEMINI_FALLBACK_MODELS:-gemini-2.5-flash-lite,gemini-flash-latest,gemini-2.5-flash}
+    ports:
+      - "8001:8001"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked into the browser bundle at build time → must be host-reachable.
+        NEXT_PUBLIC_USER_SERVICE_URL: http://localhost:8080
+        NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
+        NEXT_PUBLIC_AI_SERVICE_URL: http://localhost:8001
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - ai-service
+      - user-service
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

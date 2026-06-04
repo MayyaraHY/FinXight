@@ -1,0 +1,21 @@
+# Local Python virtualenvs
+venv_ai/
+venv*/
+**/venv*/
+
+# Bytecode / caches
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Local env & secrets
+.env
+.env.*
+!.env.example
+
+# Dev artifacts
+*.log
+.git/
+.idea/
+list_models.py

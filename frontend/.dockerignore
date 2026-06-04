@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+build/
+npm-debug.log*
+.git/
+.idea/
+.env
+.env.*
+!.env.example
+*.md
+README.md
+LICENSE
+banner.png
+Gemini_Generated_Image_*.png
+tsconfig.tsbuildinfo

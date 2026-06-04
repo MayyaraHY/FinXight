@@ -1,0 +1,18 @@
+# Build output (rebuilt inside the image)
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Local env & secrets
+.env
+.env.*
+!.env.example
+
+# Per-service compose (superseded by the root docker-compose.yml)
+docker-compose.yml
+
+# IDE / docs / runtime data
+.idea/
+docs/
+userprofile/
+*.log
+.git/
