@@ -1,7 +1,7 @@
 import logging
 from decimal import Decimal
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import json
 from sqlalchemy.orm import Session
@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 
 CR_RULES_PATH = Path(__file__).resolve().parent.parent / "core" / "cr_rules.json"
 
+# CR-relevant classes. An account in these classes that maps to no line is a
+# real gap (rule missing or bad code) and must be surfaced, never dropped.
+CR_CLASSES = ("6", "7")
+
 
 class CompteResultatService:
 
@@ -22,6 +26,7 @@ class CompteResultatService:
         self.repo = CompteResultatRepository(db)
         self.inventory_method = inventory_method
         self._rules: Optional[List[Dict]] = None
+        self._index: Optional[List[Tuple[str, Decimal, int]]] = None
 
     # =====================================================
     # RULES LOADER
@@ -34,6 +39,46 @@ class CompteResultatService:
         self._rules = data["compte_resultat_tunisien"]["lines"]
         logger.info(f"CR rules loaded: {len(self._rules)} lines")
         return self._rules
+
+    # =====================================================
+    # PREFIX INDEX  (longest-match-wins)
+    # =====================================================
+    def build_index(self) -> List[Tuple[str, Decimal, int]]:
+        """
+        Flatten every computed/stock_variation rule account into
+        (prefix, sign, line_id), sorted longest-prefix-first so a specific
+        account (6861) wins over a broad one (681). Built once, cached.
+
+        Inventory-method lines (L6/L7) contribute the account set for the
+        ACTIVE method only, so the index never mixes permanent/intermittent.
+        """
+        if self._index is not None:
+            return self._index
+
+        index: List[Tuple[str, Decimal, int]] = []
+        for rule in self.load_rules():
+            if rule["type"] not in ("computed", "stock_variation"):
+                continue
+
+            if "comptes_permanent" in rule:
+                if self.inventory_method == "permanent":
+                    codes = list(rule.get("comptes_permanent", []))
+                    # fallback accounts also belong to this line; they only
+                    # contribute if the primary accounts net to zero, which
+                    # compute_all_lines handles — keep them OUT of the index
+                    # to avoid double counting here.
+                else:
+                    codes = list(rule.get("comptes_intermittent", []))
+            else:
+                codes = list(rule.get("comptes", []))
+
+            for entry in codes:
+                sign = Decimal("-1") if entry.startswith("-") else Decimal("1")
+                index.append((entry.lstrip("-"), sign, rule["line_id"]))
+
+        index.sort(key=lambda x: len(x[0]), reverse=True)
+        self._index = index
+        return index
 
     # =====================================================
     # ACCOUNTS LOADER
@@ -50,28 +95,30 @@ class CompteResultatService:
         return accounts
 
     # =====================================================
-    # BALANCE EXTRACTION  (same logic as BilanService)
+    # BALANCE EXTRACTION  (sign-by-class)
     # =====================================================
     def get_balance(self, acc: Account) -> Decimal:
-        # MAGNITUDE convention for the income statement.
-        #
-        # The CR rules (cr_rules.json) were authored around each account
-        # contributing its natural positive magnitude, with explicit "-" prefixes
-        # for contra accounts (e.g. "-709" subtracts rebates from revenue). We
-        # therefore take the absolute value of the canonical signed balance, which
-        # makes the result IDENTICAL across every CSV layout (previously a single
-        # "solde_final" column returned a signed value — so revenues came out
-        # negative on those files and every CR total was wrong; R1).
-        #
-        # NOTE: stock variation (line 5) deliberately bypasses this and keeps the
-        # signed value — see compute_line() — because its sign is meaningful (R2).
-        return abs(signed_balance(acc))
+        """
+        Sign-by-class convention for the income statement.
+
+        signed_balance() is canonical DEBIT-POSITIVE. We flip class 7
+        (produits, naturally credit) so revenues come out POSITIVE and charges
+        (class 6, naturally debit) stay POSITIVE. Any account carrying the
+        WRONG sign for its class then surfaces as a negative value instead of
+        being masked — this is intentional: sign-masking was the core failure
+        mode, so we no longer use abs().
+        """
+        bal = signed_balance(acc)
+        if acc.account_code.startswith("7"):
+            return -bal
+        return bal
 
     # =====================================================
-    # ACCOUNT MATCHING BY PREFIX
+    # SUM BY EXACT PREFIX  (used by fallback + check_account only)
     # =====================================================
     def sum_by_prefix(self, accounts: List[Account], prefix: str) -> Decimal:
-        """Sum balances of all accounts whose code starts with prefix."""
+        """Raw prefix sum. Used for fallback/check computations where the
+        longest-match index does not apply."""
         return sum(
             (
                 self.get_balance(acc)
@@ -81,18 +128,10 @@ class CompteResultatService:
             Decimal("0"),
         )
 
-    # =====================================================
-    # COMPUTE ONE LINE FROM ITS COMPTES
-    # =====================================================
     def compute_from_comptes(
         self, comptes: List[str], accounts: List[Account]
     ) -> Decimal:
-        """
-        Apply sign rules from prefix list.
-        "-701" → subtract, "701" → add.
-        Revenue accounts (7x) credit = positive, debit = negative.
-        Expense accounts (6x) debit = positive, credit = negative.
-        """
+        """Apply explicit sign-prefix list (used only for L6/L7 fallback)."""
         total = Decimal("0")
         for entry in comptes:
             sign = Decimal("-1") if entry.startswith("-") else Decimal("1")
@@ -101,109 +140,93 @@ class CompteResultatService:
         return total
 
     # =====================================================
-    # COMPUTE SINGLE LINE
-    # =====================================================
-    def compute_line(
-        self,
-        rule: Dict,
-        accounts: List[Account],
-        computed: Dict[int, Decimal],
-    ) -> Decimal:
-        line_type = rule["type"]
-
-        # --- Direct account computation ---
-        if line_type == "computed":
-            comptes = rule.get("comptes", [])
-            return self.compute_from_comptes(comptes, accounts)
-
-        # --- Stock variation: SIGNED net debit-credit of compte 71 (R2) ---
-        #     A stock variation can legitimately be positive or negative, so we
-        #     keep the signed balance here instead of the magnitude used elsewhere.
-        if line_type == "stock_variation":
-            prefix = rule["comptes"][0]
-            return sum(
-                (
-                    signed_balance(acc)
-                    for acc in accounts
-                    if acc.account_code.startswith(prefix)
-                ),
-                Decimal("0"),
-            )
-
-        # NOTE: inventory-method lines (L6/L7, which carry "comptes_permanent") are
-        # handled directly in compute_all_lines() before compute_line() is reached.
-        # The previous duplicate branch here was unreachable (the "computed" check
-        # above always returned first) and has been removed.
-
-        # --- Formula lines: sum/subtract already-computed lines ---
-        if line_type == "formula":
-            return self._eval_formula(rule["formula"], computed)
-
-        logger.warning(f"Unknown line type '{line_type}' for line {rule['line_id']}")
-        return Decimal("0")
-
-    # =====================================================
     # FORMULA EVALUATOR  e.g. [4, "-", 11]  or  [1, 2, 3]
     # =====================================================
     def _eval_formula(
         self, formula: List, computed: Dict[int, Decimal]
     ) -> Decimal:
-        """
-        Supports two formats:
-          [1, 2, 3]           → L1 + L2 + L3  (sum)
-          [4, "-", 11]        → L4 - L11
-          [12, "-", 13, "+", 14, "+", 15, "-", 16]
-        """
         total = Decimal("0")
         sign = Decimal("1")
-
         for token in formula:
             if token == "+":
                 sign = Decimal("1")
             elif token == "-":
                 sign = Decimal("-1")
             else:
-                # token is a line_id integer
                 total += sign * computed.get(int(token), Decimal("0"))
-                sign = Decimal("1")  # reset to + after each operand
-
+                sign = Decimal("1")
         return total
 
     # =====================================================
     # COMPUTE ALL 23 LINES
     # =====================================================
-    def compute_all_lines(self, accounts: List[Account]) -> Dict[int, Dict]:
+    def compute_all_lines(
+        self, accounts: List[Account]
+    ) -> Tuple[Dict[int, Dict], List[str]]:
         rules = self.load_rules()
-        computed: Dict[int, Decimal] = {}   # line_id → amount
-        lines_output: Dict[int, Dict] = {}  # final serialisable result
+        index = self.build_index()
 
+        computed: Dict[int, Decimal] = {r["line_id"]: Decimal("0") for r in rules}
+        matched_codes: Dict[int, List[str]] = {r["line_id"]: [] for r in rules}
+
+        # ---- Pass 1: assign each account to its single best line ----------
+        unmapped: List[str] = []
+        for acc in accounts:
+            code = acc.account_code
+            hit = None
+            for prefix, sign, line_id in index:
+                if code.startswith(prefix):
+                    hit = (sign, line_id)
+                    break
+            if hit is None:
+                if code[:1] in CR_CLASSES:
+                    unmapped.append(code)
+                continue
+
+            sign, line_id = hit
+            rule = next(r for r in rules if r["line_id"] == line_id)
+
+            # Stock variation keeps the SIGNED balance (its direction matters).
+            if rule["type"] == "stock_variation":
+                val = signed_balance(acc)
+            else:
+                val = self.get_balance(acc)
+
+            computed[line_id] += sign * val
+            matched_codes[line_id].append(code)
+
+        # ---- L6 / L7 fallback: only when primary accounts netted to zero --
+        for rule in rules:
+            if "comptes_permanent" not in rule:
+                continue
+            if self.inventory_method != "permanent":
+                continue
+            line_id = rule["line_id"]
+            if computed[line_id] == 0 and "fallback_permanent" in rule:
+                computed[line_id] = self.compute_from_comptes(
+                    rule["fallback_permanent"], accounts
+                )
+                matched_codes[line_id].append("(fallback)")
+
+        # ---- Pass 2: formula lines (rules are ordered) --------------------
+        for rule in rules:
+            if rule["type"] == "formula":
+                computed[rule["line_id"]] = self._eval_formula(
+                    rule["formula"], computed
+                )
+
+        # ---- Serialise -----------------------------------------------------
+        lines_output: Dict[int, Dict] = {}
         for rule in rules:
             line_id = rule["line_id"]
-
-            # L6/L7 special: re-route to inventory-method handler
-            if "comptes_permanent" in rule:
-                if self.inventory_method == "permanent":
-                    comptes = rule.get("comptes_permanent", [])
-                    amount = self.compute_from_comptes(comptes, accounts)
-                    if amount == 0 and "fallback_permanent" in rule:
-                        amount = self.compute_from_comptes(
-                            rule["fallback_permanent"], accounts
-                        )
-                else:
-                    amount = self.compute_from_comptes(
-                        rule.get("comptes_intermittent", []), accounts
-                    )
-            else:
-                amount = self.compute_line(rule, accounts, computed)
-
-            computed[line_id] = amount
             lines_output[line_id] = {
                 "line_id": line_id,
                 "label": rule["label"],
-                "amount": float(round(amount, 3)),
+                "amount": float(round(computed[line_id], 3)),
+                "accounts": matched_codes[line_id],
             }
 
-        return lines_output
+        return lines_output, unmapped
 
     # =====================================================
     # TOTALS
@@ -223,40 +246,56 @@ class CompteResultatService:
         }
 
     # =====================================================
-    # VALIDATION: cross-check résultat net vs compte 13
+    # VALIDATION
     # =====================================================
     def validate(
-        self, lines: Dict[int, Dict], accounts: List[Account]
+        self,
+        lines: Dict[int, Dict],
+        accounts: List[Account],
+        unmapped: List[str],
     ) -> List[str]:
-        warnings = []
+        warnings: List[str] = []
 
-        # ── Per-line checks driven by "check_account" in the rules ──────────
+        # ── Unmapped class 6/7 accounts (silent-drop guard) ─────────────────
+        if unmapped:
+            warnings.append(
+                f"{len(unmapped)} compte(s) de charges/produits non affecté(s) à "
+                f"une ligne du CR (lacune de règle ou code invalide) : "
+                f"{', '.join(sorted(set(unmapped)))}."
+            )
+
+        # ── Per-line check_account (e.g. L21 vs compte 13) ──────────────────
         for rule in self.load_rules():
             check_accounts = rule.get("check_account")
             if not check_accounts:
                 continue
 
-            line_id    = rule["line_id"]
+            line_id = rule["line_id"]
             calculated = lines.get(line_id, {}).get("amount", 0.0)
 
-            # Same sign-prefix convention as comptes: "-135" → subtract
-            bilan_result = Decimal("0")
-            account_labels: List[str] = []
+            # 131 (bénéfice) / 135 (perte) are class-1 equity accounts.
+            # get_balance leaves class 1 debit-positive, so a credit-balance
+            # profit on 131 returns NEGATIVE. The CR résultat net is positive
+            # for a profit. We therefore compare against the NEGATED bilan
+            # figure: -(131_debit_positive) = credit balance = profit > 0.
+            bilan_raw = Decimal("0")
+            labels: List[str] = []
             for entry in check_accounts:
-                sign   = Decimal("-1") if entry.startswith("-") else Decimal("1")
+                sign = Decimal("-1") if entry.startswith("-") else Decimal("1")
                 prefix = entry.lstrip("-")
-                bilan_result  += sign * self.sum_by_prefix(accounts, prefix)
-                account_labels.append(prefix)
+                bilan_raw += sign * self.sum_by_prefix(accounts, prefix)
+                labels.append(prefix)
 
-            bilan_result_f = float(bilan_result)
+            # Flip to the income-statement sign (credit profit -> positive).
+            bilan_result = float(-bilan_raw)
 
-            if bilan_result_f != 0 and abs(calculated - bilan_result_f) > 1.0:
-                label        = rule.get("label", f"Ligne {line_id}")
-                accounts_str = "/".join(account_labels)
+            if bilan_result != 0 and abs(calculated - bilan_result) > 1.0:
+                label = rule.get("label", f"Ligne {line_id}")
+                accs = "/".join(labels)
                 warnings.append(
                     f"{label} calculé ({calculated:,.3f} DT) ≠ "
-                    f"Compte(s) {accounts_str} au bilan ({bilan_result_f:,.3f} DT). "
-                    f"Vérifiez les comptes {accounts_str}."
+                    f"Compte(s) {accs} au bilan ({bilan_result:,.3f} DT). "
+                    f"Vérifiez les comptes {accs} (solde pré-clôture possible)."
                 )
 
         return warnings
@@ -265,37 +304,21 @@ class CompteResultatService:
     # MAIN ENTRY POINT
     # =====================================================
     def calculate_and_save(self, upload_id: int) -> Dict:
-        """
-        1. Load accounts
-        2. Compute all 23 lines
-        3. Compute totals
-        4. Validate
-        5. Save to DB
-        """
         logger.info(f"Starting CR calculation for upload {upload_id}")
-
         try:
             accounts = self.load_accounts(upload_id)
 
-            # Diagnostic: log first 5 accounts so we can verify which balance
-            # column is populated and what get_balance returns.
             for acc in accounts[:5]:
-                bal = self.get_balance(acc)
                 logger.info(
-                    "DIAG account=%s solde_final=%s sfd=%s sfc=%s "
-                    "solde_debit=%s solde_credit=%s → balance=%s",
-                    acc.account_code,
-                    acc.solde_final,
-                    acc.solde_final_debit,
-                    acc.solde_final_credit,
-                    acc.solde_debit,
-                    acc.solde_credit,
-                    bal,
+                    "DIAG account=%s solde_final=%s sfd=%s sfc=%s → balance=%s",
+                    acc.account_code, acc.solde_final,
+                    acc.solde_final_debit, acc.solde_final_credit,
+                    self.get_balance(acc),
                 )
 
-            lines    = self.compute_all_lines(accounts)
+            lines, unmapped = self.compute_all_lines(accounts)
             totals   = self.compute_totals(lines)
-            warnings = self.validate(lines, accounts)
+            warnings = self.validate(lines, accounts, unmapped)
 
             final_result = {
                 "lines":    lines,
@@ -305,23 +328,19 @@ class CompteResultatService:
 
             self.repo.update(upload_id, final_result)
             logger.info(f"✓ Compte de résultat saved for upload {upload_id}")
-
             return final_result
 
         except Exception as e:
-            logger.error(f"CR calculation failed for upload {upload_id}: {e}", exc_info=True)
+            logger.error(
+                f"CR calculation failed for upload {upload_id}: {e}",
+                exc_info=True,
+            )
             raise
 
     # =====================================================
-    # AI ANALYSIS — dedicated method called by /analyze endpoint
+    # AI ANALYSIS
     # =====================================================
     def analyze(self, upload_id: int) -> dict:
-        """
-        Run AI diagnosis on the already-saved CR.
-        Returns {"cr_diagnosis": "..."} when warnings exist,
-        {"cr_diagnosis": None} when the CR is clean.
-        Raises ValueError with a French message on failure.
-        """
         cr = self.repo.get_by_upload_id(upload_id)
         if not cr or not cr.data:
             raise ValueError("Aucun compte de résultat trouvé. Générez d'abord le CR.")
@@ -332,18 +351,8 @@ class CompteResultatService:
 
         from app.ai.groq_client import ask_groq, KnowledgeScope
         from app.ai.prompts import CR_DIAGNOSIS_PROMPT
-        from app.models.account import Account
-
-        accounts = (
-            self.db.query(Account)
-            .filter(Account.upload_id == upload_id)
-            .all()
-        )
-        accounts_payload = [
-            {"code": a.account_code, "label": a.label, "solde": float(self.get_balance(a))}
-            for a in accounts[:100]
-        ]
         import json as _json
+
         context = {
             "cr_lines": cr.data.get("lines", {}),
             "totals":   cr.data.get("totals", {}),
@@ -355,15 +364,13 @@ class CompteResultatService:
         cr_diagnosis = ask_groq(prompt, context=context, scope=KnowledgeScope.NONE)
         result = {"cr_diagnosis": cr_diagnosis}
 
-        # Persist into saved CR data
         updated_data = dict(cr.data)
         updated_data.update(result)
         self.repo.update(upload_id, updated_data)
-
         return result
 
     # =====================================================
-    # UPDATE (manual override from controller)
+    # UPDATE / DELETE
     # =====================================================
     def update_cr(self, upload_id: int, data: dict) -> dict:
         cr = self.repo.get_by_upload_id(upload_id)
@@ -372,9 +379,6 @@ class CompteResultatService:
         updated = self.repo.update(upload_id, data)
         return updated.data
 
-    # =====================================================
-    # DELETE
-    # =====================================================
     def delete_cr(self, upload_id: int) -> None:
         self.repo.delete_by_upload_id(upload_id)
         logger.info(f"CR deleted for upload {upload_id}")

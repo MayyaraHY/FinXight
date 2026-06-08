@@ -1,6 +1,6 @@
 {
   "_source": "Plan de regroupement des comptes de l'état de résultat selon le modèle autorisé — Maquette SCE tunisienne (PDF officiel, sous-section 2). Toute modification doit citer la page source.",
-  "_remarque": "Les comptes de charges sont présentés nets des transferts des charges concernés.",
+  "_remarque": "Les comptes de charges sont présentés nets des transferts des charges concernés. Le moteur utilise un appariement par PRÉFIXE LE PLUS LONG : chaque compte est affecté à UNE seule ligne (le préfixe le plus spécifique gagne). C'est pourquoi L9 = 681 n'avale plus 6861 — ce dernier est capté par L13 (préfixe plus long). Le patch -6861 historique en L9 est donc supprimé.",
   "compte_resultat_tunisien": {
     "lines": [
       {
@@ -33,7 +33,7 @@
         "label": "Variation des stocks des produits finis et des en-cours (en + ou en -)",
         "type": "stock_variation",
         "comptes": ["71"],
-        "note": "± 71. Moins lorsque le stock final > au stock initial de produits finis et en-cours."
+        "note": "± 71. Moins lorsque le stock final > au stock initial de produits finis et en-cours. Conserve le solde signé (le sens est significatif)."
       },
       {
         "line_id": 6,
@@ -50,7 +50,8 @@
         "type": "computed",
         "comptes_permanent": ["6032"],
         "comptes_intermittent": ["602", "-6032", "6062"],
-        "note": "Permanent: 603 (variation des stocks d'approvisionnements, sous-compte 6032). Intermittent: 60 (y compris quote-part 606 assimilable aux achats d'approvisionnement) ± 603. 606 Quote-part = achat de matières, emballages et fournitures de production (intrants) non stockées."
+        "fallback_permanent": ["603", "-6031"],
+        "note": "Permanent: 603 (variation des stocks d'approvisionnements, sous-compte 6032). Intermittent: 60 (y compris quote-part 606 assimilable aux achats d'approvisionnement) ± 603. 606 Quote-part = achat de matières, emballages et fournitures de production (intrants) non stockées. fallback_permanent ajouté par symétrie avec L6 : si 6032 absent, retombe sur 603 net du sous-compte marchandises."
       },
       {
         "line_id": 8,
@@ -62,8 +63,8 @@
         "line_id": 9,
         "label": "Dotations aux amortissements et aux provisions",
         "type": "computed",
-        "comptes": ["681", "-6861"],
-        "note": "681 sauf 6861 (Résorption des autres actifs non courants de nature financière — reclassé en ligne 13)."
+        "comptes": ["681"],
+        "note": "681. 6861 (Résorption des autres actifs non courants de nature financière) est désormais capté par L13 grâce à l'appariement par préfixe le plus long ; l'ancien patch -6861 est supprimé."
       },
       {
         "line_id": 10,
