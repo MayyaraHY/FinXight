@@ -210,6 +210,7 @@ def get_accounts_by_upload_id(
 @router.put("/update/{account_id}")
 def update_account_endpoint(
     account_id: int,
+    account_code: str = None,
     label: str = None,
     debit: float = None,
     credit: float = None,
@@ -224,10 +225,10 @@ def update_account_endpoint(
 ):
     """Update account + auto-recalculate bilan if exists"""
     try:
-        # All business logic is in the service function
         result = update_account_with_bilan(
             db,
             account_id,
+            account_code=account_code,
             label=label,
             debit=debit,
             credit=credit,

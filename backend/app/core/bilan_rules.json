@@ -3,12 +3,14 @@
   "_validation": {
     "convention_signe": "credit stocké en negatif, debit en positif (debit - credit)",
     "regle_classe4": "un compte 4x ne peut figurer côté actif ET passif que via suffixe (DR)/(CR). Ex: (422 DR) = actif seulement si solde débiteur; 422 CR = passif seulement si solde créditeur.",
-    "note": "Les placements de comptes ci-dessous sont intentionnels et validés. Ne pas modifier sans référence à la maquette SCE officielle.",
-    "exemples_convention": [
-      "(422 DR) côté actif = avance sur salaire versée (solde débiteur uniquement)",
-      "422 CR côté passif = rémunération à payer (solde créditeur uniquement)",
-      "421 côté actif = cas exceptionnel (acompte sur salaire versé = solde débiteur)"
-    ]
+    "corrections_appliquees": [
+      "421 retiré de actifs_courants (erreur initiale) → ajouté à autres_passifs_courants. 421 = Rémunérations dues au personnel = dette = passif.",
+      "431 remplacé par (431 DR) côté actif — seul le solde débiteur (avance versée) est un actif; le solde créditeur relève du passif."
+    ],
+    "classe4_ambigue": {
+      "actif_uniquement_si_DR": ["(422 DR)", "(423 DR)", "(431 DR)", "(433 DR)", "(441 DR)", "(442 DR)", "(46 DR)"],
+      "passif_uniquement_si_CR": ["421", "422 CR", "423 CR", "425", "427", "432", "433 CR", "435", "437", "441 CR", "442 CR", "46 CR"]
+    }
   },
   "bilan_comptable_tunisien": {
     "actifs": {

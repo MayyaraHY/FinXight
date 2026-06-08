@@ -86,6 +86,11 @@ class PCGTLoader:
         self._by_code: Dict[str, PCGTAccount] = {}
         self._by_subclass: Dict[str, List[PCGTAccount]] = {}
         self._by_class: Dict[str, List[PCGTAccount]] = {}
+        # All valid prefixes of all known codes — built at load time, O(1) lookup.
+        # e.g. code "6511" generates "6", "65", "651", "6511" — all valid.
+        # This lets us accept ERP codes like "54", "65", "75" that are parent
+        # codes used in practice but not listed as leaf entries in the PCGT JSON.
+        self._valid_prefixes: set = set()
         logger.info("PCGTLoader initialised with reference path: %s", self._path)
 
     # ------------------------------------------------------------------ paths
@@ -135,10 +140,14 @@ class PCGTLoader:
             self._by_code.setdefault(acc.code, acc)
             self._by_subclass.setdefault(acc.subclass, []).append(acc)
             self._by_class.setdefault(acc.klass, []).append(acc)
+            # Register every prefix of this code as valid (minimum length 1).
+            # "6511" → {"6", "65", "651", "6511"} all accepted.
+            for i in range(1, len(acc.code) + 1):
+                self._valid_prefixes.add(acc.code[:i])
 
         logger.info(
-            "PCGT loaded: %d accounts across %d classes, %d sub-classes",
-            len(accounts), len(self._by_class), len(self._by_subclass),
+            "PCGT loaded: %d accounts, %d valid prefixes across %d classes",
+            len(accounts), len(self._valid_prefixes), len(self._by_class),
         )
 
     def _walk_accounts(self, node: dict, out: List[PCGTAccount]) -> None:
@@ -187,41 +196,32 @@ class PCGTLoader:
         """
         True when the code is a real PCGT account (or a recognised ERP variant).
 
-        Three matching strategies, tried in order:
-
-        1. Exact match                  — "401" → found directly.
-        2. Analytic-suffix match        — "401000" → prefix "401" is known.
-           (ERPs often append cost-centre digits after the base account code.)
-        3. Zero-padded ERP code         — "23000000" → strip trailing zeros → "23".
-           Rule confirmed: the meaningful prefix ends at the first trailing zero.
-           After stripping, accept if the result (or a prefix of it) is a known
-           account OR a known subclass (category code like "23", "40", …).
+        Strategy: check the _valid_prefixes set built at load time, which contains
+        every prefix of every known PCGT account code.  This handles:
+          • Exact codes          — "401"        is a leaf entry.
+          • Parent prefix codes  — "54", "65", "75" are parents of "541", "651"…
+          • Analytic suffixes    — "4010000" → prefix "401" is in the set.
+          • Zero-padded ERP      — "23000000" → strip zeros → "23" is in the set.
+        All O(1) lookups after the one-time load.
         """
         self._ensure_loaded()
         code = str(code).strip()
 
-        # 1. Exact
-        if code in self._by_code:
+        # Direct hit — covers exact codes and all parent prefixes
+        if code in self._valid_prefixes:
             return True
 
-        # 2. Analytic suffix (e.g. "4010000" → prefix "401")
-        for n in range(len(code) - 1, 1, -1):
-            if code[:n] in self._by_code:
-                return True
-
-        # 3. Zero-padded: strip trailing zeros, then repeat checks
+        # Zero-padded ERP code: strip trailing zeros and retry
+        # e.g. "23000000" → "23" which is in _valid_prefixes as a prefix of "231"
         stripped = code.rstrip("0")
-        if len(stripped) >= 2 and stripped != code:
-            if stripped in self._by_code:
-                return True
-            for n in range(len(stripped) - 1, 1, -1):
-                if stripped[:n] in self._by_code:
-                    return True
-            # Accept category-level codes (e.g. "23" is a valid subclass prefix)
-            if stripped[:2] in self._by_subclass:
-                return True
+        if stripped and stripped != code and stripped in self._valid_prefixes:
+            return True
 
         return False
+
+    def get_accounts_by_prefix(self, prefix: str) -> list:
+        prefix = str(prefix).strip()
+        return [acc for acc in self._accounts if acc.code.startswith(prefix)]
 
     def get_candidates(self, code: str) -> CandidateResult:
         """

@@ -24,7 +24,6 @@ export interface ValidationLine {
 export interface ValidationSummary {
   total: number;
   valid: number;
-  warnings: number;
   errors: number;
 }
 
@@ -41,5 +40,16 @@ export async function getValidationReport(
 ): Promise<ValidationReport> {
   const res = await fetchAuthed(`${API_URL}/${uploadId}`);
   if (!res.ok) throw new Error("Failed to fetch validation report");
+  return res.json();
+}
+
+/**
+ * Re-run PCGT validation now (synchronous on the backend).
+ * Use this when the stored report may be stale — e.g. after a PCGT logic update.
+ * Returns the fresh report immediately when done.
+ */
+export async function runValidation(uploadId: number): Promise<ValidationReport> {
+  const res = await fetchAuthed(`${API_URL}/run/${uploadId}`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to run validation");
   return res.json();
 }

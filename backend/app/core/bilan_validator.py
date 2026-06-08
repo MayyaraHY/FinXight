@@ -107,6 +107,11 @@ def find_unmapped_accounts(
     Return one issue per account that matches no bilan rule prefix.
     An unmapped account contributes to the imbalance silently — making it
     visible is the single most important check.
+
+    PCGT class logic (generalises to any bilan automatically):
+      First digit 1–5 → bilan accounts → flagged if absent from rules.
+      First digit 6–7 → compte de résultat accounts → NEVER belong in the
+        bilan; handled separately by check_closure.  Never flagged here.
     """
     prefixes = _extract_rule_prefixes(rules_data)
     issues: List[DetectedIssue] = []
@@ -116,6 +121,10 @@ def find_unmapped_accounts(
         bal  = _bal(acc)
         if abs(bal) < BALANCE_TOLERANCE:
             continue  # zero balance — irrelevant
+        # Classes 6 and 7 never belong in the bilan by accounting definition.
+        # Their balance being non-zero is a clôture issue, not an unmapped issue.
+        if code[:1] in ("6", "7"):
+            continue
         if not _is_mapped(code, prefixes):
             issues.append(DetectedIssue(
                 severity="error",

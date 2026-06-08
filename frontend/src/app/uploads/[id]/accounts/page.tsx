@@ -9,7 +9,7 @@ import Alert from "@/components/ui/alert/Alert";
 import { getAccountsByUpload, updateAccount, deleteAccount } from "@/services/accountService";
 import { getBilan } from "@/services/bilanService";
 import { getUpload } from "@/services/UploadService";
-import { getValidationReport, ValidationLine } from "@/services/validationService";
+import { getValidationReport, runValidation, ValidationLine } from "@/services/validationService";
 import { Account } from "@/models/account";
 import { Upload } from "@/models/Upload";
 import { formatCurrency } from "@/utils/formatters";
@@ -102,6 +102,7 @@ export default function UploadDetailsPage() {
   const [hasRecon, setHasRecon] = useState(false);   // bilan data_quality available
   // Map of account_code → ValidationLine for codes flagged invalid by PCGT check
   const [invalidMap, setInvalidMap] = useState<Map<string, ValidationLine>>(new Map());
+  const [validationStatus, setValidationStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -126,6 +127,30 @@ export default function UploadDetailsPage() {
     code: string;
     label: string;
   } | null>(null);
+
+  // ===== VALIDATION — two modes =====
+  // loadValidation(id, false) → read cached result (called on mount, non-blocking)
+  // loadValidation(id, true)  → re-run now via POST /run (called by button)
+  const loadValidation = async (id: number, forceRerun = false) => {
+    setValidationStatus("loading");
+    try {
+      const valRes = forceRerun
+        ? await runValidation(id)           // POST — fresh run, always current
+        : await getValidationReport(id);    // GET  — cached result on mount
+
+      if (valRes.status === "done") {
+        const map = new Map<string, ValidationLine>();
+        (valRes.data?.lines ?? []).forEach((l) => map.set(l.source_code, l));
+        setInvalidMap(map);
+        setValidationStatus("done");
+      } else {
+        setInvalidMap(new Map());
+        setValidationStatus("idle");
+      }
+    } catch {
+      setValidationStatus("error");
+    }
+  };
 
   // ===== FETCH =====
   useEffect(() => {
@@ -153,16 +178,7 @@ export default function UploadDetailsPage() {
         }
 
         // Try to load PCGT validation report (non-blocking — may still be pending)
-        try {
-          const valRes = await getValidationReport(uploadId);
-          if (valRes.status === "done" && valRes.data?.lines?.length) {
-            const map = new Map<string, ValidationLine>();
-            valRes.data.lines.forEach((l) => map.set(l.source_code, l));
-            setInvalidMap(map);
-          }
-        } catch {
-          // Validation not yet run — badges simply won't appear
-        }
+        loadValidation(uploadId);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load data";
         setError(message);
@@ -281,7 +297,35 @@ export default function UploadDetailsPage() {
   // ===== RENDER =====
   return (
     <div>
-      <ComponentCard title={`Accounts — ${upload?.display_filename || upload?.filename || "Loading…"}`}>
+      <ComponentCard
+        title={`Accounts — ${upload?.display_filename || upload?.filename || "Loading…"}`}
+        headerAction={
+          <button
+            onClick={() => loadValidation(uploadId, true)}
+            disabled={validationStatus === "loading"}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-800 dark:hover:text-gray-200 transition-colors disabled:opacity-50"
+          >
+            {validationStatus === "loading" ? (
+              <>
+                <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                Vérification…
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Validation PCGT
+                {invalidMap.size > 0 && (
+                  <span className="ml-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-error-500 text-white text-[10px] font-bold">
+                    {invalidMap.size}
+                  </span>
+                )}
+              </>
+            )}
+          </button>
+        }
+      >
 
         {loading && (
           <div className="flex justify-center py-10">
@@ -321,6 +365,29 @@ export default function UploadDetailsPage() {
                 )}
                 <span className="text-xs text-warning-600/70 dark:text-warning-400/60 ml-auto">
                   Cliquez sur un badge pour filtrer · Les montants sont calculés selon les règles SCE
+                </span>
+              </div>
+            )}
+
+            {/* ── PCGT validation summary ── */}
+            {validationStatus === "done" && invalidMap.size === 0 && (
+              <div className="rounded-xl border border-success-200 bg-success-50 dark:border-success-500/30 dark:bg-success-500/10 px-4 py-2.5 flex items-center gap-2 text-xs text-success-700 dark:text-success-400">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                Tous les codes sont valides selon le PCGT tunisien.
+              </div>
+            )}
+            {validationStatus === "done" && invalidMap.size > 0 && (
+              <div className="rounded-xl border border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/10 px-4 py-3 flex flex-wrap items-center gap-3 text-sm">
+                <svg className="w-4 h-4 text-error-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <span className="text-error-700 dark:text-error-400 font-medium">
+                  {invalidMap.size} code{invalidMap.size > 1 ? "s" : ""} absent{invalidMap.size > 1 ? "s" : ""} du PCGT
+                </span>
+                <span className="text-xs text-error-600/70 dark:text-error-400/60 ml-auto">
+                  Survolez le badge ⚠ invalide pour voir la suggestion de correction
                 </span>
               </div>
             )}
