@@ -10,6 +10,10 @@ export type Upload = {
 
   created_at: string;
 
+  company_id?: number | null;
+  period_year?: number | null;
+  period_month?: number | null;
+
   // relationship (optional depending on API)
   accounts?: Account[];
 };

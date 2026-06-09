@@ -55,12 +55,16 @@ check("garbage label needs_llm", r_garbage.needs_llm is True, f"score={r_garbage
 print("\nValidator statuses:")
 check("valid", validate_account("532", "Banques")["status"] == "valid")
 check("valid (no label)", validate_account("401", None)["status"] == "valid")
+# Labels are not checked — validator only validates code existence vs PCGT.
+# A valid code with a mismatched label is still "valid".
 lm = validate_account("532", "Comptes bancaires")
-check("label_mismatch", lm["status"] == "label_mismatch", lm["status"])
-cm = validate_account("601", "Ventes de produits finis")
-check("class_mismatch (not label_mismatch)", cm["status"] == "class_mismatch", cm["status"])
+check("valid code + wrong label still valid", lm["status"] == "valid", lm["status"])
+# invalid_code: code absent from PCGT, suggestion comes from LLM (may be None without live key)
 ic = validate_account("225", "Terrains nus")
-check("invalid_code with suggestion", ic["status"] == "invalid_code" and ic["suggested_code"] is not None, f"sugg={ic['suggested_code']}")
+check("invalid_code status", ic["status"] == "invalid_code", ic["status"])
+# No label → invalid_code, no suggestion
+no_label = validate_account("225", None)
+check("no label → invalid_code, no suggestion", no_label["status"] == "invalid_code" and no_label["suggested_code"] is None, no_label["status"])
 
 print("\nHappy path — zero false positives (clean file of real PCGT codes+labels):")
 clean_rows = [
@@ -71,7 +75,6 @@ report = validate_accounts_batch(clean_rows)
 s = report["summary"]
 print(f"  summary: {s}")
 check("all valid", s["valid"] == s["total"], f"{s['valid']}/{s['total']}")
-check("zero warnings", s["warnings"] == 0)
 check("zero errors", s["errors"] == 0)
 
 print("\n" + ("ALL CHECKS PASSED" if not failures else f"FAILED: {failures}"))

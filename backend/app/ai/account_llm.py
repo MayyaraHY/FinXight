@@ -1,33 +1,37 @@
 """
 LLM fallback for account matching — Groq.
 
-Strategy (replaces fuzzy-first flow):
+Strategy:
   1. Code prefix doesn't exist in PCGT → trigger this module.
-  2. Extract subclass (first 2 digits, e.g. "67" from "673").
-  3. If subclass candidates exist → ask Groq to match semantically within subclass.
-  4. If subclass has no candidates (e.g. "67" is not a real PCGT subclass) →
-     fall back to full class candidates (all "6x" accounts).
-  5. Groq matches purely on label semantics — the invalid code's digits are
-     irrelevant, only the label meaning drives the suggestion.
-  6. Suggested code must be >= 2 digits (never bare class digit like "6").
-  7. Returns { suggested_code, suggested_label, confidence, reason } or unresolved.
-  8. Never raises — on any failure returns unresolved so parsing is never blocked.
+  2. Use fuzzy ranking to trim PCGT candidates to top 5 (by label similarity).
+     Prefers subclass candidates (first 2 digits); falls back to full class if empty.
+     This collapses the old two-call subclass→class retry into a single call.
+  3. llm_match_batch() accepts all invalid (code, label) pairs at once and sends
+     them in a single Groq prompt, returning one suggestion per pair.
+  4. Retry with exponential backoff on 429.
+  5. Never raises — on any failure returns unresolved so parsing is never blocked.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-from typing import List, Optional
+import time
+from typing import Dict, List, Optional, Tuple
 
 from groq import Groq
 
 from app.core.config import settings
 from app.core.pcgt_loader import PCGTAccount, PCGTLoader
+from app.services.account_matcher import fuzzy_match
+from app.services.preparation_service import normalize_string
 
 logger = logging.getLogger(__name__)
 
 MODEL = "llama-3.1-8b-instant"
+TOP_N_CANDIDATES = 5   # candidates sent to the LLM per invalid code
+BATCH_SIZE = 20        # max invalid codes per Groq call
+MAX_RETRIES = 3
 
 _client: Optional[Groq] = None
 
@@ -49,90 +53,149 @@ def _unresolved(reason: str) -> dict:
     }
 
 
-def _call_groq(source_code: str, source_label: str, candidates: List[PCGTAccount]) -> dict:
+# ---------------------------------------------------------------------------
+# Candidate trimming
+# ---------------------------------------------------------------------------
+
+def _top_candidates(source_label: str, pool: List[PCGTAccount]) -> List[PCGTAccount]:
     """
-    Single Groq call: match source_label semantically against candidates.
-    Returns { status, code, label, confidence, reason }.
-    Never raises.
+    Rank pool by fuzzy label similarity to source_label and return top TOP_N_CANDIDATES.
+    Uses the existing fuzzy_match scorer — no LLM involved here.
     """
-    candidate_lines = "\n".join(f"{c.code}: {c.label}" for c in candidates)
-    valid_codes = {c.code for c in candidates}
-    by_code = {c.code: c for c in candidates}
+    if not pool:
+        return []
+    norm = normalize_string(source_label)
+    scored = sorted(pool, key=lambda a: fuzzy_match(norm, [a]).score, reverse=True)
+    return scored[:TOP_N_CANDIDATES]
+
+
+def _get_trimmed_candidates(source_code: str, source_label: str, loader: PCGTLoader) -> List[PCGTAccount]:
+    """
+    Return top-N candidates for a single invalid code.
+    Prefers subclass (first 2 digits); falls back to full class if subclass is empty.
+    Single candidate set — no second LLM call needed.
+    """
+    klass = source_code[0]
+    subclass = source_code[:2]
+
+    subclass_pool = loader.get_accounts_by_prefix(subclass)
+    pool = subclass_pool if subclass_pool else loader.get_accounts_by_prefix(klass)
+
+    return _top_candidates(source_label, pool)
+
+
+# ---------------------------------------------------------------------------
+# Groq call with retry
+# ---------------------------------------------------------------------------
+
+def _call_groq_batch(items: List[Tuple[str, str, List[PCGTAccount]]]) -> List[dict]:
+    """
+    Single Groq call for a batch of (source_code, source_label, candidates) triples.
+    Returns a list of result dicts in the same order as items.
+    On any failure, returns _unresolved() for every item in the batch.
+    """
+    if not items:
+        return []
+
+    # Build per-item blocks
+    blocks = []
+    valid_codes_per_item = []
+    by_code_per_item = []
+
+    for idx, (code, label, candidates) in enumerate(items, start=1):
+        candidate_lines = "\n".join(f"  {c.code}: {c.label}" for c in candidates)
+        blocks.append(
+            f"Compte {idx} — Code invalide: {code}, Libellé: {label}\n"
+            f"Candidats PCGT:\n{candidate_lines}"
+        )
+        valid_codes_per_item.append({c.code for c in candidates})
+        by_code_per_item.append({c.code: c for c in candidates})
 
     system = (
         "Tu es un expert-comptable tunisien spécialisé dans le Plan Comptable Général Tunisien (PCGT). "
-        "Un code de compte invalide t'est soumis avec son libellé. "
-        "Ignore complètement les chiffres du code source — utilise UNIQUEMENT le sens du libellé "
-        "pour choisir le meilleur compte de la liste de candidats. "
-        "Tu ne peux choisir QUE des codes présents dans la liste fournie. "
-        "Le code suggéré doit avoir au minimum 2 chiffres. "
-        "Si aucun candidat ne correspond sémantiquement, retourne null. "
-        "Réponds uniquement en JSON strict."
+        "Pour chaque compte invalide, choisis le meilleur candidat PCGT selon le sens du libellé uniquement. "
+        "Ignore les chiffres du code invalide. Tu ne peux choisir QUE des codes présents dans la liste de candidats. "
+        "Si aucun candidat ne correspond, utilise null. Réponds uniquement en JSON strict."
     )
 
     user = (
-        f"Code source (invalide): {source_code}\n"
-        f"Libellé source: {source_label}\n\n"
-        f"Comptes PCGT candidats (code: libellé officiel):\n{candidate_lines}\n\n"
-        "Retourne exactement ce JSON:\n"
-        '{"code": "<code candidat ou null>", '
-        '"confidence": <0-100>, '
-        '"reason": "<explication courte en français>"}'
+        "Voici les comptes invalides à corriger:\n\n"
+        + "\n\n".join(blocks)
+        + "\n\nRetourne exactement ce JSON (un objet par compte, dans le même ordre):\n"
+        '{"results": [{"source_code": "<code invalide>", "code": "<code PCGT ou null>", '
+        '"confidence": <0-100>, "reason": "<explication courte en français>"}]}'
     )
 
-    try:
-        response = get_client().chat.completions.create(
-            model=MODEL,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            temperature=0,
-            response_format={"type": "json_object"},
-            max_tokens=200,
-        )
-        raw = response.choices[0].message.content
-        parsed = json.loads(raw)
-    except Exception as e:
-        logger.warning("Groq call failed for %s / %s: %s", source_code, source_label, e)
-        return _unresolved(f"erreur LLM: {e}")
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = get_client().chat.completions.create(
+                model=MODEL,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                temperature=0,
+                response_format={"type": "json_object"},
+                max_tokens=150 * len(items),
+            )
+            raw = response.choices[0].message.content
+            parsed = json.loads(raw)
+            results_raw = parsed.get("results", [])
+            break
+        except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "rate_limit" in err_str.lower():
+                wait = 2 ** attempt
+                logger.warning("Groq 429 on attempt %d/%d, waiting %ds", attempt + 1, MAX_RETRIES, wait)
+                time.sleep(wait)
+                if attempt == MAX_RETRIES - 1:
+                    logger.error("Groq rate limit persistent after %d retries", MAX_RETRIES)
+                    return [_unresolved("rate limit persistant") for _ in items]
+            else:
+                logger.warning("Groq batch call failed: %s", e)
+                return [_unresolved(f"erreur LLM: {e}") for _ in items]
 
-    code = parsed.get("code")
-    code = str(code).strip() if code not in (None, "", "null") else None
-    confidence = parsed.get("confidence", 0)
-    reason = parsed.get("reason") or ""
+    # Parse and validate each result
+    output = []
+    for idx, (code, label, candidates) in enumerate(items):
+        raw_r = results_raw[idx] if idx < len(results_raw) else {}
+        valid_codes = valid_codes_per_item[idx]
+        by_code = by_code_per_item[idx]
 
-    # Enforce: code must be in candidate list and have >= 2 digits
-    if not code or code not in valid_codes or len(code) < 2:
-        return _unresolved(reason or "aucun code valide retourné par le LLM")
+        suggested = raw_r.get("code")
+        suggested = str(suggested).strip() if suggested not in (None, "", "null") else None
+        confidence = raw_r.get("confidence", 0)
+        reason = raw_r.get("reason") or ""
 
-    try:
-        confidence = float(confidence)
-    except (TypeError, ValueError):
-        confidence = 0.0
+        if not suggested or suggested not in valid_codes or len(suggested) < 2:
+            output.append(_unresolved(reason or "aucun code valide retourné"))
+            continue
 
-    acc = by_code[code]
-    return {
-        "status": "matched",
-        "code": acc.code,
-        "label": acc.label,
-        "confidence": confidence,
-        "reason": reason,
-    }
+        try:
+            confidence = float(confidence)
+        except (TypeError, ValueError):
+            confidence = 0.0
 
+        acc = by_code[suggested]
+        output.append({
+            "status": "matched",
+            "code": acc.code,
+            "label": acc.label,
+            "confidence": confidence,
+            "reason": reason,
+        })
+
+    return output
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
 
 def llm_match(source_code: str, source_label: str, loader: Optional[PCGTLoader] = None) -> dict:
     """
-    Entry point: given an invalid PCGT code and its label, suggest the correct
-    PCGT code using semantic label matching.
-
-    Flow:
-      1. Extract subclass (first 2 digits) → try subclass candidates first.
-      2. If no subclass candidates → fall back to full class candidates.
-      3. Groq picks best semantic match from whichever candidate set is used.
-
-    Returns:
-        { status: "matched"|"unresolved", code, label, confidence, reason }
+    Single-code entry point (used by validate_account for on-demand calls).
+    Trims candidates to top-5, makes one Groq call with retry.
     Never raises.
     """
     loader = loader or PCGTLoader()
@@ -141,30 +204,54 @@ def llm_match(source_code: str, source_label: str, loader: Optional[PCGTLoader] 
     if not source_code or not source_label:
         return _unresolved("code ou libellé manquant")
 
-    klass = source_code[0]           # e.g. "6"
-    subclass = source_code[:2]       # e.g. "67"
+    candidates = _get_trimmed_candidates(source_code, source_label, loader)
+    if not candidates:
+        return _unresolved(f"aucun compte PCGT trouvé pour le code {source_code!r}")
 
-    # ── Step 1: try subclass candidates ──────────────────────────────────────
-    subclass_candidates = loader.get_accounts_by_prefix(subclass)
+    logger.debug("llm_match %s: %d trimmed candidates", source_code, len(candidates))
+    results = _call_groq_batch([(source_code, source_label, candidates)])
+    return results[0] if results else _unresolved("erreur inattendue")
 
-    if subclass_candidates:
-        logger.debug(
-            "llm_match %s: using %d subclass '%s' candidates",
-            source_code, len(subclass_candidates), subclass,
-        )
-        result = _call_groq(source_code, source_label, subclass_candidates)
-        if result["status"] == "matched":
-            return result
-        # Subclass matched nothing → fall through to class-level
 
-    # ── Step 2: fall back to full class candidates ────────────────────────────
-    class_candidates = loader.get_accounts_by_prefix(klass)
+def llm_match_batch(
+    items: List[Tuple[str, str]],
+    loader: Optional[PCGTLoader] = None,
+) -> Dict[str, dict]:
+    """
+    Batch entry point: resolve multiple (source_code, source_label) pairs.
+    Sends them to Groq in chunks of BATCH_SIZE to stay within token limits.
+    Returns dict keyed by source_code.
+    Never raises.
+    """
+    loader = loader or PCGTLoader()
+    if not items:
+        return {}
 
-    if not class_candidates:
-        return _unresolved(f"aucun compte PCGT trouvé pour la classe {klass!r}")
+    # Build (code, label, candidates) triples
+    triples = []
+    for code, label in items:
+        code = str(code).strip()
+        candidates = _get_trimmed_candidates(code, label, loader)
+        if not candidates:
+            triples.append((code, label, []))
+        else:
+            triples.append((code, label, candidates))
 
-    logger.debug(
-        "llm_match %s: subclass '%s' unresolved, retrying with %d class '%s' candidates",
-        source_code, subclass, len(class_candidates), klass,
-    )
-    return _call_groq(source_code, source_label, class_candidates)
+    # Separate codes with no candidates (no LLM needed)
+    results: Dict[str, dict] = {}
+    to_call = [(c, l, cands) for c, l, cands in triples if cands]
+    no_cands = [(c, l) for c, l, cands in triples if not cands]
+
+    for code, label in no_cands:
+        results[code] = _unresolved(f"aucun compte PCGT trouvé pour le code {code!r}")
+
+    logger.info("llm_match_batch: %d codes → %d Groq call(s)", len(to_call), -(-len(to_call) // BATCH_SIZE))
+
+    # Call in batches
+    for i in range(0, len(to_call), BATCH_SIZE):
+        chunk = to_call[i:i + BATCH_SIZE]
+        batch_results = _call_groq_batch(chunk)
+        for (code, label, _), result in zip(chunk, batch_results):
+            results[code] = result
+
+    return results

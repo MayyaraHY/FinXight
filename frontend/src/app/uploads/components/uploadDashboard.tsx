@@ -1,15 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { Modal } from "@/components/ui/modal";
 import Alert from "@/components/ui/alert/Alert";
+import { getCompanies } from "@/services/companyService";
+import { Company } from "@/models/Company";
 
 import { useUploads } from "../hooks/useUploads";
 
-export default function UploadDashboard() {
+const CURRENT_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: CURRENT_YEAR - 2014 }, (_, i) => CURRENT_YEAR - i);
+const MONTHS = [
+  { value: 1, label: "January" },
+  { value: 2, label: "February" },
+  { value: 3, label: "March" },
+  { value: 4, label: "April" },
+  { value: 5, label: "May" },
+  { value: 6, label: "June" },
+  { value: 7, label: "July" },
+  { value: 8, label: "August" },
+  { value: 9, label: "September" },
+  { value: 10, label: "October" },
+  { value: 11, label: "November" },
+  { value: 12, label: "December" },
+];
+
+export default function UploadDashboard({ defaultCompanyId }: { defaultCompanyId?: number }) {
   const router = useRouter();
   const {
     uploads,
@@ -18,6 +37,7 @@ export default function UploadDashboard() {
     remove,
   } = useUploads();
 
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; fileId: number | null; fileName: string }>({
     isOpen: false,
     fileId: null,
@@ -29,14 +49,35 @@ export default function UploadDashboard() {
     message: "",
   });
 
-  const [displayNameInput, setDisplayNameInput] = useState<{ isOpen: boolean; file: File | null; displayName: string }>({
+  const [displayNameInput, setDisplayNameInput] = useState<{
+    isOpen: boolean;
+    file: File | null;
+    displayName: string;
+    companyId: number | null;
+    periodYear: number | null;
+    periodMonth: number | null;
+  }>({
     isOpen: false,
     file: null,
     displayName: "",
+    companyId: defaultCompanyId ?? null,
+    periodYear: null,
+    periodMonth: null,
   });
 
   // Tracks the name of the file currently being uploaded so the ghost card can display it.
   const [uploadingFileName, setUploadingFileName] = useState<string | null>(null);
+
+  useEffect(() => {
+    getCompanies().then(setCompanies).catch(() => {});
+  }, []);
+
+  // When defaultCompanyId is provided (from URL ?company_id=X), pre-select it in the modal
+  useEffect(() => {
+    if (defaultCompanyId) {
+      setDisplayNameInput((prev) => ({ ...prev, companyId: defaultCompanyId }));
+    }
+  }, [defaultCompanyId]);
 
   // Validate file type - only CSV and Excel files allowed
   const isValidFileType = (file: File): boolean => {
@@ -72,22 +113,26 @@ export default function UploadDashboard() {
 
     // File is valid, show display name input
     setFileError({ isOpen: false, message: "" });
-    setDisplayNameInput({ isOpen: true, file, displayName: "" });
+    setDisplayNameInput((prev) => ({ ...prev, isOpen: true, file, displayName: "" }));
   };
 
   const handleConfirmUpload = async () => {
     if (displayNameInput.file) {
       const displayName = displayNameInput.displayName.trim() || undefined;
-      // Capture the display label before clearing the modal state.
       setUploadingFileName(displayName || displayNameInput.file.name);
-      setDisplayNameInput({ isOpen: false, file: null, displayName: "" });
-      await uploadParse(displayNameInput.file, displayName);
+      setDisplayNameInput({ isOpen: false, file: null, displayName: "", companyId: defaultCompanyId ?? null, periodYear: null, periodMonth: null });
+      await uploadParse(displayNameInput.file, {
+        displayName,
+        companyId: displayNameInput.companyId,
+        periodYear: displayNameInput.periodYear,
+        periodMonth: displayNameInput.periodMonth,
+      });
       setUploadingFileName(null);
     }
   };
 
   const handleCancelUpload = () => {
-    setDisplayNameInput({ isOpen: false, file: null, displayName: "" });
+    setDisplayNameInput({ isOpen: false, file: null, displayName: "", companyId: defaultCompanyId ?? null, periodYear: null, periodMonth: null });
   };
 
   const handleDeleteClick = (fileId: number, fileName: string) => {
@@ -155,25 +200,81 @@ export default function UploadDashboard() {
                   autoFocus
                   value={displayNameInput.displayName}
                   onChange={(e) =>
-                    setDisplayNameInput({
-                      ...displayNameInput,
-                      displayName: e.target.value,
-                    })
+                    setDisplayNameInput({ ...displayNameInput, displayName: e.target.value })
                   }
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && uploadProgress === 0) {
-                      handleConfirmUpload();
-                    }
+                    if (e.key === "Enter" && uploadProgress === 0) handleConfirmUpload();
                   }}
                   placeholder="Leave empty to use original filename"
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  This is how the file will be displayed in the system. The original filename is always used for file I/O.
-                </p>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Company (Optional)
+                </label>
+                <select
+                  value={displayNameInput.companyId ?? ""}
+                  onChange={(e) =>
+                    setDisplayNameInput({
+                      ...displayNameInput,
+                      companyId: e.target.value ? Number(e.target.value) : null,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                >
+                  <option value="">— No company —</option>
+                  {companies.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Year (Optional)
+                  </label>
+                  <select
+                    value={displayNameInput.periodYear ?? ""}
+                    onChange={(e) =>
+                      setDisplayNameInput({
+                        ...displayNameInput,
+                        periodYear: e.target.value ? Number(e.target.value) : null,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  >
+                    <option value="">— Year —</option>
+                    {YEARS.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Month (Optional)
+                  </label>
+                  <select
+                    value={displayNameInput.periodMonth ?? ""}
+                    onChange={(e) =>
+                      setDisplayNameInput({
+                        ...displayNameInput,
+                        periodMonth: e.target.value ? Number(e.target.value) : null,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  >
+                    <option value="">— Month —</option>
+                    {MONTHS.map((m) => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
                 <button
                   onClick={handleCancelUpload}
                   disabled={uploadProgress > 0}

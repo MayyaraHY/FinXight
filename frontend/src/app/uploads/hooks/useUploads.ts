@@ -8,6 +8,7 @@ import {
   uploadFile,
   uploadAndParseWithProgress,
   parseUpload,
+  UploadMetadata,
 } from "@/services/UploadService";
 import { Upload } from "@/models/Upload";
 
@@ -72,11 +73,11 @@ export function useUploads() {
     setLoading(false);
   };
 
-  const uploadParse = async (file: File, displayName?: string) => {
+  const uploadParse = async (file: File, metadata?: UploadMetadata) => {
     setLoading(true);
     setUploadProgress(0);
     try {
-      await uploadAndParseWithProgress(file, displayName, (progress) => {
+      await uploadAndParseWithProgress(file, metadata, (progress) => {
         setUploadProgress(progress);
       });
       await fetchUploads();

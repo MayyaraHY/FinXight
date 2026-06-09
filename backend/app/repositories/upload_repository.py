@@ -10,6 +10,9 @@ def create_upload(
     file_path: str,
     user_id: PyUUID,
     display_filename: str = None,
+    company_id: int = None,
+    period_year: int = None,
+    period_month: int = None,
 ):
     """Insert a new upload row owned by ``user_id``.
 
@@ -23,6 +26,9 @@ def create_upload(
         display_filename=display_filename,
         status="uploaded",
         user_id=user_id,
+        company_id=company_id,
+        period_year=period_year,
+        period_month=period_month,
     )
 
     db.add(upload)
@@ -84,4 +90,47 @@ def delete_all_uploads(db, user_id: PyUUID):
     """Delete every upload owned by ``user_id``. Does NOT touch legacy
     unowned rows or other users' data."""
     db.query(Upload).filter(Upload.user_id == user_id).delete()
+    db.commit()
+
+
+_MISSING = object()
+
+
+def patch_metadata(
+    db,
+    upload_id: int,
+    user_id: PyUUID,
+    *,
+    company_id=_MISSING,
+    period_year=_MISSING,
+    period_month=_MISSING,
+) -> Upload | None:
+    """Patch only the fields that are explicitly provided (sentinel guards None vs not-sent)."""
+    upload = get_upload_by_id(db, upload_id, user_id=user_id)
+    if not upload:
+        return None
+    if company_id is not _MISSING:
+        upload.company_id = company_id
+    if period_year is not _MISSING:
+        upload.period_year = period_year
+    if period_month is not _MISSING:
+        upload.period_month = period_month
+    db.commit()
+    db.refresh(upload)
+    return upload
+
+
+def get_by_company(db, company_id: int, user_id: PyUUID) -> list[Upload]:
+    return (
+        db.query(Upload)
+        .filter(Upload.company_id == company_id, Upload.user_id == user_id)
+        .order_by(Upload.period_year.asc().nullslast(), Upload.period_month.asc().nullslast())
+        .all()
+    )
+
+
+def delete_by_company(db, company_id: int, user_id: PyUUID) -> None:
+    db.query(Upload).filter(
+        Upload.company_id == company_id, Upload.user_id == user_id
+    ).delete()
     db.commit()

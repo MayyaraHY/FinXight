@@ -144,6 +144,9 @@ def upload_and_parse_document(
     file,
     user_id: PyUUID,
     display_filename: str = None,
+    company_id: int = None,
+    period_year: int = None,
+    period_month: int = None,
     background_tasks=None,
 ):
     """
@@ -169,6 +172,9 @@ def upload_and_parse_document(
             file_path=file_path,
             user_id=user_id,
             display_filename=display_filename,
+            company_id=company_id,
+            period_year=period_year,
+            period_month=period_month,
         )
 
         logger.info(f"Upload registered with ID: {upload.id}")

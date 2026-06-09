@@ -9,6 +9,7 @@ import {
   CalenderIcon,
   ChevronDownIcon,
   FileIcon,
+  FolderIcon,
   GridIcon,
   HorizontaLDots,
   ListIcon,
@@ -37,6 +38,11 @@ const navItems: NavItem[] = [
     icon: <FileIcon />,
     name: "My documents",
     path: "/uploads",
+  },
+  {
+    icon: <FolderIcon />,
+    name: "Companies",
+    path: "/companies",
   },
   {
     icon: <CalenderIcon />,

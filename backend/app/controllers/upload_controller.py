@@ -1,10 +1,13 @@
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Form, UploadFile, File, Depends, Query, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.auth import CurrentUser, assert_upload_owned, current_user
 from app.db.cnx import SessionLocal
+from app.repositories.upload_repository import patch_metadata
 from app.services.upload_service import (
     upload_document,
     parse_csv_file,
@@ -88,6 +91,9 @@ async def upload_and_parse(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     display_name: str = Form(None),
+    company_id: Optional[int] = Form(None),
+    period_year: Optional[int] = Form(None),
+    period_month: Optional[int] = Form(None),
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(current_user),
 ):
@@ -102,6 +108,9 @@ async def upload_and_parse(
             file=file,
             user_id=user.id,
             display_filename=display_name,
+            company_id=company_id,
+            period_year=period_year,
+            period_month=period_month,
             background_tasks=background_tasks,
         )
     except Exception as e:
@@ -157,3 +166,53 @@ def delete_all_uploads(
     user: CurrentUser = Depends(current_user),
 ):
     return delete_all_uploads_service(db, user_id=user.id)
+
+
+# 🔹 PATCH METADATA (company_id, period_year, period_month — any subset)
+class UploadMetadataPatch(BaseModel):
+    company_id: Optional[int] = None
+    period_year: Optional[int] = None
+    period_month: Optional[int] = None
+
+
+@router.patch("/{upload_id}/metadata")
+def patch_upload_metadata(
+    upload_id: int,
+    body: UploadMetadataPatch,
+    db: Session = Depends(get_db),
+    user: CurrentUser = Depends(current_user),
+):
+    assert_upload_owned(db, upload_id, user)
+
+    from app.repositories.upload_repository import _MISSING
+
+    kwargs: dict = {}
+    fields_set = body.model_fields_set
+    if "company_id" in fields_set:
+        kwargs["company_id"] = body.company_id
+    if "period_year" in fields_set:
+        kwargs["period_year"] = body.period_year
+    if "period_month" in fields_set:
+        kwargs["period_month"] = body.period_month
+
+    # If no fields were sent, still succeed (no-op)
+    if not kwargs:
+        from app.repositories.upload_repository import get_upload_by_id
+        upload = get_upload_by_id(db, upload_id, user_id=user.id)
+        if not upload:
+            raise HTTPException(status_code=404, detail="Upload not found")
+        return {"success": True, "data": {"id": upload.id}}
+
+    upload = patch_metadata(db, upload_id, user.id, **kwargs)
+    if not upload:
+        raise HTTPException(status_code=404, detail="Upload not found")
+
+    return {
+        "success": True,
+        "data": {
+            "id": upload.id,
+            "company_id": upload.company_id,
+            "period_year": upload.period_year,
+            "period_month": upload.period_month,
+        },
+    }

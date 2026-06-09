@@ -40,6 +40,13 @@ export async function uploadAndParse(file: File, displayName?: string) {
   return res.json();
 }
 
+export interface UploadMetadata {
+  displayName?: string;
+  companyId?: number | null;
+  periodYear?: number | null;
+  periodMonth?: number | null;
+}
+
 /**
  * Upload + parse with simulated progress reporting via fetch.
  *
@@ -52,13 +59,22 @@ export async function uploadAndParse(file: File, displayName?: string) {
  */
 export async function uploadAndParseWithProgress(
   file: File,
-  displayName?: string,
+  metadata?: UploadMetadata,
   onProgress?: (progress: number) => void
 ): Promise<Upload> {
   const formData = new FormData();
   formData.append("file", file);
-  if (displayName) {
-    formData.append("display_name", displayName);
+  if (metadata?.displayName) {
+    formData.append("display_name", metadata.displayName);
+  }
+  if (metadata?.companyId != null) {
+    formData.append("company_id", String(metadata.companyId));
+  }
+  if (metadata?.periodYear != null) {
+    formData.append("period_year", String(metadata.periodYear));
+  }
+  if (metadata?.periodMonth != null) {
+    formData.append("period_month", String(metadata.periodMonth));
   }
 
   // Simulate progress while the request is in flight
@@ -164,6 +180,21 @@ export async function getPreviewCSV(uploadId: number, rows: number = 20) {
   const res = await fetchAuthed(`${API_URL}/preview/${uploadId}?rows=${rows}`);
 
   if (!res.ok) throw new Error("Failed to fetch preview");
+
+  return res.json();
+}
+
+export async function patchUploadMetadata(
+  uploadId: number,
+  data: { company_id?: number | null; period_year?: number | null; period_month?: number | null }
+) {
+  const res = await fetchAuthed(`${API_URL}/${uploadId}/metadata`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error("Failed to update upload metadata");
 
   return res.json();
 }
