@@ -7,14 +7,15 @@
         "line_id": 1,
         "label": "Revenus",
         "type": "computed",
-        "comptes": ["701", "702", "703", "704", "705", "706", "707", "708", "-709"]
+        "comptes": ["701", "702", "703", "704", "705", "706", "707", "708", "709"],
+        "note": "709 (RRR accordés) reste signé +: get_balance neutralise déjà la classe 7 (produits → positif), donc un compte 709 débiteur ressort négatif et réduit naturellement les revenus. Un préfixe '-709' double-inverserait le signe et AJOUTERAIT les rabais aux revenus."
       },
       {
         "line_id": 2,
         "label": "Autres produits d'exploitation",
         "type": "computed",
-        "comptes": ["731", "732", "733", "734", "735", "738", "739", "74", "781", "-79"],
-        "note": "Relatif aux produits provenant de la mise de pertes ou charges à la charge de tiers (remboursement d'assurance, etc.)"
+        "comptes": ["730", "731", "732", "733", "734", "735", "738", "739", "74", "781", "79"],
+        "note": "Relatif aux produits provenant de la mise de pertes ou charges à la charge de tiers (remboursement d'assurance, etc.). 730 ajouté (produits divers). 79 (transferts de charges) reste signé +: classe 7 déjà neutralisée par get_balance, donc un préfixe '-79' double-inverserait le signe. 79 créditeur ressort positif et s'ajoute aux produits (cohérent avec la complétude -Σ classe 6/7)."
       },
       {
         "line_id": 3,
@@ -40,18 +41,18 @@
         "label": "Achats de marchandises consommés",
         "type": "computed",
         "comptes_permanent": ["6031"],
-        "comptes_intermittent": ["601", "-6031", "6061"],
+        "comptes_intermittent": ["601", "6031", "6061"],
         "fallback_permanent": ["603", "-6032"],
-        "note": "Permanent: 603 (variation des stocks de marchandises, sous-compte 6031). Intermittent: 60 (y compris quote-part 606 assimilable aux achats de marchandises) ± 603. 606 Quote-part = achat d'emballages et marchandises non stockées."
+        "note": "Permanent: 603 (variation des stocks de marchandises, sous-compte 6031). Intermittent: 601 + 6061 ± 6031. 6031 reste signé + (maquette p.14 '± 603'): get_balance ne neutralise pas la classe 6, donc un 6031 débiteur (stock baissé → plus consommé) ressort positif et S'AJOUTE aux charges. Un préfixe '-6031' forcerait toujours un moins et inverserait le signe (~2.5M d'erreur). 606 Quote-part = achat d'emballages et marchandises non stockées."
       },
       {
         "line_id": 7,
         "label": "Achats d'approvisionnements consommés",
         "type": "computed",
         "comptes_permanent": ["6032"],
-        "comptes_intermittent": ["602", "-6032", "6062"],
+        "comptes_intermittent": ["602", "604", "6032", "6062"],
         "fallback_permanent": ["603", "-6031"],
-        "note": "Permanent: 603 (variation des stocks d'approvisionnements, sous-compte 6032). Intermittent: 60 (y compris quote-part 606 assimilable aux achats d'approvisionnement) ± 603. 606 Quote-part = achat de matières, emballages et fournitures de production (intrants) non stockées. fallback_permanent ajouté par symétrie avec L6 : si 6032 absent, retombe sur 603 net du sous-compte marchandises."
+        "note": "Permanent: 603 (variation des stocks d'approvisionnements, sous-compte 6032). Intermittent: 602 + 604 + 6062 ± 6032 (ordre: brut, brut, variation, quote-part). 604 (achats stockés d'approvisionnement) ajouté. 6032 reste signé + (cf. note L6): un préfixe '-6032' inverserait le signe. 606 Quote-part = matières, emballages et fournitures de production (intrants) non stockées. fallback_permanent : si 6032 absent, retombe sur 603 net du sous-compte marchandises."
       },
       {
         "line_id": 8,
@@ -63,15 +64,15 @@
         "line_id": 9,
         "label": "Dotations aux amortissements et aux provisions",
         "type": "computed",
-        "comptes": ["681"],
-        "note": "681. 6861 (Résorption des autres actifs non courants de nature financière) est désormais capté par L13 grâce à l'appariement par préfixe le plus long ; l'ancien patch -6861 est supprimé."
+        "comptes": ["681", "687"],
+        "note": "681 + 687 (dotations aux résorptions/provisions). 6861 (Résorption des autres actifs non courants de nature financière) est capté par L13 grâce à l'appariement par préfixe le plus long ; -6861 n'est PAS réintroduit (il double-soustrairait). '687' (préfixe distinct de 6861) capte les résorptions non financières."
       },
       {
         "line_id": 10,
         "label": "Autres charges d'exploitation",
         "type": "computed",
-        "comptes": ["606", "61", "62", "63", "-636", "66"],
-        "note": "606 non rattachés aux achats (fournitures de bureau, d'entretien, énergie, matières consommables non stockées, etc. comptabilisées au 606 et non rattachées aux achats) + 61 + 62 + 63 (autres que 636) + 66."
+        "comptes": ["606", "61", "62", "63", "66"],
+        "note": "606 non rattachés aux achats (fournitures de bureau, d'entretien, énergie, matières consommables non stockées, etc. comptabilisées au 606 et non rattachées aux achats) + 61 + 62 + 63 (autres que 636) + 66. '-636' supprimé : l'appariement par préfixe le plus long route déjà 636 vers L16 ; le garder créait une collision de même longueur (636 vs 636) qui captait 636 dans L10 avec le mauvais signe."
       },
       {
         "line_id": 11,
@@ -122,7 +123,8 @@
         "line_id": 18,
         "label": "Impôts sur les bénéfices calculés sur le résultat des activités ordinaires",
         "type": "computed",
-        "comptes": ["691"]
+        "comptes": ["691", "695"],
+        "note": "691 + 695 (autres impôts sur les bénéfices des activités ordinaires). 695 ≠ 697 (impôt sur éléments extraordinaires, en L20) — pas de collision."
       },
       {
         "line_id": 19,

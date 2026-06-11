@@ -18,6 +18,11 @@ CR_RULES_PATH = Path(__file__).resolve().parent.parent / "core" / "cr_rules.json
 # real gap (rule missing or bad code) and must be surfaced, never dropped.
 CR_CLASSES = ("6", "7")
 
+# Completeness / equality tolerance in DT. Balances carry millimes, so once the
+# signs are clean this can be tightened toward 0.01; 1.0 absorbs pre-closing
+# rounding for now.
+CR_TOL = Decimal("1.0")
+
 
 class CompteResultatService:
 
@@ -246,6 +251,40 @@ class CompteResultatService:
         }
 
     # =====================================================
+    # COMPLETENESS INVARIANT
+    # =====================================================
+    def check_completeness(
+        self,
+        accounts: List[Account],
+        lines: Dict[int, Dict],
+        unmapped: List[str],
+    ) -> Dict:
+        """
+        Independent of how accounts are grouped into lines, double-entry gives
+        résultat net = −Σ(signed_balance over every class 6/7 account)
+        (class 7 credit-natured → negative b, class 6 debit-natured → positive b;
+        the leading minus turns produits into +, charges into −). If every
+        class-6/7 account is captured exactly once with the correct sign, the CR
+        line 21 equals this truth. A non-zero gap with no orphan therefore
+        isolates a sign/rule error — there can be no cross-line double count
+        because Pass 1 assigns each account to a single line.
+        """
+        truth = -sum(
+            (signed_balance(acc) for acc in accounts
+             if acc.account_code[:1] in CR_CLASSES),
+            Decimal("0"),
+        )
+        resultat_net = Decimal(str(lines.get(21, {}).get("amount", 0.0)))
+        gap = resultat_net - truth
+        return {
+            "orphans": sorted(set(unmapped)),
+            "expected": float(round(truth, 3)),
+            "resultat_net": float(round(resultat_net, 3)),
+            "gap": float(round(gap, 3)),
+            "ok": (not unmapped) and abs(gap) < CR_TOL,
+        }
+
+    # =====================================================
     # VALIDATION
     # =====================================================
     def validate(
@@ -262,6 +301,47 @@ class CompteResultatService:
                 f"{len(unmapped)} compte(s) de charges/produits non affecté(s) à "
                 f"une ligne du CR (lacune de règle ou code invalide) : "
                 f"{', '.join(sorted(set(unmapped)))}."
+            )
+
+        # ── Completeness invariant: L21 == −Σ(classe 6/7) ───────────────────
+        comp = self.check_completeness(accounts, lines, unmapped)
+        if not comp["ok"] and abs(Decimal(str(comp["gap"]))) > CR_TOL:
+            if comp["orphans"]:
+                # Cause already named by the unmapped warning above; restate the
+                # measured arithmetic impact for the accountant.
+                warnings.append(
+                    f"Écart de complétude {comp['gap']:+,.3f} DT : résultat net "
+                    f"({comp['resultat_net']:,.3f} DT) ≠ −Σ(classes 6/7) "
+                    f"({comp['expected']:,.3f} DT), dû aux comptes non capturés "
+                    f"ci-dessus."
+                )
+            else:
+                # No orphan ⇒ every account is captured but the totals still
+                # disagree → a sign or rule error, not a missing prefix.
+                warnings.append(
+                    f"Écart de complétude {comp['gap']:+,.3f} DT SANS compte "
+                    f"orphelin ⇒ erreur de signe/règle dans cr_rules.json. "
+                    f"Résultat net {comp['resultat_net']:,.3f} DT vs "
+                    f"−Σ(classes 6/7) {comp['expected']:,.3f} DT. Un écart "
+                    f"positif = charges masquées ou produits gonflés."
+                )
+
+        # ── Inventory-mode contradiction (param vs balances) ────────────────
+        gross_603 = self.sum_by_prefix(accounts, "601") + self.sum_by_prefix(accounts, "602")
+        var_6031 = self.sum_by_prefix(accounts, "6031")
+        var_6032 = self.sum_by_prefix(accounts, "6032")
+        if self.inventory_method == "permanent" and abs(gross_603) > CR_TOL:
+            warnings.append(
+                f"Mode 'permanent' demandé mais les comptes 601/602 portent "
+                f"{float(gross_603):,.0f} DT (achats bruts) — l'inventaire est "
+                f"probablement INTERMITTENT. Les achats bruts risquent d'être ignorés."
+            )
+        if self.inventory_method == "intermittent" and abs(gross_603) <= CR_TOL \
+                and abs(var_6031 + var_6032) > CR_TOL:
+            warnings.append(
+                f"Mode 'intermittent' demandé mais aucun achat brut 601/602 ; seules "
+                f"des variations 6031/6032 ({float(var_6031 + var_6032):,.0f} DT) sont "
+                f"présentes — l'inventaire est probablement PERMANENT."
             )
 
         # ── Per-line check_account (e.g. L21 vs compte 13) ──────────────────

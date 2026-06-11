@@ -22,7 +22,7 @@ router = APIRouter(
 @router.post("/generate/{upload_id}")
 def generate_cr(
     upload_id: int,
-    inventory_method: str = Query("permanent", enum=["permanent", "intermittent"]),
+    inventory_method: str = Query(..., enum=["permanent", "intermittent"]),
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(current_user),
 ):
