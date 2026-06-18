@@ -1,3 +1,4 @@
+from collections import defaultdict
 from uuid import UUID as PyUUID
 
 from sqlalchemy.orm import Session
@@ -5,8 +6,26 @@ from sqlalchemy.orm import Session
 from app.repositories.timeline_repository import get_timeline_data
 
 
-def get_company_timeline(db: Session, company_id: int, user_id: PyUUID) -> list[dict]:
-    return get_timeline_data(db, company_id, user_id)
+def get_company_timeline(db: Session, company_id: int, user_id: PyUUID) -> dict:
+    periods = get_timeline_data(db, company_id, user_id)
+
+    seen: dict[tuple, list[int]] = defaultdict(list)
+    for p in periods:
+        if p["period_year"] is not None and p["period_month"] is not None:
+            seen[(p["period_year"], p["period_month"])].append(p["upload_id"])
+
+    warnings = [
+        {
+            "type": "duplicate_period",
+            "period_year": year,
+            "period_month": month,
+            "upload_ids": upload_ids,
+        }
+        for (year, month), upload_ids in seen.items()
+        if len(upload_ids) > 1
+    ]
+
+    return {"periods": periods, "warnings": warnings}
 
 
 def compare_periods(

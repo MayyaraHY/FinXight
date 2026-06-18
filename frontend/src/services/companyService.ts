@@ -1,6 +1,6 @@
 import { BACKEND_URL } from "@/lib/apiUrls";
 import { apiClient } from "@/lib/apiClient";
-import { Company, TimelineComparison, TimelinePeriod } from "@/models/Company";
+import { Company, TimelineComparison, TimelineResponse } from "@/models/Company";
 
 const BASE = `${BACKEND_URL}/companies`;
 
@@ -28,8 +28,8 @@ export async function deleteCompany(id: number): Promise<{ success: boolean; del
   return apiClient.delete<{ success: boolean; deleted_uploads: number }>(`${BASE}/${id}`);
 }
 
-export async function getTimeline(companyId: number): Promise<TimelinePeriod[]> {
-  const res = await apiClient.get<{ success: boolean; data: TimelinePeriod[] }>(
+export async function getTimeline(companyId: number): Promise<TimelineResponse> {
+  const res = await apiClient.get<{ success: boolean; data: TimelineResponse }>(
     `${BASE}/${companyId}/timeline`
   );
   return res.data;

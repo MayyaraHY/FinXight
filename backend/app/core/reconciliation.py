@@ -63,14 +63,26 @@ def classify_and_reconcile(
     a ClassificationResult with a status and optional warning message.
 
     States:
-      ok          — rule matches; Rubrique agrees or is absent.
-      discrepancy — rule matches; Rubrique disagrees (rule used, warning emitted).
-      unmapped    — no rule match; placed by Rubrique (UNVERIFIED) or excluded.
+      ok              — rule matches; Rubrique agrees or is absent.
+      discrepancy     — rule matches; Rubrique disagrees (rule used, warning emitted).
+      unmapped        — no rule match; placed by Rubrique (UNVERIFIED) or excluded.
+      compte_resultat — class 6/7 account; belongs to income statement, not bilan.
     """
     code = account.account_code
     rubrique = getattr(account, "source_rubrique", None)
     if rubrique:
         rubrique = rubrique.strip() or None
+
+    # ── Compte résultat (class 6 & 7) — excluded from bilan by design ────────
+    if code and code[:1] in ("6", "7"):
+        return ClassificationResult(
+            account=account,
+            category_label=None,
+            node_path=None,
+            source_rubrique=rubrique,
+            status="compte_resultat",
+            warning=None,
+        )
 
     rule = loader.get_account_category(code)
 
@@ -170,7 +182,7 @@ def build_data_quality(
         for r in results
     ]
 
-    flagged = [l for l in lines if l["status"] != "ok"]
+    flagged = [l for l in lines if l["status"] not in ("ok", "compte_resultat")]
     discrepancy_count = sum(1 for r in results if r.status == "discrepancy")
     unmapped_count    = sum(1 for r in results if r.status == "unmapped")
 

@@ -7,19 +7,16 @@ import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import { useSidebar } from "@/context/SidebarContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
-import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import ComponentCard from "@/components/common/ComponentCard";
 import { Modal } from "@/components/ui/modal";
 import Alert from "@/components/ui/alert/Alert";
-import { Company, TimelinePeriod } from "@/models/Company";
+import { Company, TimelinePeriod, TimelineWarning } from "@/models/Company";
 import { Upload } from "@/models/Upload";
 import { getCompany, getTimeline } from "@/services/companyService";
 import { getUploads, patchUploadMetadata } from "@/services/UploadService";
-
-const MONTHS_SHORT = [
-  "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
+import { periodLabel, MONTHS_SHORT } from "@/lib/periodLabel";
+import TimelineChart from "@/components/companies/TimelineChart";
+import PeriodCompare from "@/components/companies/PeriodCompare";
 
 const MONTHS_FULL = [
   { value: 1, label: "January" },
@@ -55,6 +52,14 @@ function SummaryCard({ label, value }: { label: string; value: number | null | u
   );
 }
 
+function MissingBadge({ label }: { label: string }) {
+  return (
+    <span className="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 rounded">
+      {label}
+    </span>
+  );
+}
+
 export default function CompanyDetailPage() {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const params = useParams();
@@ -69,11 +74,11 @@ export default function CompanyDetailPage() {
 
   const [company, setCompany] = useState<Company | null>(null);
   const [timeline, setTimeline] = useState<TimelinePeriod[]>([]);
+  const [timelineWarnings, setTimelineWarnings] = useState<TimelineWarning[]>([]);
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Metadata edit drawer
   const [editDrawer, setEditDrawer] = useState<{
     isOpen: boolean;
     upload: Upload | null;
@@ -92,13 +97,14 @@ export default function CompanyDetailPage() {
 
   const fetchAll = async () => {
     try {
-      const [comp, tl, allUploads] = await Promise.all([
+      const [comp, tlRes, allUploads] = await Promise.all([
         getCompany(companyId),
         getTimeline(companyId),
         getUploads(),
       ]);
       setCompany(comp);
-      setTimeline(tl);
+      setTimeline(tlRes.periods);
+      setTimelineWarnings(tlRes.warnings);
       setUploads(allUploads.filter((u: Upload) => u.company_id === companyId));
       setError(null);
     } catch {
@@ -153,7 +159,6 @@ export default function CompanyDetailPage() {
         >
           <AppHeader />
           <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-            {/* Breadcrumb + back */}
             <div className="flex items-center gap-3 mb-6">
               <button
                 onClick={() => router.push("/companies")}
@@ -188,10 +193,45 @@ export default function CompanyDetailPage() {
                 {latestPeriod && (
                   <p className="text-xs text-gray-400 dark:text-gray-500">
                     Summary from latest period:{" "}
-                    {latestPeriod.period_year
-                      ? `${latestPeriod.period_year}${latestPeriod.period_month ? ` · ${MONTHS_SHORT[latestPeriod.period_month]}` : ""}`
-                      : latestPeriod.display_filename}
+                    {periodLabel(
+                      latestPeriod.period_year,
+                      latestPeriod.period_month,
+                      latestPeriod.display_filename
+                    )}
                   </p>
+                )}
+
+                {/* Duplicate period warnings */}
+                {timelineWarnings.map((w, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-2 px-4 py-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg text-sm text-yellow-800 dark:text-yellow-300"
+                  >
+                    <span className="flex-shrink-0">⚠</span>
+                    <span>
+                      Deux fichiers partagent la même période{" "}
+                      <strong>
+                        {periodLabel(w.period_year, w.period_month)}
+                      </strong>{" "}
+                      (upload #{w.upload_ids.join(", #")}). Modifiez la période d&apos;un des deux via le bouton Edit.
+                    </span>
+                  </div>
+                ))}
+
+                {/* Trend chart */}
+                <ComponentCard title="Tendances">
+                  {timeline.length < 2 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 py-6 text-center">
+                      Ajoutez au moins 2 périodes pour afficher les tendances.
+                    </p>
+                  ) : (
+                    <TimelineChart timeline={timeline} />
+                  )}
+                </ComponentCard>
+
+                {/* Period comparison */}
+                {timeline.length >= 2 && (
+                  <PeriodCompare companyId={companyId} timeline={timeline} />
                 )}
 
                 {/* Uploads table */}
@@ -240,25 +280,27 @@ export default function CompanyDetailPage() {
                                   {u.period_year ?? "—"}
                                 </td>
                                 <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">
-                                  {u.period_month ? MONTHS_SHORT[u.period_month] : "—"}
+                                  {u.period_month && u.period_month >= 1 && u.period_month <= 12
+                                    ? MONTHS_SHORT[u.period_month]
+                                    : "—"}
                                 </td>
                                 <td className="py-3 pr-4">
                                   <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
                                     {u.status}
                                   </span>
                                 </td>
-                                <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">
+                                <td className="py-3 pr-4">
                                   {period?.has_bilan ? (
                                     <span className="text-success-500">✓</span>
                                   ) : (
-                                    <span className="text-gray-300">—</span>
+                                    <MissingBadge label="Sans bilan" />
                                   )}
                                 </td>
-                                <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">
+                                <td className="py-3 pr-4">
                                   {period?.has_cr ? (
                                     <span className="text-success-500">✓</span>
                                   ) : (
-                                    <span className="text-gray-300">—</span>
+                                    <MissingBadge label="Sans CR" />
                                   )}
                                 </td>
                                 <td className="py-3 text-right">

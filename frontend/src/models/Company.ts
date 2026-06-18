@@ -29,6 +29,18 @@ export type ComparisonValue = {
   pct: number | null;
 };
 
+export type TimelineWarning = {
+  type: "duplicate_period";
+  period_year: number;
+  period_month: number | null;
+  upload_ids: number[];
+};
+
+export type TimelineResponse = {
+  periods: TimelinePeriod[];
+  warnings: TimelineWarning[];
+};
+
 export type TimelineComparison = {
   period_a: TimelinePeriod;
   period_b: TimelinePeriod;

@@ -16,7 +16,7 @@ import { formatCurrency } from "@/utils/formatters";
 
 // ===== RECONCILIATION TYPES (from bilan data_quality) =====
 
-type ReconStatus = "ok" | "discrepancy" | "unmapped";
+type ReconStatus = "ok" | "discrepancy" | "unmapped" | "compte_resultat";
 
 interface ReconLine {
   code: string;
@@ -31,7 +31,7 @@ type ReconMap = Map<string, ReconLine>;
 
 // ===== STATUS FILTER =====
 
-type StatusFilter = "all" | "ok" | "discrepancy" | "unmapped";
+type StatusFilter = "all" | "ok" | "discrepancy" | "unmapped" | "compte_resultat";
 
 // ===== STATUS BADGE =====
 
@@ -48,6 +48,10 @@ function StatusBadge({ status, warning }: { status: ReconStatus; warning: string
     unmapped: {
       label: "Non répertorié",
       cls: "bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400",
+    },
+    compte_resultat: {
+      label: "Compte résultat",
+      cls: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
     },
   };
 
@@ -75,6 +79,11 @@ function StatusBadge({ status, warning }: { status: ReconStatus; warning: string
           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
         </svg>
       )}
+      {status === "compte_resultat" && (
+        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v1H7V5zm0 3h6v1H7V8zm0 3h4v1H7v-1z" clipRule="evenodd" />
+        </svg>
+      )}
       {label}
     </span>
   );
@@ -87,6 +96,8 @@ function rowBg(status: ReconStatus | undefined): string {
     return "bg-error-50/30 dark:bg-error-500/5 hover:bg-error-50/60 dark:hover:bg-error-500/10";
   if (status === "unmapped")
     return "bg-warning-50/30 dark:bg-warning-500/5 hover:bg-warning-50/60 dark:hover:bg-warning-500/10";
+  if (status === "compte_resultat")
+    return "bg-blue-50/20 dark:bg-blue-500/5 hover:bg-blue-50/40 dark:hover:bg-blue-500/10";
   return "hover:bg-gray-50 dark:hover:bg-gray-800";
 }
 
@@ -205,7 +216,8 @@ export default function UploadDetailsPage() {
         statusFilter === "all" ||
         (statusFilter === "ok" && (!recon || recon.status === "ok")) ||
         (statusFilter === "discrepancy" && recon?.status === "discrepancy") ||
-        (statusFilter === "unmapped" && recon?.status === "unmapped");
+        (statusFilter === "unmapped" && recon?.status === "unmapped") ||
+        (statusFilter === "compte_resultat" && recon?.status === "compte_resultat");
 
       return matchesSearch && matchesPrefix && matchesStatus;
     });
@@ -419,6 +431,7 @@ export default function UploadDetailsPage() {
                   <option value="ok">✓ OK</option>
                   <option value="discrepancy">⚠ Incohérence</option>
                   <option value="unmapped">ℹ Non répertorié</option>
+                  <option value="compte_resultat">📄 Compte résultat</option>
                 </select>
               )}
             </div>
@@ -697,6 +710,10 @@ export default function UploadDetailsPage() {
                 <span className="flex items-center gap-1">
                   <span className="inline-block w-2.5 h-2.5 rounded-sm bg-error-100 dark:bg-error-500/20 border border-error-300 dark:border-error-500/30" />
                   Incohérence — rubrique source ≠ règle SCE (règle appliquée)
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-sm bg-blue-100 dark:bg-blue-500/20 border border-blue-300 dark:border-blue-500/30" />
+                  Compte résultat — classe 6/7, exclu du bilan
                 </span>
               </div>
             )}
