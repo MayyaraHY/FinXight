@@ -10,11 +10,8 @@ import { useModal } from "@/hooks/useModal";
 
 // ── Constants ──
 
-// Lines rendered with a bold subtotal style
 const SUBTOTAL_LINE_IDS = new Set([4, 11, 17, 19]);
-// Lines rendered with strong result emphasis + sign coloring
 const RESULT_LINE_IDS = new Set([12, 21, 23]);
-// Section header appears *before* these line IDs
 const SECTION_HEADERS: Record<number, string> = {
   1: "Produits d'exploitation",
   5: "Charges d'exploitation",
@@ -26,10 +23,18 @@ const SECTION_HEADERS: Record<number, string> = {
 
 // ── Types ──
 
+interface AccountDetail {
+  code: string;
+  label?: string | null;
+  amount: number;
+}
+
 interface CRLine {
   line_id: number;
   label: string;
   amount: number;
+  accounts: string[];
+  account_breakdown?: AccountDetail[];
 }
 
 interface CRTotals {
@@ -64,32 +69,33 @@ export default function CompteResultatPage() {
   const uploadId = Number(params.id);
 
   const [crData, setCRData] = useState<CRData | null>(null);
-  const [inventoryMethod, setInventoryMethod] =
-    useState<InventoryMethod>("permanent");
+  const [inventoryMethod, setInventoryMethod] = useState<InventoryMethod>("permanent");
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [diagnosing, setDiagnosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedLines, setExpandedLines] = useState<Set<number>>(new Set());
   const { isOpen: exportOpen, openModal: openExport, closeModal: closeExport } = useModal();
+
+  const toggleLine = (lineId: number) => {
+    setExpandedLines((prev) => {
+      const next = new Set(prev);
+      next.has(lineId) ? next.delete(lineId) : next.add(lineId);
+      return next;
+    });
+  };
 
   const loadCR = useCallback(async () => {
     try {
       const res = (await getCR(uploadId)) as CRResponse;
       if (!res.success) {
-        const generated = (await generateCR(
-          uploadId,
-          inventoryMethod
-        )) as CRResponse;
+        const generated = (await generateCR(uploadId, inventoryMethod)) as CRResponse;
         setCRData(generated.data);
       } else {
         setCRData(res.data);
       }
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load compte de résultat"
-      );
+      setError(err instanceof Error ? err.message : "Failed to load compte de résultat");
     } finally {
       setLoading(false);
     }
@@ -97,6 +103,7 @@ export default function CompteResultatPage() {
 
   const handleRegenerate = async () => {
     setRegenerating(true);
+    setExpandedLines(new Set());
     try {
       const res = (await generateCR(uploadId, inventoryMethod)) as CRResponse;
       if (res.success) {
@@ -106,9 +113,7 @@ export default function CompteResultatPage() {
         setError(res.message ?? "Failed to regenerate");
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to regenerate compte de résultat"
-      );
+      setError(err instanceof Error ? err.message : "Failed to regenerate compte de résultat");
     } finally {
       setRegenerating(false);
     }
@@ -119,7 +124,7 @@ export default function CompteResultatPage() {
     try {
       const res = await analyzeCR(uploadId);
       if (res.success) {
-        setCRData((prev) => prev ? { ...prev, ...res.data } : prev);
+        setCRData((prev) => (prev ? { ...prev, ...res.data } : prev));
         setError(null);
       } else {
         setError(res.message || "Diagnostic IA échoué");
@@ -147,9 +152,7 @@ export default function CompteResultatPage() {
   if (error)
     return (
       <div className="rounded-2xl border border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/15 p-5">
-        <p className="text-sm font-medium text-error-700 dark:text-error-400">
-          {error}
-        </p>
+        <p className="text-sm font-medium text-error-700 dark:text-error-400">{error}</p>
       </div>
     );
 
@@ -160,10 +163,7 @@ export default function CompteResultatPage() {
       </p>
     );
 
-  const orderedLines = Object.values(crData.lines).sort(
-    (a, b) => a.line_id - b.line_id
-  );
-
+  const orderedLines = Object.values(crData.lines).sort((a, b) => a.line_id - b.line_id);
   const resultatNet = crData.totals.resultat_net;
   const isProfit = resultatNet >= 0;
 
@@ -180,29 +180,22 @@ export default function CompteResultatPage() {
           </p>
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Inventory method segmented control */}
           <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-0.5">
-            {(["permanent", "intermittent"] as InventoryMethod[]).map(
-              (method) => (
-                <button
-                  key={method}
-                  onClick={() => setInventoryMethod(method)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors capitalize ${
-                    inventoryMethod === method
-                      ? "bg-brand-500 text-white shadow-theme-xs"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                  }`}
-                >
-                  {method}
-                </button>
-              )
-            )}
+            {(["permanent", "intermittent"] as InventoryMethod[]).map((method) => (
+              <button
+                key={method}
+                onClick={() => setInventoryMethod(method)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors capitalize ${
+                  inventoryMethod === method
+                    ? "bg-brand-500 text-white shadow-theme-xs"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                }`}
+              >
+                {method}
+              </button>
+            ))}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={openExport}
-          >
+          <Button variant="outline" size="sm" onClick={openExport}>
             Exporter .xlsx
           </Button>
           <Button
@@ -266,10 +259,7 @@ export default function CompteResultatPage() {
           </p>
           <ul className="space-y-1">
             {crData.warnings.map((w, i) => (
-              <li
-                key={i}
-                className="text-sm text-warning-700 dark:text-warning-300"
-              >
+              <li key={i} className="text-sm text-warning-700 dark:text-warning-300">
                 {w}
               </li>
             ))}
@@ -285,9 +275,12 @@ export default function CompteResultatPage() {
           </p>
           <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed space-y-1">
             {crData.cr_diagnosis?.split("\n").map((line, i) => (
-              <p key={i} dangerouslySetInnerHTML={{
-                __html: line.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-              }} />
+              <p
+                key={i}
+                dangerouslySetInnerHTML={{
+                  __html: line.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>"),
+                }}
+              />
             ))}
           </div>
         </div>
@@ -312,7 +305,6 @@ export default function CompteResultatPage() {
           <tbody>
             {orderedLines.map((line) => (
               <React.Fragment key={line.line_id}>
-                {/* Section header row */}
                 {SECTION_HEADERS[line.line_id] && (
                   <tr className="bg-gray-50 dark:bg-white/[0.02] border-t border-gray-100 dark:border-gray-800">
                     <td />
@@ -324,7 +316,11 @@ export default function CompteResultatPage() {
                     </td>
                   </tr>
                 )}
-                <LineRow line={line} />
+                <LineRow
+                  line={line}
+                  expanded={expandedLines.has(line.line_id)}
+                  onToggle={() => toggleLine(line.line_id)}
+                />
               </React.Fragment>
             ))}
           </tbody>
@@ -334,7 +330,202 @@ export default function CompteResultatPage() {
   );
 }
 
-// ── Sub-components ──
+// ── LineRow ──
+
+interface LineRowProps {
+  line: CRLine;
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+function LineRow({ line, expanded, onToggle }: LineRowProps) {
+  const isResult = RESULT_LINE_IDS.has(line.line_id);
+  const isSubtotal = SUBTOTAL_LINE_IDS.has(line.line_id);
+
+  // Formula lines (subtotals/results) have no direct accounts — no toggle
+  const hasBreakdown = (line.account_breakdown?.length ?? 0) > 0;
+
+  const chevron = hasBreakdown ? (
+    <svg
+      className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform ${
+        expanded ? "rotate-90" : ""
+      }`}
+      viewBox="0 0 20 20"
+      fill="currentColor"
+    >
+      <path
+        fillRule="evenodd"
+        d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+        clipRule="evenodd"
+      />
+    </svg>
+  ) : (
+    // Placeholder so columns stay aligned
+    <span className="w-3.5 h-3.5 flex-shrink-0 inline-block" />
+  );
+
+  // Breakdown panel shared by all row variants
+  const breakdownPanel =
+    hasBreakdown && expanded ? (
+      <tr>
+        <td colSpan={3} className="px-5 py-3 bg-gray-50/70 dark:bg-white/[0.015] border-t border-gray-100 dark:border-gray-800">
+          <BreakdownTable breakdown={line.account_breakdown!} />
+        </td>
+      </tr>
+    ) : null;
+
+  if (isResult) {
+    return (
+      <>
+        <tr
+          onClick={hasBreakdown ? onToggle : undefined}
+          className={`border-t-2 border-gray-200 dark:border-gray-700 bg-brand-50/40 dark:bg-brand-500/5 ${
+            hasBreakdown ? "cursor-pointer hover:bg-brand-50/60 dark:hover:bg-brand-500/10" : ""
+          } transition-colors`}
+        >
+          <td className="px-5 py-3.5 text-sm font-bold text-brand-700 dark:text-brand-400">
+            {line.line_id}
+          </td>
+          <td className="px-4 py-3.5 text-sm font-bold text-gray-900 dark:text-white">
+            <div className="flex items-center gap-2">
+              {chevron}
+              {line.label}
+            </div>
+          </td>
+          <td
+            className={`px-5 py-3.5 text-right text-base font-bold tabular-nums ${
+              line.amount >= 0
+                ? "text-success-600 dark:text-success-400"
+                : "text-error-600 dark:text-error-400"
+            }`}
+          >
+            {formatCurrency(line.amount)}
+          </td>
+        </tr>
+        {breakdownPanel}
+      </>
+    );
+  }
+
+  if (isSubtotal) {
+    return (
+      <>
+        <tr
+          onClick={hasBreakdown ? onToggle : undefined}
+          className={`border-t border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-white/[0.015] ${
+            hasBreakdown ? "cursor-pointer hover:bg-gray-100/60 dark:hover:bg-white/[0.025]" : ""
+          } transition-colors`}
+        >
+          <td className="px-5 py-3 text-sm font-semibold text-gray-500 dark:text-gray-400">
+            {line.line_id}
+          </td>
+          <td className="px-4 py-3 text-sm font-semibold text-gray-800 dark:text-gray-200">
+            <div className="flex items-center gap-2">
+              {chevron}
+              {line.label}
+            </div>
+          </td>
+          <td className="px-5 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white tabular-nums">
+            {formatCurrency(line.amount)}
+          </td>
+        </tr>
+        {breakdownPanel}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <tr
+        onClick={hasBreakdown ? onToggle : undefined}
+        className={`border-t border-gray-100 dark:border-gray-800 ${
+          hasBreakdown
+            ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
+            : "hover:bg-gray-50 dark:hover:bg-white/[0.02]"
+        } transition-colors`}
+      >
+        <td className="px-5 py-3 text-xs text-gray-400 dark:text-gray-500">
+          {line.line_id}
+        </td>
+        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+          <div className="flex items-center gap-2">
+            {chevron}
+            {line.label}
+          </div>
+        </td>
+        <td className="px-5 py-3 text-right text-sm text-gray-900 dark:text-white tabular-nums">
+          {formatCurrency(line.amount)}
+        </td>
+      </tr>
+      {breakdownPanel}
+    </>
+  );
+}
+
+// ── BreakdownTable ──
+
+function BreakdownTable({ breakdown }: { breakdown: AccountDetail[] }) {
+  if (breakdown.length === 0) {
+    return (
+      <p className="text-xs text-gray-400 dark:text-gray-500 italic">
+        Aucun détail disponible
+      </p>
+    );
+  }
+
+  return (
+    <table className="w-full text-xs">
+      <thead>
+        <tr className="text-gray-400 dark:text-gray-500 border-b border-gray-200 dark:border-gray-700">
+          <th className="text-left pb-2 font-medium">Compte</th>
+          <th className="text-left pb-2 font-medium">Libellé</th>
+          <th className="text-right pb-2 font-medium">Montant (DT)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {breakdown.map((item, idx) => (
+          <tr
+            key={idx}
+            className="border-b border-gray-100 dark:border-gray-800/60 last:border-0"
+          >
+            <td className="py-1.5 font-mono text-gray-600 dark:text-gray-400 pr-4">
+              {item.code}
+            </td>
+            <td className="py-1.5 text-gray-600 dark:text-gray-400 pr-4">
+              {item.label ?? <span className="italic text-gray-400 dark:text-gray-600">—</span>}
+            </td>
+            <td
+              className={`py-1.5 text-right tabular-nums font-medium ${
+                item.amount < 0
+                  ? "text-error-600 dark:text-error-400"
+                  : "text-gray-800 dark:text-gray-200"
+              }`}
+            >
+              {formatCurrency(item.amount)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+      {/* Subtotal row when more than one account */}
+      {breakdown.length > 1 && (
+        <tfoot>
+          <tr className="border-t border-gray-200 dark:border-gray-700">
+            <td colSpan={2} className="pt-2 text-gray-500 dark:text-gray-400 font-medium">
+              Sous-total
+            </td>
+            <td className="pt-2 text-right tabular-nums font-semibold text-gray-900 dark:text-white">
+              {formatCurrency(
+                breakdown.reduce((sum, item) => sum + item.amount, 0)
+              )}
+            </td>
+          </tr>
+        </tfoot>
+      )}
+    </table>
+  );
+}
+
+// ── MetricCard ──
 
 interface MetricCardProps {
   label: string;
@@ -365,62 +556,5 @@ function MetricCard({ label, value, accent }: MetricCardProps) {
         {formatCurrency(value)}
       </p>
     </div>
-  );
-}
-
-function LineRow({ line }: { line: CRLine }) {
-  const isResult = RESULT_LINE_IDS.has(line.line_id);
-  const isSubtotal = SUBTOTAL_LINE_IDS.has(line.line_id);
-
-  if (isResult) {
-    return (
-      <tr className="border-t-2 border-gray-200 dark:border-gray-700 bg-brand-50/40 dark:bg-brand-500/5">
-        <td className="px-5 py-3.5 text-sm font-bold text-brand-700 dark:text-brand-400">
-          {line.line_id}
-        </td>
-        <td className="px-4 py-3.5 text-sm font-bold text-gray-900 dark:text-white">
-          {line.label}
-        </td>
-        <td
-          className={`px-5 py-3.5 text-right text-base font-bold tabular-nums ${
-            line.amount >= 0
-              ? "text-success-600 dark:text-success-400"
-              : "text-error-600 dark:text-error-400"
-          }`}
-        >
-          {formatCurrency(line.amount)}
-        </td>
-      </tr>
-    );
-  }
-
-  if (isSubtotal) {
-    return (
-      <tr className="border-t border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-white/[0.015]">
-        <td className="px-5 py-3 text-sm font-semibold text-gray-500 dark:text-gray-400">
-          {line.line_id}
-        </td>
-        <td className="px-4 py-3 text-sm font-semibold text-gray-800 dark:text-gray-200">
-          {line.label}
-        </td>
-        <td className="px-5 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white tabular-nums">
-          {formatCurrency(line.amount)}
-        </td>
-      </tr>
-    );
-  }
-
-  return (
-    <tr className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
-      <td className="px-5 py-3 text-xs text-gray-400 dark:text-gray-500">
-        {line.line_id}
-      </td>
-      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-        {line.label}
-      </td>
-      <td className="px-5 py-3 text-right text-sm text-gray-900 dark:text-white tabular-nums">
-        {formatCurrency(line.amount)}
-      </td>
-    </tr>
   );
 }

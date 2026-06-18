@@ -40,19 +40,17 @@
         "line_id": 6,
         "label": "Achats de marchandises consommés",
         "type": "computed",
-        "comptes_permanent": ["6031"],
-        "comptes_intermittent": ["601", "6031", "6061"],
-        "fallback_permanent": ["603", "-6032"],
-        "note": "Permanent: 603 (variation des stocks de marchandises, sous-compte 6031). Intermittent: 601 + 6061 ± 6031. 6031 reste signé + (maquette p.14 '± 603'): get_balance ne neutralise pas la classe 6, donc un 6031 débiteur (stock baissé → plus consommé) ressort positif et S'AJOUTE aux charges. Un préfixe '-6031' forcerait toujours un moins et inverserait le signe (~2.5M d'erreur). 606 Quote-part = achat d'emballages et marchandises non stockées."
+        "comptes_permanent": ["6037"],
+        "comptes_intermittent": ["607", "6037"],
+        "note": "MARCHANDISES. Alignement sur plan_comptables_tunisiens.json (qui prime sur l'hypothèse maquette p.14 du Round 1) : 607 = Achats de marchandises ; 6037 = Variation des marchandises. Permanent: 6037 (± variation). Intermittent: 607 ± 6037. 6037 reste signé + : get_balance ne neutralise pas la classe 6, donc un 6037 débiteur (stock baissé → plus consommé) ressort positif et S'AJOUTE aux charges (jamais '-6037'). 601/6031 NE sont PLUS ici : le plan les classe en matières premières (approvisionnements) → L7. Un 603 non subdivisé (ni 6031/6032/6037) est affecté en totalité à L7 par le moteur (affectation unique)."
       },
       {
         "line_id": 7,
         "label": "Achats d'approvisionnements consommés",
         "type": "computed",
-        "comptes_permanent": ["6032"],
-        "comptes_intermittent": ["602", "604", "6032", "6062"],
-        "fallback_permanent": ["603", "-6031"],
-        "note": "Permanent: 603 (variation des stocks d'approvisionnements, sous-compte 6032). Intermittent: 602 + 604 + 6062 ± 6032 (ordre: brut, brut, variation, quote-part). 604 (achats stockés d'approvisionnement) ajouté. 6032 reste signé + (cf. note L6): un préfixe '-6032' inverserait le signe. 606 Quote-part = matières, emballages et fournitures de production (intrants) non stockées. fallback_permanent : si 6032 absent, retombe sur 603 net du sous-compte marchandises."
+        "comptes_permanent": ["6031", "6032"],
+        "comptes_intermittent": ["601", "602", "604", "6031", "6032", "6061", "6021", "6062"],
+        "note": "APPROVISIONNEMENTS / MATIÈRES. Alignement sur plan_comptables_tunisiens.json : 601 = Achats stockés MP, 602 = Achats stockés approvisionnements, 604 = Achats d'études/prestations, 6031/6032 = variations MP & autres approvisionnements, 6061/6062 = achats non stockés (matières/fournitures, classés appro). Permanent: 6031 + 6032 (± variations). Intermittent: 601 + 602 + 604 + 6061 + 6062 ± (6031 + 6032). Variations signées + (cf. note L6) : jamais de préfixe '-'. NB inter-mode: 6061/6062 vont en L7 (intermittent) mais sont captés par 606→L10 en permanent. Un 603 non subdivisé est affecté ici (L7) en totalité par le moteur — voir compute_all_lines."
       },
       {
         "line_id": 8,
@@ -71,8 +69,8 @@
         "line_id": 10,
         "label": "Autres charges d'exploitation",
         "type": "computed",
-        "comptes": ["606", "61", "62", "63", "66"],
-        "note": "606 non rattachés aux achats (fournitures de bureau, d'entretien, énergie, matières consommables non stockées, etc. comptabilisées au 606 et non rattachées aux achats) + 61 + 62 + 63 (autres que 636) + 66. '-636' supprimé : l'appariement par préfixe le plus long route déjà 636 vers L16 ; le garder créait une collision de même longueur (636 vs 636) qui captait 636 dans L10 avec le mauvais signe."
+        "comptes": ["605", "606", "61", "62", "63", "66"],
+        "note": "605 (achats de matériel/équipements/travaux non immobilisés) + 606 non rattachés aux achats (fournitures de bureau, d'entretien, énergie, matières consommables non stockées) + 61 + 62 + 63 (autres que 636) + 66. 605 placé ici par défaut (best-effort, à confirmer : peut relever des immobilisations). '-636' supprimé : l'appariement par préfixe le plus long route déjà 636 vers L16 ; le garder créait une collision de même longueur."
       },
       {
         "line_id": 11,
@@ -91,15 +89,15 @@
         "line_id": 13,
         "label": "Charges financières nettes",
         "type": "computed",
-        "comptes": ["65", "6865", "6861"],
-        "note": "(65) + (6865) liés au financement des activités de l'entreprise et différences de change liées aux activités (autres que celles liées aux placements) + 6861 Résorption des autres actifs non courants de nature financière. Les comptes 75 sont entièrement attribués à la ligne 14 (Produits des placements) pour éviter le double-comptage; le PDF officiel sépare 65/75 entre financement et placements via sous-comptes, qui ne sont pas distinguables ici."
+        "comptes": ["65", "6865", "6861", "6868"],
+        "note": "(65) + (6865) liés au financement des activités de l'entreprise et différences de change liées aux activités (autres que celles liées aux placements) + 6861 Résorption des autres actifs non courants de nature financière + 6868 (dotations financières liées à une modification comptable ; placé ici par best-effort). Les comptes 75 sont entièrement attribués à la ligne 14 (Produits des placements) pour éviter le double-comptage; le PDF officiel sépare 65/75 entre financement et placements via sous-comptes, qui ne sont pas distinguables ici."
       },
       {
         "line_id": 14,
         "label": "Produits des placements",
         "type": "computed",
-        "comptes": ["75", "7866", "-6866"],
-        "note": "(75 + 7866) - (6866) liés aux activités de placements courants et à long terme. Les comptes 65 sont entièrement attribués à la ligne 13 (cf. note L13)."
+        "comptes": ["75", "786", "7866", "-6866"],
+        "note": "(75 + 786 + 7866) - (6866) liés aux activités de placements courants et à long terme. 786 = Reprises sur provisions (produits financiers). Les comptes 65 sont entièrement attribués à la ligne 13 (cf. note L13)."
       },
       {
         "line_id": 15,
@@ -136,25 +134,25 @@
         "line_id": 20,
         "label": "Éléments extraordinaires (Gains/Pertes)",
         "type": "computed",
-        "comptes": ["77", "-67", "-697"],
+        "comptes": ["77", "-67", "-697", "-608", "-6098"],
         "can_be_negative": true,
-        "note": "77 - 67 ± (697). 697 = impôt sur les éléments extraordinaires."
+        "note": "77 - 67 ± (697) - 608 - 6098. 697 = impôt sur les éléments extraordinaires. 608 (achats liés à une modification comptable / activité abandonnée) et 6098 (RRR obtenus liés à une modification comptable) placés ici par best-effort (activité abandonnée → extraordinaire) ; préfixe '-' car ce sont des charges (classe 6) qui doivent réduire L20 (cf. invariant de complétude). À confirmer : pourraient relever de L22 (effet des modifications comptables) selon le cas."
       },
       {
         "line_id": 21,
         "label": "Résultat net de l'exercice",
         "type": "formula",
         "formula": [19, "+", 20],
-        "check_account": ["131", "-135"],
-        "note": "Doit correspondre au compte 13 (131 bénéfice CR ou 135 perte DR). Un écart > 1 DT indique soit un solde pré-clôture (131/135 non encore mis à jour) soit une lacune de règle."
+        "check_account": ["131", "135"],
+        "note": "Doit correspondre au compte 13 (131 bénéfice CR ou 135 perte DR). Les deux préfixes sont signés + : la conversion classe 1 → convention CR est faite UNE seule fois par la négation finale (-bilan_raw) dans validate(). Un préfixe '-135' double-inverserait et déclencherait une fausse alerte pour toute perte. Un écart > CR_TOL indique un solde pré-clôture (131/135 non encore mis à jour) ou une lacune de règle."
       },
       {
         "line_id": 22,
         "label": "Effet des modifications comptables (net d'impôt)",
         "type": "computed",
-        "comptes": ["128"],
+        "comptes": ["-128"],
         "can_be_negative": true,
-        "note": "± 128."
+        "note": "± 128. Préfixe signé '-128' : 128 est en classe 1, NON neutralisée par get_balance, donc un effet favorable (128 créditeur) ressort négatif. Le '-' le repasse en positif pour que L23 = L21 + L22 l'ajoute correctement."
       },
       {
         "line_id": 23,

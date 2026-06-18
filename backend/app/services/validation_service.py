@@ -1,16 +1,3 @@
-"""
-Background-task entry point for PCGT account validation (Phase 7).
-
-Runs AFTER a CSV upload has been parsed and accounts saved. FastAPI closes the
-request's DB session as soon as the response is sent, so this task opens its own
-SessionLocal — never reuse the request's `db`.
-
-It writes a `pending` report row first (so the Validation tab can show a
-"computing…" state immediately), runs the validator over the saved accounts, then
-upserts the finished report. Failures are swallowed and logged: a validation
-error must never affect the upload that scheduled it.
-"""
-
 import logging
 
 from app.db.cnx import SessionLocal

@@ -37,13 +37,17 @@ def signed_balance(acc) -> Decimal:
       4. ``debit`` / ``credit``                — raw movements
     """
     # 1. Single signed closing balance — already debit-positive / credit-negative.
-    if getattr(acc, "solde_final", None) is not None:
-        return _dec(acc.solde_final)
+    #    Only trust it when it is non-zero OR there are no split columns to fall
+    #    back to. A parser that defaults solde_final to 0 must not zero out an
+    #    account whose real balance lives in the populated split columns.
+    sf = getattr(acc, "solde_final", None)
+    sfd = getattr(acc, "solde_final_debit", None)
+    sfc = getattr(acc, "solde_final_credit", None)
+    if sf is not None and (_dec(sf) != 0 or (sfd is None and sfc is None)):
+        return _dec(sf)
 
     # 2. Sage split closing balance: each side holds an absolute value; the signed
     #    balance is debit minus credit.
-    sfd = getattr(acc, "solde_final_debit", None)
-    sfc = getattr(acc, "solde_final_credit", None)
     if sfd is not None or sfc is not None:
         return _dec(sfd) - _dec(sfc)
 
@@ -60,3 +64,20 @@ def signed_balance(acc) -> Decimal:
         return _dec(d) - _dec(c)
 
     return Decimal("0")
+
+
+def unsigned_column_warning(accounts, tolerance=Decimal("1.0")) -> str | None:
+    """
+    A complete trial balance obeys Σ(debit − credit) ≈ 0. If the sum of
+    signed_balance over every account is materially non-zero, the source most
+    likely supplied an UNSIGNED (absolute) balance column, so every credit-natured
+    account carries the wrong sign upstream. Return a human warning, else None.
+    """
+    total = sum((signed_balance(a) for a in accounts), Decimal("0"))
+    if abs(total) > tolerance:
+        return (
+            f"Σ des soldes signés = {float(total):,.2f} DT (attendu ≈ 0). "
+            f"La colonne de solde est probablement NON signée (valeurs absolues) : "
+            f"les signes des comptes créditeurs sont alors faux en amont."
+        )
+    return None

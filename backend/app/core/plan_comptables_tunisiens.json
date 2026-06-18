@@ -1112,7 +1112,16 @@
               }
             }
           }
+        },
+        "69": {
+          "label": "Impôts sur les bénéfices",
+          "accounts": {
+            "691" : "Impôts sur les bénéfices calculés sur le résultat des activités ordinaires",
+            "695" : "Autres impôts sur les bénéfices (régimes particuliers)",
+            "697" : "Impôts sur les bénéfices calculés sur les éléments extraordinaires"
+          }
         }
+
       }
     },
     "classe_7": {

@@ -38,27 +38,12 @@ class BilanService:
     # BALANCE EXTRACTION
     # =====================================================
     def get_balance(self, acc: Account) -> Decimal:
-        # Canonical signed balance (debit - credit), uniform across all CSV
-        # formats. See app/services/balance.py. This makes the DR/CR side filters
-        # and the affectation negation behave correctly for BOTH the single
-        # signed-column files and the Sage split-column files (previously the
-        # split path returned absolute values, breaking the passif side filters).
         return signed_balance(acc)
 
     # =====================================================
     # RULE NORMALIZATION
     # =====================================================
     def normalize_entry(self, entry: str) -> Dict:
-        """
-        Parse a rule entry string into its components.
-
-        Supported formats:
-          "101"        → prefix=101, sign=+1, side=None
-          "-109"       → prefix=109, sign=-1, side=None  (subtract)
-          "(422 DR)"   → prefix=422, sign=+1, side=DR    (debit accounts only)
-          "532 CR"     → prefix=532, sign=+1, side=CR    (credit accounts only)
-          "-269"       → prefix=269, sign=-1, side=None
-        """
         entry = entry.replace("(", "").replace(")", "").strip()
 
         sign = 1
@@ -76,19 +61,6 @@ class BilanService:
         return {"prefix": prefix, "side": side, "sign": sign}
 
     def _passes_side_filter(self, amount: Decimal, side: Optional[str]) -> bool:
-        """
-        Return False if the account should be skipped based on the DR/CR filter.
-
-        DR filter: keep only accounts with a debit (positive) balance.
-        CR filter: keep only accounts with a credit (negative) balance.
-
-        B4/R6: a zero balance belongs to NEITHER side. Many account prefixes appear
-        in two sections distinguished only by DR vs CR (e.g. 532 is "liquidités"
-        when debit and "concours bancaires" when credit). With signed balances a
-        non-zero account passes exactly one side, but a zero balance would pass both
-        and be listed in two sections. Excluding zero here keeps each account in a
-        single section (it contributes 0 either way, so no total changes).
-        """
         if side in ("DR", "CR") and amount == 0:
             return False
         if side == "DR" and amount < 0:
@@ -174,23 +146,6 @@ class BilanService:
                     "signed_amount": float(computed),
                     "rule_prefix": rule["prefix"],
                 })
-
-        # ── AFFECTATION (Passif: capital, reserves, liabilities) ─────────────
-        #
-        # BUG 1 FIX — sign: passif accounts are credit-natured → stored as
-        #   negative in the DB (e.g. capital 101 = -13,900,000). We negate so
-        #   the displayed amount is positive (+13,900,000).
-        #   The "-" prefix in rules (e.g. "-109") still works correctly:
-        #   sign=-1 × negate = double-negate = additive effect.
-        #
-        # BUG 2 FIX — tracking: populate used_accounts and breakdown so the
-        #   passif sections have a full audit trail (was always empty before).
-        #
-        # BUG 3 FIX — side filter: apply the same DR/CR filter used for
-        #   comptes_valeurs_brutes. Without this, DR-balance accounts (e.g.
-        #   bank accounts 532xx with debit balance) are wrongly included in
-        #   passif sections like "concours bancaires" ("532 CR" rule), causing
-        #   double-counting and understating the passif total.
         for entry in node.get("comptes_affectation", []):
             rule = self.normalize_entry(entry)
 
@@ -219,13 +174,6 @@ class BilanService:
                     "rule_prefix": rule["prefix"],
                 })
 
-        # ── FINAL AMOUNT ──────────────────────────────────────────────────────
-        # B2: always additive. Each phase already carries its own sign:
-        #   brut  - gross asset values
-        #   amort - accumulated depreciation/provisions (subtracted)
-        #   net   - direct net values + affectation (passif) entries
-        # The previous "(brut - amort) if … else net" silently DROPPED the net part
-        # of any node that had both gross/amort AND net/affectation entries.
         final_amount = brut - amort + net
 
         return {
@@ -265,13 +213,6 @@ class BilanService:
     # DIAGNOSTIC: account used in more than one leaf node
     # =====================================================
     def _log_account_collisions(self, result: Dict) -> Dict[str, List[str]]:
-        """
-        Read-only diagnostic for the prefix-matching over-match risk (B4/R6):
-        prefix rules use ``startswith`` with no "most-specific wins" guarantee, so an
-        account code can be consumed by more than one section (e.g. a broad ``53`` rule
-        and a narrow ``532`` rule). This logs any such account so cross-section double
-        counting is visible. It does NOT change any computed amount.
-        """
         from collections import defaultdict
 
         account_nodes: Dict[str, List[str]] = defaultdict(list)
@@ -307,18 +248,6 @@ class BilanService:
     BALANCE_TOLERANCE = 1.0
 
     def compute_totals(self, result: Dict, cr_net_result: Optional[float] = None) -> Dict:
-        """
-        Sum only leaf nodes (nodes that have an 'amount' key).
-
-        Per the SCE maquette, "Résultat de l'exercice" is a regular leaf (accounts
-        131/135) already summed by sum_leaf_nodes — the standard, default behaviour.
-
-        cr_net_result (optional, OFF by default): override that pulls the CR engine's
-            computed net result into capitaux propres instead of relying on 131/135.
-            Useful only if the trial balance is pre-closing AND you trust the CR
-            calculation more than the ledger. Not used by the default workflow.
-        """
-
         def sum_leaf_nodes(node: Dict) -> float:
             total = 0.0
             for v in node.values():
@@ -328,9 +257,6 @@ class BilanService:
                     total += sum_leaf_nodes(v)
             return total
 
-        # B6: the rule tree is keyed by exact French section names. A typo/rename in
-        # bilan_rules.json would make a whole section silently sum to 0, so warn loudly
-        # when an expected section node is missing instead of returning a wrong total.
         def require(node: Dict, key: str, ctx: str) -> Dict:
             child = node.get(key, {})
             if not child:
@@ -348,9 +274,6 @@ class BilanService:
         passif_root          = require(result, "capitaux propres et passifs", "root")
         capitaux_propres     = sum_leaf_nodes(require(passif_root, "capitaux propres", "passif_root"))
 
-        # Inject CR net result into capitaux propres when the trial balance is
-        # pre-closing (account 131 = 0). The net result is part of equity even
-        # before the annual closing entry hits the ledger.
         if cr_net_result is not None:
             capitaux_propres += cr_net_result
             logger.info(f"CR net result {cr_net_result:,.2f} injected into capitaux propres.")
@@ -395,15 +318,6 @@ class BilanService:
     # MAIN ENTRY POINT
     # =====================================================
     def calculate_and_save(self, upload_id: int) -> Dict:
-        """
-        Full workflow: load accounts → apply rules → calculate bilan → save.
-
-        Returns:
-            dict with keys 'bilan' (full detail), 'totals', and optionally 'analysis'.
-
-        Raises:
-            ValueError: if no accounts are found for the given upload_id.
-        """
         logger.info(f"Starting bilan calculation for upload {upload_id}")
 
         try:
