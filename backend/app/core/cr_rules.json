@@ -41,7 +41,7 @@
         "label": "Achats de marchandises consommés",
         "type": "computed",
         "comptes_permanent": ["6037"],
-        "comptes_intermittent": ["607", "6037"],
+        "comptes_intermittent": ["60","607", "6037"],
         "note": "MARCHANDISES. Alignement sur plan_comptables_tunisiens.json (qui prime sur l'hypothèse maquette p.14 du Round 1) : 607 = Achats de marchandises ; 6037 = Variation des marchandises. Permanent: 6037 (± variation). Intermittent: 607 ± 6037. 6037 reste signé + : get_balance ne neutralise pas la classe 6, donc un 6037 débiteur (stock baissé → plus consommé) ressort positif et S'AJOUTE aux charges (jamais '-6037'). 601/6031 NE sont PLUS ici : le plan les classe en matières premières (approvisionnements) → L7. Un 603 non subdivisé (ni 6031/6032/6037) est affecté en totalité à L7 par le moteur (affectation unique)."
       },
       {
