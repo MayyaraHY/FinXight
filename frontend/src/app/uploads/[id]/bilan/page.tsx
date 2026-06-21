@@ -1037,9 +1037,9 @@ function DataQualityBanner({ dq }: { dq: DataQuality }) {
       {expanded && dq.flagged_lines.length > 0 && (
         <div className="border-t border-warning-200 dark:border-warning-500/20 px-4 pb-4">
           <div className="mt-3 space-y-1 max-h-64 overflow-y-auto">
-            {dq.flagged_lines.map((line) => (
+            {dq.flagged_lines.map((line, idx) => (
               <div
-                key={line.code}
+                key={`${line.code}-${idx}`}
                 className={`flex items-start gap-2 text-xs p-2 rounded-lg ${
                   line.status === "discrepancy"
                     ? "bg-error-50 dark:bg-error-500/10"

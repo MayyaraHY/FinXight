@@ -6,6 +6,7 @@ import logging
 from app.models.account import Account
 from app.models.upload import Upload
 from app.repositories.bilan_repository import BilanRepository
+from app.repositories.compte_resultat_repository import CompteResultatRepository
 from app.core.accounting_loader import AccountingRulesLoader
 from app.core.reconciliation import reconcile_all, build_data_quality
 from app.services.balance import signed_balance
@@ -361,7 +362,27 @@ class BilanService:
             self._log_account_collisions(result)
 
             # 5. Compute section totals.
-            totals = self.compute_totals(result)
+            # Fallback: if 131/135 are absent (pre-closure), use CR L21 as résultat de l'exercice.
+            cr_net_result = None
+            try:
+                resultat_node = (
+                    result
+                    .get("capitaux propres et passifs", {})
+                    .get("capitaux propres", {})
+                    .get("resultat_de_l_exercice", {})
+                )
+                if abs(resultat_node.get("amount", 0.0)) < self.BALANCE_TOLERANCE:
+                    cr = CompteResultatRepository(self.db).get_by_upload_id(upload_id)
+                    if cr and cr.data:
+                        cr_net_result = cr.data.get("totals", {}).get("resultat_net")
+                        if cr_net_result is not None:
+                            logger.info(
+                                f"131/135 absent — using CR résultat net {cr_net_result:,.2f} as fallback."
+                            )
+            except Exception:
+                logger.warning("Could not load CR fallback for résultat de l'exercice.", exc_info=True)
+
+            totals = self.compute_totals(result, cr_net_result=cr_net_result)
 
             # 5b. Deterministic validation — runs before LLM, always present in response.
             from app.core.bilan_validator import run_all_checks
