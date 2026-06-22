@@ -21,6 +21,7 @@ import {
 import { periodLabel, MONTHS_SHORT } from "@/lib/periodLabel";
 import TimelineChart from "@/components/companies/TimelineChart";
 import PeriodCompare from "@/components/companies/PeriodCompare";
+import CashFlowSection from "@/components/companies/CashFlowSection";
 
 const MONTHS_FULL = [
   { value: 1, label: "January" },
@@ -327,6 +328,11 @@ export default function CompanyDetailPage() {
                 {/* Period comparison */}
                 {timeline.length >= 2 && (
                   <PeriodCompare companyId={companyId} timeline={timeline} />
+                )}
+
+                {/* Cash flow statement */}
+                {timeline.length >= 2 && (
+                  <CashFlowSection companyId={companyId} timeline={timeline} />
                 )}
 
                 {/* Uploads table */}

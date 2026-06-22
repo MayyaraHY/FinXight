@@ -1,0 +1,150 @@
+{
+  "_source": "NC 01 — Annexe 5 (méthode indirecte) + maquette client. §59-67, Annexe 5 p.20. Toute modification cite la page source.",
+  "_method": "indirect",
+  "_design": {
+    "sources": {
+      "cr_output": "Résultat net vient du CompteResultatService (déjà agrégé).",
+      "tb_codes": "Ajustements (dotations, QP subventions) viennent du TB par codes — AUCUNE autre source: le Bilan nette ces montants. OBLIGATOIRE.",
+      "bilan_line_ref": "Variations: référencent une ligne Bilan déjà calculée quand la granularité correspond (évite la double maintenance).",
+      "tb_codes_split": "Variations: codes bruts UNIQUEMENT quand le flux exige un découpage plus fin que le Bilan (ex: créances clients vs autres actifs)."
+    },
+    "convention_signe": "signed_balance (debit - credit), réutilisé du moteur Bilan/CR.",
+    "regle_variation": {
+      "actif": "augmentation => sortie cash (-), diminution => entrée (+)",
+      "passif": "augmentation => entrée cash (+), diminution => sortie (-)"
+    },
+    "non_monetaire": "dotations rajoutées (+), reprises/QP subventions retirées (-)",
+    "reconciliation_obligatoire": "exploitation + investissement + financement DOIT égaler (Tréso_fin - Tréso_début). Sinon flag. NC 01 §67."
+  },
+
+  "flux_exploitation": {
+    "label": "Flux de trésorerie liés à l'exploitation",
+
+    "resultat_net": {
+      "label": "Résultat net de l'exercice",
+      "source": "cr_output",
+      "ref": "cr.resultat_net",
+      "note": "Sur TB pré-clôture, ne pas dériver de 131/135."
+    },
+
+    "ajustements": {
+      "dotations_amortissements_provisions": {
+        "label": "Dotations aux amortissements et aux provisions",
+        "source": "tb_codes",
+        "comptes": ["681", "686", "687"],
+        "operation": "add_back",
+        "type": "valeur_periode"
+      },
+      "qp_subventions_investissement": {
+        "label": "QP des subventions d'investissement inscrites au résultat",
+        "source": "tb_codes",
+        "comptes": ["739"],
+        "operation": "remove",
+        "type": "valeur_periode",
+        "note": "Vérifier code client (739x / 74x)."
+      }
+    },
+
+    "variations_bfr": {
+      "stocks": {
+        "label": "Variation du stock",
+        "source": "bilan_line_ref",
+        "ref": "actifs_courants.stocks",
+        "classe_actif_passif": "actif",
+        "type": "variation"
+      },
+      "creances_clients": {
+        "label": "Variation des créances clients",
+        "source": "bilan_line_ref",
+        "ref": "actifs_courants.clients_et_comptes_rattaches",
+        "classe_actif_passif": "actif",
+        "type": "variation"
+      },
+      "fournisseurs": {
+        "label": "Variation des fournisseurs",
+        "source": "bilan_line_ref",
+        "ref": "passifs_courant.fournisseurs_et_comptes_rattaches",
+        "classe_actif_passif": "passif",
+        "type": "variation"
+      },
+      "autres_actifs": {
+        "label": "Variation des autres actifs",
+        "source": "bilan_line_ref",
+        "ref": "actifs_courants.autres_actifs_courants",
+        "classe_actif_passif": "actif",
+        "type": "variation"
+      },
+      "autres_passifs": {
+        "label": "Variation des autres passifs",
+        "source": "bilan_line_ref",
+        "ref": "passifs_courant.autres_passifs_courants",
+        "classe_actif_passif": "passif",
+        "type": "variation"
+      }
+    }
+  },
+
+  "flux_investissement": {
+  "label": "Flux de trésorerie liés aux activités d'investissement",
+  "acquisition_immobilisations": {
+    "label": "Décaissements affectés à l'acquisition d'immobilisations",
+    "source": "direct_accounts",
+    "type": "variation_gross_only",
+    "comptes_valeurs_brutes": [
+      "actifs_immobilises.immobilisations_incorporelles.comptes_valeurs_brutes",
+      "actifs_immobilises.immobilisations_corporelles.comptes_valeurs_brutes",
+      "actifs_immobilises.immobilisations_financieres.comptes_valeurs_brutes"
+    ],
+    "ignore_amortissement": true,
+    "note": "Variation in gross values only; excludes amortization accounts"
+  }
+},
+
+  "flux_financement": {
+    "label": "Flux de trésorerie liés aux activités de financement",
+    "emission_actions": {
+      "label": "Encaissements suite à l'émission d'actions",
+      "source": "bilan_line_ref",
+      "ref": "capitaux_propres.capital_social",
+      "classe_actif_passif": "passif",
+      "type": "variation"
+    },
+    "dividendes": {
+      "label": "Dividendes et autres distributions",
+      "source": "tb_codes",
+      "comptes": ["0"],
+      "classe_actif_passif": "passif",
+      "type": "variation",
+      "note": "Split fin requis: 447 n'est pas une ligne Bilan isolée."
+    },
+    "emprunts": {
+      "label": "Encaissement/Décaissement provenant des emprunts",
+      "source": "bilan_line_ref",
+      "ref": "passifs_non_courant.emprunt",
+      "classe_actif_passif": "passif",
+      "type": "variation"
+    },
+    "dettes_court_terme": {
+      "label": "Variation des dettes à court terme",
+      "source": "bilan_line_ref",
+      "ref": "passifs_courant.autres_passifs_courants",
+      "classe_actif_passif": "passif",
+      "type": "variation"
+    },
+    "comptes_courants_associes": {
+      "label": "Variation des comptes courants associés",
+      "source": "tb_codes",
+      "comptes": ["462", "463", "468"],
+      "classe_actif_passif": "passif",
+      "type": "variation",
+      "note": "Vérifier code client. Risque de double-comptage avec 457 dividendes."
+    }
+  },
+
+  "tresorerie": {
+    "label": "Trésorerie (réconciliation)",
+    "source": "tb_codes",
+    "comptes": ["53", "54", "532", "537"],
+    "note": "Tréso début/fin. Jamais dans variations BFR."
+  }
+}

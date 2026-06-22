@@ -41,6 +41,40 @@ export type TimelineResponse = {
   warnings: TimelineWarning[];
 };
 
+export type CashFlowLine = {
+  label: string;
+  amount_n: number;
+  amount_n_1: number | null;
+};
+
+export type CashFlowSection = {
+  label: string;
+  lines: CashFlowLine[];
+  total_n: number;
+  total_n_1: number | null;
+};
+
+export type CashFlowResponse = {
+  year_n: number;
+  year_n_1: number;
+  label_n: string;
+  label_n_1: string;
+  has_n_1_column: boolean;
+  inventory_method: "permanent" | "intermittent";
+  sections: CashFlowSection[];
+  variation_tresorerie_n: number;
+  variation_tresorerie_n_1: number | null;
+  tresorerie_debut_n: number;
+  tresorerie_fin_n: number;
+  tresorerie_debut_n_1: number | null;
+  tresorerie_fin_n_1: number | null;
+  reconciliation_ok_n: boolean;
+  reconciliation_ecart_n: number;
+  reconciliation_ok_n_1: boolean | null;
+  reconciliation_ecart_n_1: number | null;
+  warnings: string[];
+};
+
 export type TimelineComparison = {
   period_a: TimelinePeriod;
   period_b: TimelinePeriod;
