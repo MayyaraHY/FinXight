@@ -12,6 +12,15 @@ import {
 } from "@/services/UploadService";
 import { Upload } from "@/models/Upload";
 
+/** Newest first: by created_at desc, falling back to id desc. */
+function sortByNewest(uploads: Upload[]): Upload[] {
+  return [...uploads].sort((a, b) => {
+    const diff =
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    return diff !== 0 ? diff : b.id - a.id;
+  });
+}
+
 export function useUploads() {
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [loading, setLoading] = useState(false);
@@ -22,9 +31,7 @@ export function useUploads() {
   const fetchUploads = async () => {
     try {
       const data = await getUploads();
-      console.log("🔍 Backend upload response:", data);
-      console.log("📦 First upload sample:", data[0]);
-      setUploads(data);
+      setUploads(sortByNewest(data));
       setError(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch uploads";
@@ -41,7 +48,7 @@ export function useUploads() {
         const data = await getUploads();
         // Only update state if the component is still mounted
         if (!controller.signal.aborted) {
-          setUploads(data);
+          setUploads(sortByNewest(data));
           setError(null);
         }
       } catch (err) {

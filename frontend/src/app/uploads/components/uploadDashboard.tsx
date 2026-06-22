@@ -346,8 +346,9 @@ export default function UploadDashboard({ defaultCompanyId }: { defaultCompanyId
                 </div>
               )}
 
-              {/* Existing upload cards — never show the progress bar */}
-              {[...uploads].reverse().map((u) => (
+              {/* Existing upload cards — never show the progress bar.
+                  uploads is already sorted newest-first by useUploads. */}
+              {uploads.map((u) => (
                 <div
                   key={u.id}
                   onClick={() => router.push(`/uploads/${u.id}/accounts`)}

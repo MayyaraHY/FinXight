@@ -226,13 +226,6 @@ export default function UploadDetailsPage() {
     });
   }, [accounts, search, prefix, statusFilter, reconMap]);
 
-  // ===== TOTALS =====
-  const totalDebit = filteredAccounts.reduce((sum, acc) => sum + (acc.debit ?? 0), 0);
-  const totalCredit = filteredAccounts.reduce((sum, acc) => sum + (acc.credit ?? 0), 0);
-  const totalSoldeFinalDebit = filteredAccounts.reduce((sum, acc) => sum + (acc.solde_final_debit ?? 0), 0);
-  const totalSoldeFinalCredit = filteredAccounts.reduce((sum, acc) => sum + (acc.solde_final_credit ?? 0), 0);
-  const difference = totalDebit - totalCredit;
-
   // ===== DETECT ACTIVE COLUMNS =====
   const activeColumns = useMemo(() => ({
     source_rubrique: filteredAccounts.some((acc) => acc.source_rubrique),
@@ -458,55 +451,6 @@ export default function UploadDetailsPage() {
                   <option value="unmapped">ℹ Non répertorié</option>
                   <option value="compte_resultat">📄 Compte résultat</option>
                 </select>
-              )}
-            </div>
-
-            {/* ── Totals ── */}
-            <div className="space-y-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm font-medium">
-                {activeColumns.debit && (
-                  <div className="flex justify-between">
-                    <span>Total Débit :</span>
-                    <span>{formatCurrency(totalDebit)}</span>
-                  </div>
-                )}
-                {activeColumns.credit && (
-                  <div className="flex justify-between">
-                    <span>Total Crédit :</span>
-                    <span>{formatCurrency(totalCredit)}</span>
-                  </div>
-                )}
-                {(activeColumns.debit || activeColumns.credit) && (
-                  <div className={difference !== 0 ? "flex justify-between text-red-500 font-semibold" : "flex justify-between text-green-500"}>
-                    <span>Différence :</span>
-                    <span>{formatCurrency(difference)}</span>
-                  </div>
-                )}
-              </div>
-              {(activeColumns.solde_final_debit || activeColumns.solde_final_credit || activeColumns.solde_final) && (
-                <div className="border-t border-gray-300 dark:border-gray-600 pt-3 mt-3">
-                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-semibold">Soldes finaux</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm font-medium">
-                    {activeColumns.solde_final_debit && (
-                      <div className="flex justify-between">
-                        <span>Solde Fin Dbt :</span>
-                        <span>{formatCurrency(totalSoldeFinalDebit)}</span>
-                      </div>
-                    )}
-                    {activeColumns.solde_final_credit && (
-                      <div className="flex justify-between">
-                        <span>Solde Fin Cdt :</span>
-                        <span>{formatCurrency(totalSoldeFinalCredit)}</span>
-                      </div>
-                    )}
-                    {(activeColumns.solde_final_debit || activeColumns.solde_final_credit) && (
-                      <div className={totalSoldeFinalDebit !== totalSoldeFinalCredit ? "flex justify-between text-red-500 font-semibold" : "flex justify-between text-green-500"}>
-                        <span>Statut :</span>
-                        <span>{totalSoldeFinalDebit === totalSoldeFinalCredit ? "✓ Équilibré" : "✗ Déséquilibré"}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
               )}
             </div>
 
