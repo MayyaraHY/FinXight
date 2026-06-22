@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 
 import ComponentCard from "@/components/common/ComponentCard";
 import Alert from "@/components/ui/alert/Alert";
+import DismissControls from "@/components/warnings/DismissControls";
+import { useDismissibleWarnings } from "@/hooks/useDismissibleWarnings";
 
 import { getAccountsByUpload, updateAccount, deleteAccount } from "@/services/accountService";
 import { getBilan } from "@/services/bilanService";
@@ -121,6 +123,7 @@ export default function UploadDetailsPage() {
   const [search, setSearch] = useState("");
   const [prefix, setPrefix] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const warnings = useDismissibleWarnings(`accounts:${uploadId}`);
 
   // ✏️ EDIT & DELETE
   const [editingCell, setEditingCell] = useState<{ accountId: number; field: string } | null>(null);
@@ -351,7 +354,8 @@ export default function UploadDetailsPage() {
           <div className="space-y-4">
 
             {/* ── Reconciliation warning bar ── */}
-            {hasRecon && (warnCounts.discrepancy > 0 || warnCounts.unmapped > 0) && (
+            {hasRecon && (warnCounts.discrepancy > 0 || warnCounts.unmapped > 0) &&
+              !warnings.isDismissed("reconciliation") && (
               <div className="rounded-xl border border-warning-200 bg-warning-50 dark:border-warning-500/30 dark:bg-warning-500/10 px-4 py-3 flex flex-wrap items-center gap-3 text-sm">
                 <svg className="w-4 h-4 text-warning-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
@@ -378,6 +382,11 @@ export default function UploadDetailsPage() {
                 <span className="text-xs text-warning-600/70 dark:text-warning-400/60 ml-auto">
                   Cliquez sur un badge pour filtrer · Les montants sont calculés selon les règles SCE
                 </span>
+                <DismissControls
+                  className="text-warning-600 dark:text-warning-400"
+                  onHide={() => warnings.hide("reconciliation")}
+                  onIgnore={() => warnings.ignore("reconciliation")}
+                />
               </div>
             )}
 
@@ -390,7 +399,8 @@ export default function UploadDetailsPage() {
                 Tous les codes sont valides selon le PCGT tunisien.
               </div>
             )}
-            {validationStatus === "done" && invalidMap.size > 0 && (
+            {validationStatus === "done" && invalidMap.size > 0 &&
+              !warnings.isDismissed("pcgt-invalid") && (
               <div className="rounded-xl border border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/10 px-4 py-3 flex flex-wrap items-center gap-3 text-sm">
                 <svg className="w-4 h-4 text-error-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
@@ -401,6 +411,11 @@ export default function UploadDetailsPage() {
                 <span className="text-xs text-error-600/70 dark:text-error-400/60 ml-auto">
                   Survolez le badge ⚠ invalide pour voir la suggestion de correction
                 </span>
+                <DismissControls
+                  className="text-error-600 dark:text-error-400"
+                  onHide={() => warnings.hide("pcgt-invalid")}
+                  onIgnore={() => warnings.ignore("pcgt-invalid")}
+                />
               </div>
             )}
 

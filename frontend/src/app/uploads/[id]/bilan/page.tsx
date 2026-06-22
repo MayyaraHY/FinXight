@@ -3,10 +3,12 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getBilan, generateBilan, analyzeBilan } from "@/services/bilanService";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatCurrencyRounded } from "@/utils/formatters";
 import Button from "@/components/ui/button/Button";
 import ExportModal from "@/components/export/ExportModal";
 import { useModal } from "@/hooks/useModal";
+import { useDismissibleWarnings } from "@/hooks/useDismissibleWarnings";
+import DismissControls from "@/components/warnings/DismissControls";
 
 // ===== TYPES =====
 
@@ -202,6 +204,7 @@ export default function BilanPage() {
   const [diagnosing, setDiagnosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isOpen: exportOpen, openModal: openExport, closeModal: closeExport } = useModal();
+  const warnings = useDismissibleWarnings(`bilan:${uploadId}`);
 
   // Build account-code → reconciliation-line lookup from data_quality.lines.
   // Only populate when the upload actually had a rubrique column; otherwise keep
@@ -359,7 +362,7 @@ export default function BilanPage() {
             />
             {isBalanced
               ? "Équilibré"
-              : `Écart : ${formatCurrency(bilanData.totals.difference)}`}
+              : `Écart : ${formatCurrencyRounded(bilanData.totals.difference)}`}
           </span>
           <Button
             variant="outline"
@@ -436,11 +439,18 @@ export default function BilanPage() {
       )}
 
       {/* ── AI Imbalance Diagnosis (unbalanced bilan) ── */}
-      {bilanData.imbalance_analysis && (
+      {bilanData.imbalance_analysis && !warnings.isDismissed("imbalance-analysis") && (
         <div className="rounded-2xl border border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/15 p-5">
-          <p className="text-xs font-semibold text-error-600 dark:text-error-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-            <span>⚠</span> Diagnostic IA — Bilan déséquilibré
-          </p>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <p className="text-xs font-semibold text-error-600 dark:text-error-400 uppercase tracking-wide flex items-center gap-1.5">
+              <span>⚠</span> Diagnostic IA — Bilan déséquilibré
+            </p>
+            <DismissControls
+              className="text-error-600 dark:text-error-400"
+              onHide={() => warnings.hide("imbalance-analysis")}
+              onIgnore={() => warnings.ignore("imbalance-analysis")}
+            />
+          </div>
           <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed space-y-1">
             {bilanData.imbalance_analysis.split("\n").map((line, i) => (
               <p key={i} dangerouslySetInnerHTML={{
@@ -452,8 +462,13 @@ export default function BilanPage() {
       )}
 
       {/* ── Data Quality Banner ── */}
-      {bilanData.data_quality && bilanData.data_quality.rubrique_present && (
-        <DataQualityBanner dq={bilanData.data_quality} />
+      {bilanData.data_quality && bilanData.data_quality.rubrique_present &&
+        !warnings.isDismissed("data-quality") && (
+        <DataQualityBanner
+          dq={bilanData.data_quality}
+          onHide={() => warnings.hide("data-quality")}
+          onIgnore={() => warnings.ignore("data-quality")}
+        />
       )}
 
       {/* ── Two-column layout ── */}
@@ -741,7 +756,7 @@ function StructureSubtotal({
     >
       <span className={level === "section" ? "text-xs" : "text-sm"}>{label}</span>
       <span className="text-sm tabular-nums ml-4 flex-shrink-0">
-        {formatCurrency(value)}
+        {formatCurrencyRounded(value)}
       </span>
     </div>
   );
@@ -795,7 +810,7 @@ function SectionCard({ title, total, children }: SectionCardProps) {
           {title}
         </h3>
         <span className="text-sm font-bold text-gray-900 dark:text-white tabular-nums">
-          {formatCurrency(total)}
+          {formatCurrencyRounded(total)}
         </span>
       </div>
       <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -812,7 +827,7 @@ function TotalFooter({ label, value }: { label: string; value: number }) {
         {label}
       </span>
       <span className="text-base font-bold text-gray-900 dark:text-white tabular-nums">
-        {formatCurrency(value)}
+        {formatCurrencyRounded(value)}
       </span>
     </div>
   );
@@ -992,7 +1007,15 @@ function ExpandableRow({
 
 // ===== DATA QUALITY BANNER =====
 
-function DataQualityBanner({ dq }: { dq: DataQuality }) {
+function DataQualityBanner({
+  dq,
+  onHide,
+  onIgnore,
+}: {
+  dq: DataQuality;
+  onHide: () => void;
+  onIgnore: () => void;
+}) {
   const [expanded, setExpanded] = React.useState(false);
   const total = dq.discrepancy_count + dq.unmapped_count;
 
@@ -1001,14 +1024,14 @@ function DataQualityBanner({ dq }: { dq: DataQuality }) {
   return (
     <div className="rounded-2xl border border-warning-200 bg-warning-50 dark:border-warning-500/30 dark:bg-warning-500/10 overflow-hidden">
       {/* Summary bar */}
-      <button
-        onClick={() => setExpanded((p) => !p)}
-        className="w-full flex items-start gap-3 p-4 text-left"
-      >
+      <div className="flex items-start gap-3 p-4">
         <svg className="w-4 h-4 mt-0.5 text-warning-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
         </svg>
-        <div className="flex-1 min-w-0">
+        <button
+          onClick={() => setExpanded((p) => !p)}
+          className="flex-1 min-w-0 text-left"
+        >
           <p className="text-sm font-medium text-warning-700 dark:text-warning-400">
             {dq.discrepancy_count > 0 && (
               <span>{dq.discrepancy_count} compte{dq.discrepancy_count > 1 ? "s" : ""} avec rubrique incohérente</span>
@@ -1024,14 +1047,25 @@ function DataQualityBanner({ dq }: { dq: DataQuality }) {
               <span className="ml-1 underline cursor-pointer">Voir le détail ({dq.flagged_lines.length})</span>
             )}
           </p>
-        </div>
-        <svg
-          className={`w-4 h-4 text-warning-500 flex-shrink-0 transition-transform mt-0.5 ${expanded ? "rotate-180" : ""}`}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        </button>
+        <DismissControls
+          className="text-warning-600 dark:text-warning-400 mt-0.5"
+          onHide={onHide}
+          onIgnore={onIgnore}
+        />
+        <button
+          onClick={() => setExpanded((p) => !p)}
+          aria-label={expanded ? "Réduire" : "Développer"}
+          className="flex-shrink-0"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+          <svg
+            className={`w-4 h-4 text-warning-500 transition-transform mt-0.5 ${expanded ? "rotate-180" : ""}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
 
       {/* Flagged accounts detail */}
       {expanded && dq.flagged_lines.length > 0 && (

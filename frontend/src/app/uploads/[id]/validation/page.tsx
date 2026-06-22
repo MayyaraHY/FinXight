@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 
 import ComponentCard from "@/components/common/ComponentCard";
 import Alert from "@/components/ui/alert/Alert";
+import DismissControls from "@/components/warnings/DismissControls";
+import { useDismissibleWarnings } from "@/hooks/useDismissibleWarnings";
 import {
   getValidationReport,
   ValidationLine,
@@ -110,6 +112,7 @@ export default function ValidationPage() {
   );
   const [error, setError] = useState<string | null>(null);
   const [onlyIssues, setOnlyIssues] = useState(false);
+  const warnings = useDismissibleWarnings(`validation:${uploadId}`);
   const pollRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollCount   = useRef(0);
   const cancelledRef = useRef(false); // set true on unmount to kill async chain
@@ -162,9 +165,10 @@ export default function ValidationPage() {
     };
   }, [uploadId, load]);
 
-  const visibleLines = onlyIssues
+  const visibleLines = (onlyIssues
     ? lines.filter((l) => l.status !== "valid")
-    : lines;
+    : lines
+  ).filter((l) => l.status === "valid" || !warnings.isDismissed(l.source_code));
 
   return (
     <ComponentCard title="Validation des comptes (PCGT)">
@@ -234,6 +238,7 @@ export default function ValidationPage() {
                   <th className="px-3 py-2 text-left">Suggestion PCGT</th>
                   <th className="px-3 py-2 text-left">Raison</th>
                   <th className="px-3 py-2 text-left">Méthode</th>
+                  <th className="px-3 py-2 text-left"></th>
                 </tr>
               </thead>
               <tbody>
@@ -271,6 +276,15 @@ export default function ValidationPage() {
                         <span className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                           {METHOD_LABEL[line.method] ?? line.method}
                         </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        {line.status !== "valid" && (
+                          <DismissControls
+                            className="text-gray-500 dark:text-gray-400"
+                            onHide={() => warnings.hide(line.source_code)}
+                            onIgnore={() => warnings.ignore(line.source_code)}
+                          />
+                        )}
                       </td>
                     </tr>
                   );

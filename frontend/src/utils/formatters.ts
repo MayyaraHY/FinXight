@@ -15,3 +15,15 @@ export function formatCurrency(value: number | null | undefined): string {
     maximumFractionDigits: 2,
   }).format(value);
 }
+
+/** Like formatCurrency but rounded to a whole number (for totals/subtotals). */
+export function formatCurrencyRounded(value: number | null | undefined): string {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}

@@ -7,6 +7,8 @@ import { formatCurrency } from "@/utils/formatters";
 import Button from "@/components/ui/button/Button";
 import ExportModal from "@/components/export/ExportModal";
 import { useModal } from "@/hooks/useModal";
+import { useDismissibleWarnings } from "@/hooks/useDismissibleWarnings";
+import DismissControls from "@/components/warnings/DismissControls";
 
 // ── Constants ──
 
@@ -76,6 +78,7 @@ export default function CompteResultatPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedLines, setExpandedLines] = useState<Set<number>>(new Set());
   const { isOpen: exportOpen, openModal: openExport, closeModal: closeExport } = useModal();
+  const warnings = useDismissibleWarnings(`cr:${uploadId}`);
 
   const toggleLine = (lineId: number) => {
     setExpandedLines((prev) => {
@@ -252,17 +255,26 @@ export default function CompteResultatPage() {
       </div>
 
       {/* ── Warnings ── */}
-      {crData.warnings.length > 0 && (
+      {crData.warnings.filter((w) => !warnings.isDismissed(w)).length > 0 && (
         <div className="rounded-2xl border border-warning-300 bg-warning-50 dark:border-warning-500/30 dark:bg-warning-500/15 p-4">
           <p className="text-xs font-semibold text-warning-700 dark:text-warning-400 uppercase tracking-wide mb-2">
             Avertissements
           </p>
           <ul className="space-y-1">
-            {crData.warnings.map((w, i) => (
-              <li key={i} className="text-sm text-warning-700 dark:text-warning-300">
-                {w}
-              </li>
-            ))}
+            {crData.warnings
+              .filter((w) => !warnings.isDismissed(w))
+              .map((w, i) => (
+                <li
+                  key={`${w}-${i}`}
+                  className="flex items-start justify-between gap-3 text-sm text-warning-700 dark:text-warning-300"
+                >
+                  <span className="min-w-0">{w}</span>
+                  <DismissControls
+                    onHide={() => warnings.hide(w)}
+                    onIgnore={() => warnings.ignore(w)}
+                  />
+                </li>
+              ))}
           </ul>
         </div>
       )}

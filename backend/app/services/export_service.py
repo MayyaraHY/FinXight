@@ -32,6 +32,10 @@ def _round(value):
     return round(value, 3) if isinstance(value, (int, float)) else value
 
 
+def _round0(value):
+    return round(value) if isinstance(value, (int, float)) else value
+
+
 def _flatten_bilan(bilan_data: Dict) -> List[Dict]:
     """Flatten the nested bilan tree into report rows + a totals block."""
     rows: List[Dict] = []
@@ -69,7 +73,7 @@ def _flatten_bilan(bilan_data: Dict) -> List[Dict]:
         ("TOTAL PASSIF",              passif.get("total_passif")),
         ("Différence (Actif - Passif)", totals.get("difference")),
     ]:
-        rows.append({"Catégorie": "TOTAUX", "Poste": poste, "Montant": _round(val)})
+        rows.append({"Catégorie": "TOTAUX", "Poste": poste, "Montant": _round0(val)})
     rows.append({
         "Catégorie": "TOTAUX",
         "Poste": "Équilibré",
