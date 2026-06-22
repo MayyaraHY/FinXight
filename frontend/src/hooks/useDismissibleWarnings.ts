@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { addNotification } from "@/utils/notifications";
 
 const KEY_PREFIX = "dismissedWarnings:";
 
@@ -6,7 +7,8 @@ const KEY_PREFIX = "dismissedWarnings:";
  * Tracks per-warning dismissal for a given scope (e.g. `bilan:164`).
  *
  * - `hide(id)`   — dismiss for this session only; the warning returns on reload.
- * - `ignore(id)` — dismiss permanently; persisted to localStorage for the scope.
+ * - `ignore(id, notify?)` — dismiss permanently (persisted to localStorage for
+ *   the scope). When `notify` is given, also pushes a notification to the bell.
  * - `isDismissed(id)` — true if hidden this session OR previously ignored.
  *
  * Each warning needs a stable `id`. For persisted "ignore" to survive reloads,
@@ -37,7 +39,7 @@ export function useDismissibleWarnings(scope: string) {
   }, []);
 
   const ignore = useCallback(
-    (id: string) => {
+    (id: string, notify?: { message: string; href: string }) => {
       setIgnored((prev) => {
         const next = new Set(prev);
         next.add(id);
@@ -48,6 +50,7 @@ export function useDismissibleWarnings(scope: string) {
         }
         return next;
       });
+      if (notify) addNotification(notify);
     },
     [storageKey]
   );

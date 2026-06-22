@@ -282,7 +282,12 @@ export default function ValidationPage() {
                           <DismissControls
                             className="text-gray-500 dark:text-gray-400"
                             onHide={() => warnings.hide(line.source_code)}
-                            onIgnore={() => warnings.ignore(line.source_code)}
+                            onIgnore={() =>
+                              warnings.ignore(line.source_code, {
+                                message: `Compte ${line.source_code} — ${STATUS_CONFIG[line.status].label}`,
+                                href: `/uploads/${uploadId}/validation`,
+                              })
+                            }
                           />
                         )}
                       </td>

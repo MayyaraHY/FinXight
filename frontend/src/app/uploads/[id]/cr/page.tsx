@@ -271,7 +271,12 @@ export default function CompteResultatPage() {
                   <span className="min-w-0">{w}</span>
                   <DismissControls
                     onHide={() => warnings.hide(w)}
-                    onIgnore={() => warnings.ignore(w)}
+                    onIgnore={() =>
+                      warnings.ignore(w, {
+                        message: w,
+                        href: `/uploads/${uploadId}/cr`,
+                      })
+                    }
                   />
                 </li>
               ))}

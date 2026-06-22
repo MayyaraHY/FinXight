@@ -448,7 +448,12 @@ export default function BilanPage() {
             <DismissControls
               className="text-error-600 dark:text-error-400"
               onHide={() => warnings.hide("imbalance-analysis")}
-              onIgnore={() => warnings.ignore("imbalance-analysis")}
+              onIgnore={() =>
+                warnings.ignore("imbalance-analysis", {
+                  message: "Bilan déséquilibré",
+                  href: `/uploads/${uploadId}/bilan`,
+                })
+              }
             />
           </div>
           <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed space-y-1">
@@ -467,7 +472,12 @@ export default function BilanPage() {
         <DataQualityBanner
           dq={bilanData.data_quality}
           onHide={() => warnings.hide("data-quality")}
-          onIgnore={() => warnings.ignore("data-quality")}
+          onIgnore={() =>
+            warnings.ignore("data-quality", {
+              message: "Bilan — anomalies de classification",
+              href: `/uploads/${uploadId}/bilan`,
+            })
+          }
         />
       )}
 

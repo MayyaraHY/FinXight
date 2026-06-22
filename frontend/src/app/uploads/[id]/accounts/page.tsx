@@ -385,7 +385,12 @@ export default function UploadDetailsPage() {
                 <DismissControls
                   className="text-warning-600 dark:text-warning-400"
                   onHide={() => warnings.hide("reconciliation")}
-                  onIgnore={() => warnings.ignore("reconciliation")}
+                  onIgnore={() =>
+                    warnings.ignore("reconciliation", {
+                      message: "Comptes — anomalies de classification",
+                      href: `/uploads/${uploadId}/accounts`,
+                    })
+                  }
                 />
               </div>
             )}
@@ -414,7 +419,12 @@ export default function UploadDetailsPage() {
                 <DismissControls
                   className="text-error-600 dark:text-error-400"
                   onHide={() => warnings.hide("pcgt-invalid")}
-                  onIgnore={() => warnings.ignore("pcgt-invalid")}
+                  onIgnore={() =>
+                    warnings.ignore("pcgt-invalid", {
+                      message: "Comptes — codes absents du PCGT",
+                      href: `/uploads/${uploadId}/accounts`,
+                    })
+                  }
                 />
               </div>
             )}
