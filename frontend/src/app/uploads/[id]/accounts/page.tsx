@@ -206,24 +206,30 @@ export default function UploadDetailsPage() {
 
   // ===== FILTERED DATA =====
   const filteredAccounts = useMemo(() => {
-    return accounts.filter((acc) => {
-      const matchesSearch =
-        acc.account_code.toLowerCase().includes(search.toLowerCase()) ||
-        (acc.label ?? "").toLowerCase().includes(search.toLowerCase()) ||
-        (acc.source_rubrique ?? "").toLowerCase().includes(search.toLowerCase());
+    return accounts
+      .filter((acc) => {
+        const matchesSearch =
+          acc.account_code.toLowerCase().includes(search.toLowerCase()) ||
+          (acc.label ?? "").toLowerCase().includes(search.toLowerCase()) ||
+          (acc.source_rubrique ?? "").toLowerCase().includes(search.toLowerCase());
 
-      const matchesPrefix = prefix ? acc.account_code.startsWith(prefix) : true;
+        const matchesPrefix = prefix ? acc.account_code.startsWith(prefix) : true;
 
-      const recon = reconMap.get(acc.account_code);
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "ok" && (!recon || recon.status === "ok")) ||
-        (statusFilter === "discrepancy" && recon?.status === "discrepancy") ||
-        (statusFilter === "unmapped" && recon?.status === "unmapped") ||
-        (statusFilter === "compte_resultat" && recon?.status === "compte_resultat");
+        const recon = reconMap.get(acc.account_code);
+        const matchesStatus =
+          statusFilter === "all" ||
+          (statusFilter === "ok" && (!recon || recon.status === "ok")) ||
+          (statusFilter === "discrepancy" && recon?.status === "discrepancy") ||
+          (statusFilter === "unmapped" && recon?.status === "unmapped") ||
+          (statusFilter === "compte_resultat" && recon?.status === "compte_resultat");
 
-      return matchesSearch && matchesPrefix && matchesStatus;
-    });
+        return matchesSearch && matchesPrefix && matchesStatus;
+      })
+      // PCGT order: lexicographic on the account code reproduces the
+      // plan_comptable_tunisien.json tree order (101 < 1011 < 105 < 541 …).
+      .sort((a, b) =>
+        a.account_code < b.account_code ? -1 : a.account_code > b.account_code ? 1 : 0
+      );
   }, [accounts, search, prefix, statusFilter, reconMap]);
 
   // ===== DETECT ACTIVE COLUMNS =====
