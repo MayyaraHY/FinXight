@@ -16,12 +16,22 @@ def get_timeline_data(db: Session, company_id: int, user_id: PyUUID) -> list[dic
         .order_by(
             Upload.period_year.asc().nullslast(),
             Upload.period_month.asc().nullslast(),
+            # Tiebreaker: when an upload has duplicate bilan rows (no unique
+            # constraint on Bilan.upload_id), the newest one wins after dedup.
+            Bilan.created_at.desc().nullslast(),
         )
         .all()
     )
 
     result = []
+    seen_uploads: set[int] = set()
     for upload, bilan, cr in rows:
+        # The double outer join fans out when an upload has >1 bilan row; keep
+        # only the first occurrence per upload (the most recent bilan).
+        if upload.id in seen_uploads:
+            continue
+        seen_uploads.add(upload.id)
+
         totals = bilan.data.get("totals", {}) if bilan and bilan.data else {}
         actif = totals.get("actif", {})
         passif = totals.get("passif", {})

@@ -35,7 +35,7 @@ CR_QUANTUM = Decimal("0.001")
 
 class CompteResultatService:
 
-    def __init__(self, db: Session, inventory_method: str = "permanent"):
+    def __init__(self, db: Session, inventory_method: str = "intermittent"):
         self.db = db
         self.repo = CompteResultatRepository(db)
         self.inventory_method = inventory_method

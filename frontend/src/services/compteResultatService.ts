@@ -5,7 +5,7 @@ const API_URL = `${BACKEND_URL}/cr`;
 
 export async function generateCR(
   uploadId: number,
-  inventoryMethod: "permanent" | "intermittent" = "permanent"
+  inventoryMethod: "permanent" | "intermittent" = "intermittent"
 ) {
   const res = await fetchAuthed(
     `${API_URL}/generate/${uploadId}?inventory_method=${inventoryMethod}`,

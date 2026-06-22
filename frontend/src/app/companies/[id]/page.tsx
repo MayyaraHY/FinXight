@@ -12,8 +12,12 @@ import { Modal } from "@/components/ui/modal";
 import Alert from "@/components/ui/alert/Alert";
 import { Company, TimelinePeriod, TimelineWarning } from "@/models/Company";
 import { Upload } from "@/models/Upload";
-import { getCompany, getTimeline } from "@/services/companyService";
-import { getUploads, patchUploadMetadata } from "@/services/UploadService";
+import { getCompany, getCompanies, getTimeline } from "@/services/companyService";
+import {
+  getUploads,
+  patchUploadMetadata,
+  uploadAndParseWithProgress,
+} from "@/services/UploadService";
 import { periodLabel, MONTHS_SHORT } from "@/lib/periodLabel";
 import TimelineChart from "@/components/companies/TimelineChart";
 import PeriodCompare from "@/components/companies/PeriodCompare";
@@ -73,11 +77,32 @@ export default function CompanyDetailPage() {
     : "lg:ml-[90px]";
 
   const [company, setCompany] = useState<Company | null>(null);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [timeline, setTimeline] = useState<TimelinePeriod[]>([]);
   const [timelineWarnings, setTimelineWarnings] = useState<TimelineWarning[]>([]);
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [addModal, setAddModal] = useState<{
+    isOpen: boolean;
+    file: File | null;
+    displayName: string;
+    companyId: number | null;
+    periodYear: number | null;
+    periodMonth: number | null;
+    progress: number; // 0 = idle
+    error: string | null;
+  }>({
+    isOpen: false,
+    file: null,
+    displayName: "",
+    companyId: companyId,
+    periodYear: null,
+    periodMonth: null,
+    progress: 0,
+    error: null,
+  });
 
   const [editDrawer, setEditDrawer] = useState<{
     isOpen: boolean;
@@ -116,8 +141,78 @@ export default function CompanyDetailPage() {
 
   useEffect(() => {
     fetchAll();
+    getCompanies().then(setCompanies).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
+
+  // Only CSV / Excel files are accepted.
+  const isValidFileType = (file: File): boolean => {
+    const validTypes = [
+      "text/csv",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ];
+    if (validTypes.includes(file.type)) return true;
+    const name = file.name.toLowerCase();
+    return [".csv", ".xls", ".xlsx"].some((ext) => name.endsWith(ext));
+  };
+
+  const openAddModal = () => {
+    setAddModal({
+      isOpen: true,
+      file: null,
+      displayName: "",
+      companyId: companyId,
+      periodYear: null,
+      periodMonth: null,
+      progress: 0,
+      error: null,
+    });
+  };
+
+  const handleAddFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    const file = e.target.files[0];
+    e.target.value = ""; // allow re-selecting the same file
+    if (!isValidFileType(file)) {
+      setAddModal((prev) => ({
+        ...prev,
+        file: null,
+        error: `Invalid file type "${file.name}". Please upload only CSV or Excel files (.csv, .xls, .xlsx).`,
+      }));
+      return;
+    }
+    setAddModal((prev) => ({ ...prev, file, error: null }));
+  };
+
+  const handleConfirmAdd = async () => {
+    if (!addModal.file) return;
+    const displayName = addModal.displayName.trim() || undefined;
+    try {
+      await uploadAndParseWithProgress(
+        addModal.file,
+        {
+          displayName,
+          companyId: addModal.companyId,
+          periodYear: addModal.periodYear,
+          periodMonth: addModal.periodMonth,
+        },
+        (progress) => setAddModal((prev) => ({ ...prev, progress }))
+      );
+      setAddModal((prev) => ({ ...prev, isOpen: false, progress: 0 }));
+      await fetchAll();
+    } catch (err) {
+      setAddModal((prev) => ({
+        ...prev,
+        progress: 0,
+        error: err instanceof Error ? err.message : "Upload failed",
+      }));
+    }
+  };
+
+  const handleCancelAdd = () => {
+    setAddModal((prev) => ({ ...prev, isOpen: false, progress: 0 }));
+  };
 
   const latestPeriod = timeline.length > 0 ? timeline[timeline.length - 1] : null;
 
@@ -239,7 +334,7 @@ export default function CompanyDetailPage() {
                   title="Periods"
                   headerAction={
                     <button
-                      onClick={() => router.push(`/uploads?add=1&company_id=${companyId}`)}
+                      onClick={openAddModal}
                       className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm rounded-lg transition"
                     >
                       + Add period
@@ -327,6 +422,162 @@ export default function CompanyDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Add period (upload) modal */}
+      <Modal
+        isOpen={addModal.isOpen}
+        onClose={handleCancelAdd}
+        className="max-w-md"
+        showBackdrop={true}
+      >
+        <div className="p-6 pt-8">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Upload File
+          </h3>
+
+          <div className="space-y-4">
+            {addModal.error && (
+              <Alert
+                variant="error"
+                title="Invalid File Type"
+                message={addModal.error}
+                showLink={false}
+              />
+            )}
+
+            {/* Upload area / selected file */}
+            {addModal.file ? (
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400 min-w-0">
+                  <span className="font-medium">Original filename:</span>{" "}
+                  <span className="break-all">{addModal.file.name}</span>
+                </p>
+                <label className="flex-shrink-0 text-xs text-brand-500 hover:text-brand-600 cursor-pointer underline">
+                  Change
+                  <input
+                    type="file"
+                    accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    onChange={handleAddFileChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-xl cursor-pointer hover:border-brand-500 transition text-center">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Drag &amp; drop a CSV or Excel file (.csv, .xls, .xlsx) or click to upload
+                </span>
+                <input
+                  type="file"
+                  accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={handleAddFileChange}
+                  className="hidden"
+                />
+              </label>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Display Name (Optional)
+              </label>
+              <input
+                type="text"
+                value={addModal.displayName}
+                onChange={(e) =>
+                  setAddModal((prev) => ({ ...prev, displayName: e.target.value }))
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && addModal.file && addModal.progress === 0)
+                    handleConfirmAdd();
+                }}
+                placeholder="Leave empty to use original filename"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Company (Optional)
+              </label>
+              <select
+                value={addModal.companyId ?? ""}
+                onChange={(e) =>
+                  setAddModal((prev) => ({
+                    ...prev,
+                    companyId: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              >
+                <option value="">— No company —</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Year (Optional)
+                </label>
+                <select
+                  value={addModal.periodYear ?? ""}
+                  onChange={(e) =>
+                    setAddModal((prev) => ({
+                      ...prev,
+                      periodYear: e.target.value ? Number(e.target.value) : null,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                >
+                  <option value="">— Year —</option>
+                  {YEARS.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Month (Optional)
+                </label>
+                <select
+                  value={addModal.periodMonth ?? ""}
+                  onChange={(e) =>
+                    setAddModal((prev) => ({
+                      ...prev,
+                      periodMonth: e.target.value ? Number(e.target.value) : null,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                >
+                  <option value="">— Month —</option>
+                  {MONTHS_FULL.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={handleCancelAdd}
+                disabled={addModal.progress > 0}
+                className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAdd}
+                disabled={!addModal.file || addModal.progress > 0}
+                className="flex-1 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {addModal.progress > 0 ? `Uploading... ${addModal.progress}%` : "Upload"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       {/* Metadata edit modal */}
       <Modal

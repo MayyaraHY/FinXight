@@ -71,7 +71,7 @@ export default function CompteResultatPage() {
   const uploadId = Number(params.id);
 
   const [crData, setCRData] = useState<CRData | null>(null);
-  const [inventoryMethod, setInventoryMethod] = useState<InventoryMethod>("permanent");
+  const [inventoryMethod, setInventoryMethod] = useState<InventoryMethod>("intermittent");
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [diagnosing, setDiagnosing] = useState(false);
