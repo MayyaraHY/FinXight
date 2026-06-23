@@ -62,6 +62,35 @@ tb_only_amort_n_1 = {"28100000": 100_000.0}
 section2 = svc._build_section(cashflow_rules["flux_investissement"], {}, {}, tb_only_amort_n, tb_only_amort_n_1)
 check("amortization-only movement ignored", section2.lines[0].amount == 0.0, f"got {section2.lines[0].amount}")
 
+# 4) Catch-all line forces reconciliation: sections + autres == variation de trésorerie.
+res = svc.compute(
+    resultat_net_n=-100_000.0,
+    bilan_n={"actifs_courants.stocks": 50_000.0},
+    bilan_n_minus_1={"actifs_courants.stocks": 70_000.0},
+    tb_balances_n={"53100000": 40_000.0, "21100000": 600_000.0},
+    tb_balances_n_1={"53100000": 90_000.0, "21100000": 500_000.0},
+    period_flows_n={"681": 30_000.0},
+)
+total = res.exploitation.total + res.investissement.total + res.financement.total + res.autres.total
+check("reconciliation_ok after catch-all", res.reconciliation_ok is True, f"ecart={res.reconciliation_ecart}")
+check(
+    "sections + autres == variation de trésorerie",
+    abs(total - res.variation_tresorerie) < 0.01,
+    f"total={total} vs var={res.variation_tresorerie}",
+)
+check("treasury (53/54) picked up", res.tresorerie_fin == 40_000.0, f"got {res.tresorerie_fin}")
+
+# 5) Sign of tb_codes lines (raw signed_balance: liability = negative).
+fin = cashflow_rules["flux_financement"]
+# Rising short-term debt (50x more negative in N) → cash inflow (+).
+sec_up = svc._build_section(fin, {}, {}, {"50100000": -300_000.0}, {"50100000": -100_000.0})
+dct_up = next(l for l in sec_up.lines if "dettes" in l.label.lower())
+check("rising liability → positive (inflow)", dct_up.amount == 200_000.0, f"got {dct_up.amount}")
+# Falling short-term debt (repayment) → cash outflow (-).
+sec_dn = svc._build_section(fin, {}, {}, {"50100000": -100_000.0}, {"50100000": -300_000.0})
+dct_dn = next(l for l in sec_dn.lines if "dettes" in l.label.lower())
+check("falling liability → negative (outflow)", dct_dn.amount == -200_000.0, f"got {dct_dn.amount}")
+
 print()
 if failures:
     print(f"FAILED: {len(failures)} — {failures}")

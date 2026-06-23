@@ -104,6 +104,53 @@ class CashFlowOrchestrator:
                 wanted.extend(refs)
         return sorted({r for r in wanted if r not in bilan_flat})
 
+    # Bilan leaves that legitimately have no flux line: the cash target itself and
+    # equity result lines (they articulate via résultat net), so don't flag them.
+    _AUDIT_DENYLIST = {
+        "actifs_courants.liquidites_et_equivalents_de_liquidites",
+        "capitaux_propres.resultat_de_l_exercice",
+        "capitaux_propres.resultat_reportes",
+        # Split-handled, not dropped: its 50x go to dettes_court_terme (tb_codes),
+        # its 532/537 CR are part of the treasury reconciliation.
+        "passifs_courant.conours_bancaires_et_autres_passif_financier",
+    }
+
+    def _referenced_leaves(self) -> set[str]:
+        """Flat bilan-leaf keys covered by some flux rule — bilan_line_ref refs plus
+        each direct_accounts dot-path with its trailing '.comptes_valeurs_brutes'
+        stripped (e.g. 'actifs_immobilises.immobilisations_incorporelles')."""
+        refs: set[str] = set()
+        for section in ("flux_exploitation", "flux_investissement", "flux_financement"):
+            cfg = self.rules[section]
+            items = cfg.get("variations_bfr", {}) if section == "flux_exploitation" else cfg
+            for key, item in items.items():
+                if not isinstance(item, dict):
+                    continue
+                if item.get("source") == "bilan_line_ref":
+                    r = item["ref"]
+                    refs.update(r if isinstance(r, list) else [r])
+                elif item.get("source") == "direct_accounts":
+                    for path in item.get("comptes_valeurs_brutes", []):
+                        refs.add(path.rsplit(".", 1)[0])
+        return refs
+
+    def _uncaptured_movements(
+        self, bilan_n_flat: dict[str, float], bilan_n_1_flat: dict[str, float]
+    ) -> list[str]:
+        """Audit: non-treasury bilan leaves with a nonzero period Δ that no flux rule
+        captures. These are absorbed by the catch-all line; surfacing the largest
+        ones explains that residual (and would have caught the dropped concours bug)."""
+        referenced = self._referenced_leaves() | self._AUDIT_DENYLIST
+        deltas: list[tuple[str, float]] = []
+        for key in set(bilan_n_flat) | set(bilan_n_1_flat):
+            if key in referenced:
+                continue
+            delta = bilan_n_flat.get(key, 0.0) - bilan_n_1_flat.get(key, 0.0)
+            if abs(delta) > 1.0:
+                deltas.append((key, delta))
+        deltas.sort(key=lambda kv: abs(kv[1]), reverse=True)
+        return [f"{k} (Δ {v:,.0f})" for k, v in deltas[:8]]
+
     # ---- public entry ----
     def build(
         self, company_id: int, user_id: PyUUID, year_n: int, inventory_method: str
@@ -125,6 +172,8 @@ class CashFlowOrchestrator:
 
         warnings: list[str] = []
         bilan_n_flat, _ = self._bilan_and_tb(upload_n)
+        bilan_n_1_flat, _ = self._bilan_and_tb(upload_n_1)
+
         missing = self._missing_refs(bilan_n_flat)
         if missing:
             msg = (
@@ -133,6 +182,15 @@ class CashFlowOrchestrator:
             )
             warnings.append(msg)
             logger.warning("Cashflow coverage: %s", msg)
+
+        uncaptured = self._uncaptured_movements(bilan_n_flat, bilan_n_1_flat)
+        if uncaptured:
+            msg = (
+                "Mouvements de bilan non ventilés (absorbés par la ligne de "
+                "réconciliation) : " + " ; ".join(uncaptured)
+            )
+            warnings.append(msg)
+            logger.info("Cashflow audit: %s", msg)
 
         return _to_response(
             year_n=year_n,
@@ -176,6 +234,7 @@ def _to_response(*, year_n, upload_n, upload_n_1, stmt_n, stmt_n_1, warnings) ->
             _section_pair(stmt_n.exploitation, stmt_n_1.exploitation if has_prev else None),
             _section_pair(stmt_n.investissement, stmt_n_1.investissement if has_prev else None),
             _section_pair(stmt_n.financement, stmt_n_1.financement if has_prev else None),
+            _section_pair(stmt_n.autres, stmt_n_1.autres if has_prev else None),
         ],
         "variation_tresorerie_n": stmt_n.variation_tresorerie,
         "variation_tresorerie_n_1": stmt_n_1.variation_tresorerie if has_prev else None,

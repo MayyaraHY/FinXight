@@ -22,6 +22,7 @@ class CashFlowResult:
     exploitation: CashFlowSection = None
     investissement: CashFlowSection = None
     financement: CashFlowSection = None
+    autres: CashFlowSection = None
     variation_tresorerie: float = 0.0
     tresorerie_debut: float = 0.0
     tresorerie_fin: float = 0.0
@@ -71,7 +72,18 @@ class CashFlowService:
         result.tresorerie_debut = self._sum_codes(tb_balances_n_1, self.tresorerie_comptes)
         result.tresorerie_fin = self._sum_codes(tb_balances_n, self.tresorerie_comptes)
         result.variation_tresorerie = result.tresorerie_fin - result.tresorerie_debut
-        result.reconciliation_ecart = result.variation_tresorerie - total_flux
+
+        # Catch-all: this model captures a curated subset of the balance sheet, so
+        # the three sections rarely equal the true cash movement on real data. The
+        # residual = (Δtréso − Σsections) is ventilated into one explicit line so the
+        # statement always articulates and the unmodeled movement stays visible.
+        residual = result.variation_tresorerie - total_flux
+        result.autres = CashFlowSection(
+            "Autres postes du bilan (réconciliation)",
+            [CashFlowLine("Variation des autres postes du bilan (non ventilée)", residual)],
+            residual,
+        )
+        result.reconciliation_ecart = result.variation_tresorerie - (total_flux + residual)
         result.reconciliation_ok = abs(result.reconciliation_ecart) < 0.01
 
         return result
@@ -84,6 +96,8 @@ class CashFlowService:
         s.lines.append(CashFlowLine("Résultat net de l'exercice", resultat_net))
         s.total += resultat_net
 
+        # add_back/remove assume natural balances (dotations 68x debit → positive
+        # period amount; QP subventions 739 credit). Verify the 739 sign per dataset.
         for adj in cfg["ajustements"].values():
             amount = self._sum_codes(flows, adj["comptes"])
             if adj["operation"] == "remove":
@@ -93,7 +107,7 @@ class CashFlowService:
 
         for var in cfg["variations_bfr"].values():
             delta = self._variation(var, bilan_n, bilan_n_1, None, None)
-            effect = self._apply_sign(delta, var["classe_actif_passif"])
+            effect = self._effect(var, delta)
             s.lines.append(CashFlowLine(var["label"], effect))
             s.total += effect
 
@@ -106,13 +120,7 @@ class CashFlowService:
             if key == "label" or not isinstance(item, dict):
                 continue
             delta = self._variation(item, bilan_n, bilan_n_1, tb_n, tb_n_1)
-            if item.get("type") == "variation_gross_only":
-                # Gross fixed-asset increase = cash spent = investment outflow (-).
-                # Equivalent to _apply_sign(delta, "actif"); kept explicit since the
-                # rule carries no classe_actif_passif.
-                effect = -delta
-            else:
-                effect = self._apply_sign(delta, item["classe_actif_passif"])
+            effect = self._effect(item, delta)
             s.lines.append(CashFlowLine(item["label"], effect))
             s.total += effect
         return s
@@ -133,8 +141,8 @@ class CashFlowService:
                 prefixes.extend(self._resolve_codes(path))
             if not prefixes:
                 logger.warning("Cashflow: '%s' resolved to no account codes.", item.get("label"))
-            n = self._sum_codes(tb_n, prefixes)
-            n_1 = self._sum_codes(tb_n_1, prefixes)
+            n = self._sum_codes_signed(tb_n, prefixes)
+            n_1 = self._sum_codes_signed(tb_n_1, prefixes)
             return n - n_1
         # tb_codes
         n = self._sum_codes(tb_n, item["comptes"])
@@ -172,6 +180,20 @@ class CashFlowService:
                     return found
         return None
 
+    def _effect(self, item, delta):
+        """Cash effect of a balance-sheet variation, accounting for the sign space
+        of its source.
+
+        - tb_codes / direct_accounts read raw signed_balance (debit − credit). In
+          that space the cash effect of any non-cash movement is always −Δ (the
+          identity the treasury reconciliation relies on), regardless of actif/passif.
+        - bilan_line_ref reads bilan DISPLAY values, where passifs are already
+          sign-normalized to positive, so the actif/passif rule applies.
+        """
+        if item.get("source") in ("tb_codes", "direct_accounts"):
+            return -delta
+        return self._apply_sign(delta, item["classe_actif_passif"])
+
     @staticmethod
     def _apply_sign(variation, classe):
         return -variation if classe == "actif" else variation
@@ -184,4 +206,22 @@ class CashFlowService:
             match = max((p for p in cleaned if code.startswith(p)), key=len, default=None)
             if match is not None:
                 total += bal
+        return total
+
+    @staticmethod
+    def _sum_codes_signed(balances, prefixes):
+        """Like _sum_codes but honors a leading '-' on a prefix (contra accounts
+        such as '-259'/'-269' are subtracted), keeping the bilan's gross-value
+        sign convention."""
+        sign_by_code: dict[str, float] = {}
+        cleaned: list[str] = []
+        for p in prefixes:
+            code = p.split()[0].strip("()-")
+            cleaned.append(code)
+            sign_by_code[code] = -1.0 if p.strip().startswith("-") else 1.0
+        total = 0.0
+        for code, bal in balances.items():
+            match = max((c for c in cleaned if code.startswith(c)), key=len, default=None)
+            if match is not None:
+                total += sign_by_code[match] * bal
         return total

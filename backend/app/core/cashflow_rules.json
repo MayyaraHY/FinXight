@@ -112,39 +112,45 @@
     "dividendes": {
       "label": "Dividendes et autres distributions",
       "source": "tb_codes",
-      "comptes": ["0"],
+      "comptes": [],
       "classe_actif_passif": "passif",
       "type": "variation",
-      "note": "Split fin requis: 447 n'est pas une ligne Bilan isolée."
+      "note": "Désactivé: 457 est déjà inclus dans autres_passifs_courants (BFR) — l'activer ici double-compterait. Mouvement absorbé par la ligne de réconciliation."
     },
     "emprunts": {
       "label": "Encaissement/Décaissement provenant des emprunts",
       "source": "bilan_line_ref",
-      "ref": "passifs_non_courant.emprunt",
+      "ref": [
+        "passifs_non_courant.emprunt",
+        "passifs_non_courant.autres_passifs_financiers",
+        "passifs_non_courant.provisions"
+      ],
       "classe_actif_passif": "passif",
-      "type": "variation"
+      "type": "variation",
+      "note": "Variation du Total des Passifs Non Courants (emprunts 16x + autres passifs financiers 18 + provisions 15)."
     },
     "dettes_court_terme": {
       "label": "Variation des dettes à court terme",
-      "source": "bilan_line_ref",
-      "ref": "passifs_courant.autres_passifs_courants",
+      "source": "tb_codes",
+      "comptes": ["501", "505", "506", "507", "508"],
       "classe_actif_passif": "passif",
-      "type": "variation"
+      "type": "variation",
+      "note": "Autres passifs financiers (50x) UNIQUEMENT. Le Bilan regroupe concours bancaires + autres passifs financiers, mais ici on exclut les concours bancaires 532/537 CR (déjà comptés dans la trésorerie) pour éviter le double-comptage."
     },
     "comptes_courants_associes": {
       "label": "Variation des comptes courants associés",
       "source": "tb_codes",
-      "comptes": ["462", "463", "468"],
+      "comptes": [],
       "classe_actif_passif": "passif",
       "type": "variation",
-      "note": "Vérifier code client. Risque de double-comptage avec 457 dividendes."
+      "note": "Désactivé (0) — codes client à confirmer (461/462 retirés: 462 est un actif). Mouvement absorbé par la ligne de réconciliation."
     }
   },
 
   "tresorerie": {
     "label": "Trésorerie (réconciliation)",
     "source": "tb_codes",
-    "comptes": ["53", "54", "532", "537"],
-    "note": "Tréso début/fin. Jamais dans variations BFR."
+    "comptes": ["53", "54"],
+    "note": "Tréso début/fin (53 couvre déjà 532/537). Jamais dans variations BFR."
   }
 }
