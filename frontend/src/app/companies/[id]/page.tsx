@@ -26,6 +26,10 @@ import KpiCard from "@/components/companies/KpiCard";
 import ExecutiveSummary from "@/components/companies/ExecutiveSummary";
 import RatioAnalysis from "@/components/companies/RatioAnalysis";
 import PeriodsTable from "@/components/companies/PeriodsTable";
+import { KPI_CATALOG, KPI_KEYS } from "@/components/companies/kpiCatalog";
+import { useDashboardKpis } from "@/hooks/useDashboardKpis";
+import { Dropdown } from "@/components/ui/dropdown/Dropdown";
+import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
 const MONTHS_FULL = [
   { value: 1, label: "January" },
@@ -65,6 +69,10 @@ export default function CompanyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [comparison, setComparison] = useState<TimelineComparison | null>(null);
+  const kpis = useDashboardKpis(companyId);
+  const [editingKpis, setEditingKpis] = useState(false);
+  const [addKpiOpen, setAddKpiOpen] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const [addModal, setAddModal] = useState<{
     isOpen: boolean;
@@ -319,39 +327,108 @@ export default function CompanyDetailPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* KPI cards */}
-                <div className="grid grid-cols-12 gap-4 md:gap-6">
-                  <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-                    <KpiCard
-                      label="Total Actif"
-                      value={latestPeriod?.total_actif}
-                      delta={comparison?.comparison.total_actif.delta}
-                      pct={comparison?.comparison.total_actif.pct}
-                    />
+                {/* KPI cards (customisable) */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                      Indicateurs clés
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {editingKpis && (
+                        <button
+                          onClick={() => kpis.reset()}
+                          className="text-xs text-gray-500 hover:text-brand-500 transition"
+                        >
+                          Réinitialiser
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setEditingKpis((v) => !v);
+                          setAddKpiOpen(false);
+                        }}
+                        className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                      >
+                        {editingKpis ? "Terminer" : "Personnaliser"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-                    <KpiCard
-                      label="Total Passif"
-                      value={latestPeriod?.total_passif}
-                      delta={comparison?.comparison.total_passif.delta}
-                      pct={comparison?.comparison.total_passif.pct}
-                    />
-                  </div>
-                  <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-                    <KpiCard
-                      label="Capitaux propres"
-                      value={latestPeriod?.capitaux_propres}
-                      delta={comparison?.comparison.capitaux_propres.delta}
-                      pct={comparison?.comparison.capitaux_propres.pct}
-                    />
-                  </div>
-                  <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-                    <KpiCard
-                      label="Résultat net"
-                      value={latestPeriod?.resultat_net}
-                      delta={comparison?.comparison.resultat_net.delta}
-                      pct={comparison?.comparison.resultat_net.pct}
-                    />
+
+                  <div className="grid grid-cols-12 gap-4 md:gap-6">
+                    {kpis.keys.map((key, i) => {
+                      const cat = KPI_CATALOG[key];
+                      if (!cat) return null;
+                      return (
+                        <div
+                          key={key}
+                          className={`col-span-12 sm:col-span-6 xl:col-span-3 ${
+                            editingKpis ? "cursor-move" : ""
+                          } ${dragIndex === i ? "opacity-50" : ""}`}
+                          draggable={editingKpis}
+                          onDragStart={() => setDragIndex(i)}
+                          onDragOver={(e) => {
+                            if (editingKpis) e.preventDefault();
+                          }}
+                          onDrop={() => {
+                            if (dragIndex != null) kpis.move(dragIndex, i);
+                            setDragIndex(null);
+                          }}
+                          onDragEnd={() => setDragIndex(null)}
+                        >
+                          <KpiCard
+                            label={cat.label}
+                            value={cat.value(latestPeriod)}
+                            delta={cat.delta(comparison)}
+                            pct={cat.pct(comparison)}
+                            editing={editingKpis}
+                            onRemove={() => kpis.remove(key)}
+                          />
+                        </div>
+                      );
+                    })}
+
+                    {editingKpis && (
+                      <div className="col-span-12 sm:col-span-6 xl:col-span-3">
+                        <div className="relative h-full">
+                          <button
+                            onClick={() => setAddKpiOpen((v) => !v)}
+                            className="dropdown-toggle flex h-full min-h-[7rem] w-full items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 text-sm text-gray-500 hover:border-brand-400 hover:text-brand-500 transition dark:border-gray-700"
+                          >
+                            + Ajouter un KPI
+                          </button>
+                          <Dropdown
+                            isOpen={addKpiOpen}
+                            onClose={() => setAddKpiOpen(false)}
+                            className="left-0 w-64 p-1 max-h-72 overflow-y-auto"
+                          >
+                            {KPI_KEYS.filter((k) => !kpis.keys.includes(k)).map((k) => (
+                              <DropdownItem
+                                key={k}
+                                onClick={() => {
+                                  kpis.add(k);
+                                  setAddKpiOpen(false);
+                                }}
+                              >
+                                {KPI_CATALOG[k].label}
+                              </DropdownItem>
+                            ))}
+                            {KPI_KEYS.every((k) => kpis.keys.includes(k)) && (
+                              <p className="px-4 py-2 text-xs text-gray-400">
+                                Tous les KPI sont déjà affichés.
+                              </p>
+                            )}
+                          </Dropdown>
+                        </div>
+                      </div>
+                    )}
+
+                    {kpis.keys.length === 0 && !editingKpis && (
+                      <div className="col-span-12">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+                          Aucun KPI affiché. Cliquez sur « Personnaliser » pour en ajouter.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
