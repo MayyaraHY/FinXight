@@ -5,6 +5,8 @@ import ComponentCard from "@/components/common/ComponentCard";
 import { CashFlowResponse, TimelinePeriod } from "@/models/Company";
 import { getCashFlow } from "@/services/cashFlowService";
 import { formatCurrency, formatCurrencyRounded } from "@/utils/formatters";
+import { useDismissibleWarnings } from "@/hooks/useDismissibleWarnings";
+import DismissControls from "@/components/warnings/DismissControls";
 
 type InventoryMethod = "permanent" | "intermittent";
 
@@ -32,6 +34,7 @@ export default function CashFlowSection({ companyId, timeline }: Props) {
   const [data, setData] = useState<CashFlowResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const reco = useDismissibleWarnings(`cashflow:${companyId}`);
 
   const load = useCallback(async () => {
     if (year == null) return;
@@ -103,25 +106,24 @@ export default function CashFlowSection({ companyId, timeline }: Props) {
       {!loading && !error && data && (
         <div className="space-y-4">
           {/* Reconciliation banner */}
-          <div
-            className={`rounded-xl px-4 py-3 text-sm border ${
-              data.reconciliation_ok_n
-                ? "border-success-300 bg-success-50 text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400"
-                : "border-error-300 bg-error-50 text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
-            }`}
-          >
-            {data.reconciliation_ok_n
-              ? "✓ Réconciliation équilibrée : la somme des flux égale la variation des soldes de trésorerie."
-              : `⚠ Écart de réconciliation : ${formatCurrencyRounded(data.reconciliation_ecart_n)} (flux ≠ variation des soldes de trésorerie).`}
-          </div>
-
-          {data.warnings.length > 0 && (
-            <ul className="rounded-xl px-4 py-3 text-xs bg-warning-50 dark:bg-warning-500/10 text-warning-700 dark:text-warning-400 space-y-1">
-              {data.warnings.map((w, i) => (
-                <li key={i}>{w}</li>
-              ))}
-            </ul>
-          )}
+          {data.reconciliation_ok_n
+            ? !reco.isDismissed(`reco-${data.year_n}`) && (
+                <div className="flex items-start justify-between gap-3 rounded-xl px-4 py-3 text-sm border border-success-300 bg-success-50 text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400">
+                  <span>
+                    ✓ Réconciliation équilibrée : la somme des flux égale la variation des soldes de trésorerie.
+                  </span>
+                  <DismissControls
+                    className="text-success-700 dark:text-success-400"
+                    onHide={() => reco.hide(`reco-${data.year_n}`)}
+                    onIgnore={() => reco.ignore(`reco-${data.year_n}`)}
+                  />
+                </div>
+              )
+            : (
+                <div className="rounded-xl px-4 py-3 text-sm border border-error-300 bg-error-50 text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+                  ⚠ La réconciliation n&apos;est pas équilibrée — vérifiez d&apos;où provient l&apos;écart.
+                </div>
+              )}
 
           {/* Table */}
           <div className="overflow-x-auto">

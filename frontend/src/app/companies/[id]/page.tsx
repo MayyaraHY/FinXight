@@ -10,18 +10,22 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import ComponentCard from "@/components/common/ComponentCard";
 import { Modal } from "@/components/ui/modal";
 import Alert from "@/components/ui/alert/Alert";
-import { Company, TimelinePeriod, TimelineWarning } from "@/models/Company";
+import { Company, TimelinePeriod, TimelineWarning, TimelineComparison } from "@/models/Company";
 import { Upload } from "@/models/Upload";
-import { getCompany, getCompanies, getTimeline } from "@/services/companyService";
+import { getCompany, getCompanies, getTimeline, compareTimeline } from "@/services/companyService";
 import {
   getUploads,
   patchUploadMetadata,
   uploadAndParseWithProgress,
 } from "@/services/UploadService";
-import { periodLabel, MONTHS_SHORT } from "@/lib/periodLabel";
+import { periodLabel } from "@/lib/periodLabel";
+import Badge from "@/components/ui/badge/Badge";
 import TimelineChart from "@/components/companies/TimelineChart";
 import PeriodCompare from "@/components/companies/PeriodCompare";
-import CashFlowSection from "@/components/companies/CashFlowSection";
+import KpiCard from "@/components/companies/KpiCard";
+import ExecutiveSummary from "@/components/companies/ExecutiveSummary";
+import RatioAnalysis from "@/components/companies/RatioAnalysis";
+import PeriodsTable from "@/components/companies/PeriodsTable";
 
 const MONTHS_FULL = [
   { value: 1, label: "January" },
@@ -40,30 +44,6 @@ const MONTHS_FULL = [
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: CURRENT_YEAR - 2014 }, (_, i) => CURRENT_YEAR - i);
-
-function fmt(val: number | null | undefined): string {
-  if (val == null) return "—";
-  return new Intl.NumberFormat("fr-TN", { maximumFractionDigits: 0 }).format(val);
-}
-
-function SummaryCard({ label, value }: { label: string; value: number | null | undefined }) {
-  return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
-      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-        {label}
-      </p>
-      <p className="text-2xl font-bold text-gray-900 dark:text-white">{fmt(value)}</p>
-    </div>
-  );
-}
-
-function MissingBadge({ label }: { label: string }) {
-  return (
-    <span className="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 rounded">
-      {label}
-    </span>
-  );
-}
 
 export default function CompanyDetailPage() {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
@@ -84,6 +64,7 @@ export default function CompanyDetailPage() {
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [comparison, setComparison] = useState<TimelineComparison | null>(null);
 
   const [addModal, setAddModal] = useState<{
     isOpen: boolean;
@@ -133,6 +114,29 @@ export default function CompanyDetailPage() {
       setTimelineWarnings(tlRes.warnings);
       setUploads(allUploads.filter((u: Upload) => u.company_id === companyId));
       setError(null);
+
+      // KPI deltas: compare the latest period against the previous one
+      // (A=prev, B=latest ⇒ delta = latest − prev). Backend stays the source of sign.
+      const periods = tlRes.periods;
+      const prev = periods[periods.length - 2];
+      const latest = periods[periods.length - 1];
+      if (periods.length >= 2 && prev?.period_year && latest?.period_year) {
+        try {
+          setComparison(
+            await compareTimeline(
+              companyId,
+              prev.period_year,
+              latest.period_year,
+              prev.period_month ?? undefined,
+              latest.period_month ?? undefined
+            )
+          );
+        } catch {
+          setComparison(null);
+        }
+      } else {
+        setComparison(null);
+      }
     } catch {
       setError("Failed to load company data");
     } finally {
@@ -255,17 +259,44 @@ export default function CompanyDetailPage() {
         >
           <AppHeader />
           <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <button
-                onClick={() => router.push("/companies")}
-                className="text-sm text-gray-500 hover:text-brand-500 transition"
-              >
-                ← Companies
-              </button>
-              <span className="text-gray-300 dark:text-gray-600">/</span>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                {company?.name ?? "…"}
-              </h1>
+            <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <button
+                  onClick={() => router.push("/companies")}
+                  className="text-sm text-gray-500 hover:text-brand-500 transition"
+                >
+                  ← Companies
+                </button>
+                <div className="flex flex-wrap items-center gap-3 mt-1">
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {company?.name ?? "…"}
+                  </h1>
+                  {latestPeriod && (
+                    <Badge color="light" size="sm">
+                      Dernière période :{" "}
+                      {periodLabel(
+                        latestPeriod.period_year,
+                        latestPeriod.period_month,
+                        latestPeriod.display_filename
+                      )}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 self-start">
+                <button
+                  onClick={() => router.push(`/companies/${companyId}/statements`)}
+                  className="px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm rounded-lg transition"
+                >
+                  États financiers
+                </button>
+                <button
+                  onClick={openAddModal}
+                  className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm rounded-lg transition"
+                >
+                  + Ajouter une période
+                </button>
+              </div>
             </div>
 
             {error && (
@@ -275,27 +306,54 @@ export default function CompanyDetailPage() {
             )}
 
             {loading ? (
-              <p className="text-gray-500 dark:text-gray-400 py-12 text-center">Loading…</p>
+              <div className="space-y-6">
+                <div className="grid grid-cols-12 gap-4 md:gap-6">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="col-span-12 sm:col-span-6 xl:col-span-3 h-28 animate-pulse rounded-2xl bg-gray-100 dark:bg-white/5"
+                    />
+                  ))}
+                </div>
+                <div className="h-80 animate-pulse rounded-2xl bg-gray-100 dark:bg-white/5" />
+              </div>
             ) : (
               <div className="space-y-6">
-                {/* Summary cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <SummaryCard label="Total Actif" value={latestPeriod?.total_actif} />
-                  <SummaryCard label="Total Passif" value={latestPeriod?.total_passif} />
-                  <SummaryCard label="Capitaux propres" value={latestPeriod?.capitaux_propres} />
-                  <SummaryCard label="Résultat net" value={latestPeriod?.resultat_net} />
+                {/* KPI cards */}
+                <div className="grid grid-cols-12 gap-4 md:gap-6">
+                  <div className="col-span-12 sm:col-span-6 xl:col-span-3">
+                    <KpiCard
+                      label="Total Actif"
+                      value={latestPeriod?.total_actif}
+                      delta={comparison?.comparison.total_actif.delta}
+                      pct={comparison?.comparison.total_actif.pct}
+                    />
+                  </div>
+                  <div className="col-span-12 sm:col-span-6 xl:col-span-3">
+                    <KpiCard
+                      label="Total Passif"
+                      value={latestPeriod?.total_passif}
+                      delta={comparison?.comparison.total_passif.delta}
+                      pct={comparison?.comparison.total_passif.pct}
+                    />
+                  </div>
+                  <div className="col-span-12 sm:col-span-6 xl:col-span-3">
+                    <KpiCard
+                      label="Capitaux propres"
+                      value={latestPeriod?.capitaux_propres}
+                      delta={comparison?.comparison.capitaux_propres.delta}
+                      pct={comparison?.comparison.capitaux_propres.pct}
+                    />
+                  </div>
+                  <div className="col-span-12 sm:col-span-6 xl:col-span-3">
+                    <KpiCard
+                      label="Résultat net"
+                      value={latestPeriod?.resultat_net}
+                      delta={comparison?.comparison.resultat_net.delta}
+                      pct={comparison?.comparison.resultat_net.pct}
+                    />
+                  </div>
                 </div>
-
-                {latestPeriod && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
-                    Summary from latest period:{" "}
-                    {periodLabel(
-                      latestPeriod.period_year,
-                      latestPeriod.period_month,
-                      latestPeriod.display_filename
-                    )}
-                  </p>
-                )}
 
                 {/* Duplicate period warnings */}
                 {timelineWarnings.map((w, i) => (
@@ -314,115 +372,86 @@ export default function CompanyDetailPage() {
                   </div>
                 ))}
 
-                {/* Trend chart */}
-                <ComponentCard title="Tendances">
-                  {timeline.length < 2 ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 py-6 text-center">
-                      Ajoutez au moins 2 périodes pour afficher les tendances.
-                    </p>
-                  ) : (
-                    <TimelineChart timeline={timeline} />
-                  )}
-                </ComponentCard>
-
-                {/* Period comparison */}
-                {timeline.length >= 2 && (
-                  <PeriodCompare companyId={companyId} timeline={timeline} />
-                )}
-
-                {/* Cash flow statement */}
-                {timeline.length >= 2 && (
-                  <CashFlowSection companyId={companyId} timeline={timeline} />
-                )}
-
-                {/* Uploads table */}
-                <ComponentCard
-                  title="Periods"
-                  headerAction={
-                    <button
-                      onClick={openAddModal}
-                      className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm rounded-lg transition"
-                    >
-                      + Add period
-                    </button>
-                  }
-                >
-                  {uploads.length === 0 ? (
-                    <p className="text-gray-500 dark:text-gray-400 py-8 text-center">
-                      No uploads for this company yet.
-                    </p>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                            <th className="pb-3 font-medium">File</th>
-                            <th className="pb-3 font-medium">Year</th>
-                            <th className="pb-3 font-medium">Month</th>
-                            <th className="pb-3 font-medium">Status</th>
-                            <th className="pb-3 font-medium">Bilan</th>
-                            <th className="pb-3 font-medium">CR</th>
-                            <th className="pb-3 font-medium"></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {uploads.map((u) => {
-                            const period = timeline.find((t) => t.upload_id === u.id);
-                            return (
-                              <tr
-                                key={u.id}
-                                onClick={() => router.push(`/uploads/${u.id}/accounts`)}
-                                className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
-                              >
-                                <td className="py-3 pr-4 font-medium text-gray-900 dark:text-white">
-                                  {u.display_filename || u.filename}
-                                </td>
-                                <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">
-                                  {u.period_year ?? "—"}
-                                </td>
-                                <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">
-                                  {u.period_month && u.period_month >= 1 && u.period_month <= 12
-                                    ? MONTHS_SHORT[u.period_month]
-                                    : "—"}
-                                </td>
-                                <td className="py-3 pr-4">
-                                  <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                                    {u.status}
-                                  </span>
-                                </td>
-                                <td className="py-3 pr-4">
-                                  {period?.has_bilan ? (
-                                    <span className="text-success-500">✓</span>
-                                  ) : (
-                                    <MissingBadge label="Sans bilan" />
-                                  )}
-                                </td>
-                                <td className="py-3 pr-4">
-                                  {period?.has_cr ? (
-                                    <span className="text-success-500">✓</span>
-                                  ) : (
-                                    <MissingBadge label="Sans CR" />
-                                  )}
-                                </td>
-                                <td className="py-3 text-right">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openEditDrawer(u);
-                                    }}
-                                    className="px-2 py-1 text-xs text-gray-500 hover:text-brand-500 border border-gray-200 dark:border-gray-700 rounded transition"
-                                  >
-                                    Edit
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                {uploads.length === 0 ? (
+                  <ComponentCard title="Aucune donnée">
+                    <div className="py-10 text-center">
+                      <p className="text-gray-500 dark:text-gray-400 mb-4">
+                        Aucune période pour cette société.
+                      </p>
+                      <button
+                        onClick={openAddModal}
+                        className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm rounded-lg transition"
+                      >
+                        + Ajouter la première période
+                      </button>
                     </div>
-                  )}
-                </ComponentCard>
+                  </ComponentCard>
+                ) : (
+                  <>
+                    {/* Trend chart + period comparison */}
+                    <div className="grid grid-cols-12 gap-4 md:gap-6">
+                      <div className="col-span-12 xl:col-span-8">
+                        <ComponentCard title="Tendances">
+                          {timeline.length < 2 ? (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 py-6 text-center">
+                              Ajoutez une 2ᵉ période pour afficher les tendances.
+                            </p>
+                          ) : (
+                            <TimelineChart timeline={timeline} />
+                          )}
+                        </ComponentCard>
+                      </div>
+                      <div className="col-span-12 xl:col-span-4">
+                        {timeline.length >= 2 ? (
+                          <PeriodCompare companyId={companyId} timeline={timeline} />
+                        ) : (
+                          <ComponentCard title="Comparaison de périodes">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 py-6 text-center">
+                              Ajoutez une 2ᵉ période pour comparer.
+                            </p>
+                          </ComponentCard>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Financial ratios */}
+                    {latestPeriod && (
+                      <ComponentCard title="Ratios financiers">
+                        <RatioAnalysis
+                          periodN={comparison?.period_b ?? latestPeriod}
+                          periodN1={comparison?.period_a ?? null}
+                        />
+                      </ComponentCard>
+                    )}
+
+                    {/* Periods table */}
+                    <ComponentCard
+                      title="Périodes"
+                      headerAction={
+                        <button
+                          onClick={openAddModal}
+                          className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm rounded-lg transition"
+                        >
+                          + Ajouter une période
+                        </button>
+                      }
+                    >
+                      <PeriodsTable
+                        uploads={uploads}
+                        timeline={timeline}
+                        onEdit={openEditDrawer}
+                        onRowClick={(u) => router.push(`/uploads/${u.id}/accounts`)}
+                      />
+                    </ComponentCard>
+
+                    {/* Executive summary (bottom) */}
+                    {latestPeriod && (
+                      <ComponentCard title="Synthèse">
+                        <ExecutiveSummary latest={latestPeriod} comparison={comparison} />
+                      </ComponentCard>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
