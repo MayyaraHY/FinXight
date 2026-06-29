@@ -52,7 +52,8 @@ class CashFlowService:
         result = CashFlowResult()
 
         result.exploitation = self._build_exploitation(
-            resultat_net_n, bilan_n, bilan_n_minus_1, period_flows_n
+            resultat_net_n, bilan_n, bilan_n_minus_1, period_flows_n,
+            tb_balances_n, tb_balances_n_1,
         )
         result.investissement = self._build_section(
             self.rules["flux_investissement"],
@@ -89,7 +90,7 @@ class CashFlowService:
         return result
 
     # --- Exploitation ---
-    def _build_exploitation(self, resultat_net, bilan_n, bilan_n_1, flows):
+    def _build_exploitation(self, resultat_net, bilan_n, bilan_n_1, flows, tb_n, tb_n_1):
         cfg = self.rules["flux_exploitation"]
         s = CashFlowSection(cfg["label"])
 
@@ -106,8 +107,8 @@ class CashFlowService:
             s.total += amount
 
         for var in cfg["variations_bfr"].values():
-            delta = self._variation(var, bilan_n, bilan_n_1, None, None)
-            effect = self._effect(var, delta)
+            delta = self._variation(var, bilan_n, bilan_n_1, tb_n, tb_n_1)
+            effect = self._effect(var, delta, tb_n, tb_n_1)
             s.lines.append(CashFlowLine(var["label"], effect))
             s.total += effect
 
@@ -120,7 +121,7 @@ class CashFlowService:
             if key == "label" or not isinstance(item, dict):
                 continue
             delta = self._variation(item, bilan_n, bilan_n_1, tb_n, tb_n_1)
-            effect = self._effect(item, delta)
+            effect = self._effect(item, delta, tb_n, tb_n_1)
             s.lines.append(CashFlowLine(item["label"], effect))
             s.total += effect
         return s
@@ -180,7 +181,7 @@ class CashFlowService:
                     return found
         return None
 
-    def _effect(self, item, delta):
+    def _effect(self, item, delta, tb_n=None, tb_n_1=None):
         """Cash effect of a balance-sheet variation, accounting for the sign space
         of its source.
 
@@ -189,10 +190,21 @@ class CashFlowService:
           identity the treasury reconciliation relies on), regardless of actif/passif.
         - bilan_line_ref reads bilan DISPLAY values, where passifs are already
           sign-normalized to positive, so the actif/passif rule applies.
+
+        `exclude_comptes` peels specific TB codes out of a bilan_line_ref line so the
+        same movement can be reclassified to another section (e.g. dividendes 447 /
+        comptes courants 442 moved from BFR to financement) without double-counting or
+        editing the shared bilan tree. The correction is applied in cash-effect space
+        and is the exact negative of how those codes contribute as a tb_codes line
+        (effect = −Δ), so the two lines cancel and section subtotals stay correct.
         """
         if item.get("source") in ("tb_codes", "direct_accounts"):
             return -delta
-        return self._apply_sign(delta, item["classe_actif_passif"])
+        effect = self._apply_sign(delta, item["classe_actif_passif"])
+        for code in item.get("exclude_comptes", []):
+            code_delta = self._sum_codes(tb_n, [code]) - self._sum_codes(tb_n_1, [code])
+            effect -= -code_delta  # remove the tb_codes-style cash effect of this code
+        return effect
 
     @staticmethod
     def _apply_sign(variation, classe):

@@ -85,20 +85,53 @@
   },
 
   "flux_investissement": {
-  "label": "Flux de trésorerie liés aux activités d'investissement",
-  "acquisition_immobilisations": {
-    "label": "Décaissements affectés à l'acquisition d'immobilisations",
-    "source": "direct_accounts",
-    "type": "variation_gross_only",
-    "comptes_valeurs_brutes": [
-      "actifs_immobilises.immobilisations_incorporelles.comptes_valeurs_brutes",
-      "actifs_immobilises.immobilisations_corporelles.comptes_valeurs_brutes",
-      "actifs_immobilises.immobilisations_financieres.comptes_valeurs_brutes"
-    ],
-    "ignore_amortissement": true,
-    "note": "Variation in gross values only; excludes amortization accounts"
-  }
-},
+    "label": "Flux de trésorerie liés aux activités d'investissement",
+    "acquisition_immobilisations_corp_incorp": {
+      "label": "Décaissements affectés à l'acquisition d'immobilisations corporelles et incorporelles",
+      "source": "direct_accounts",
+      "type": "variation_gross_only",
+      "comptes_valeurs_brutes": [
+        "actifs_immobilises.immobilisations_incorporelles.comptes_valeurs_brutes",
+        "actifs_immobilises.immobilisations_corporelles.comptes_valeurs_brutes"
+      ],
+      "ignore_amortissement": true,
+      "note": "Variation des valeurs brutes uniquement (nette des sorties au coût); exclut les amortissements."
+    },
+    "cession_immobilisations_corp_incorp": {
+      "label": "Encaissements provenant de la cession d'immobilisations corporelles et incorporelles",
+      "source": "tb_codes",
+      "comptes": [],
+      "classe_actif_passif": "actif",
+      "type": "variation",
+      "note": "Désactivé (0): le prix de cession brut n'est pas extractible d'une balance — le PCG tunisien comptabilise les cessions en net (736/636). Mouvement absorbé par la ligne de réconciliation."
+    },
+    "acquisition_immobilisations_financieres": {
+      "label": "Décaissements affectés à l'acquisition d'immobilisations financières",
+      "source": "direct_accounts",
+      "type": "variation_gross_only",
+      "comptes_valeurs_brutes": [
+        "actifs_immobilises.immobilisations_financieres.comptes_valeurs_brutes"
+      ],
+      "ignore_amortissement": true,
+      "note": "Variation des valeurs brutes uniquement (nette des sorties au coût)."
+    },
+    "cession_immobilisations_financieres": {
+      "label": "Encaissements provenant de la cession d'immobilisations financières",
+      "source": "tb_codes",
+      "comptes": [],
+      "classe_actif_passif": "actif",
+      "type": "variation",
+      "note": "Désactivé (0): prix de cession brut non extractible d'une balance (cession nette 736). Mouvement absorbé par la ligne de réconciliation."
+    },
+    "placements_court_terme": {
+      "label": "Encaissements/Décaissements provenant des placements à court terme",
+      "source": "bilan_line_ref",
+      "ref": "actifs_courants.placements_et_autres_actifs_financiers",
+      "classe_actif_passif": "actif",
+      "type": "variation",
+      "note": "Variation des placements et autres actifs financiers (51/52/55), hors trésorerie 53/54."
+    }
+  },
 
   "flux_financement": {
     "label": "Flux de trésorerie liés aux activités de financement",
@@ -115,7 +148,7 @@
       "comptes": [],
       "classe_actif_passif": "passif",
       "type": "variation",
-      "note": "Désactivé: 457 est déjà inclus dans autres_passifs_courants (BFR) — l'activer ici double-compterait. Mouvement absorbé par la ligne de réconciliation."
+      "note": "Désactivé (0): 447 reste inclus dans autres_passifs_courants (BFR) — l'activer ici double-compterait. Mouvement absorbé par la ligne de réconciliation."
     },
     "emprunts": {
       "label": "Encaissement/Décaissement provenant des emprunts",
@@ -143,7 +176,7 @@
       "comptes": [],
       "classe_actif_passif": "passif",
       "type": "variation",
-      "note": "Désactivé (0) — codes client à confirmer (461/462 retirés: 462 est un actif). Mouvement absorbé par la ligne de réconciliation."
+      "note": "Désactivé (0): 442 reste inclus dans autres_passifs_courants (BFR) — l'activer ici double-compterait. Mouvement absorbé par la ligne de réconciliation."
     }
   },
 
