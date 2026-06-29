@@ -234,7 +234,6 @@ def _to_response(*, year_n, upload_n, upload_n_1, stmt_n, stmt_n_1, warnings) ->
             _section_pair(stmt_n.exploitation, stmt_n_1.exploitation if has_prev else None),
             _section_pair(stmt_n.investissement, stmt_n_1.investissement if has_prev else None),
             _section_pair(stmt_n.financement, stmt_n_1.financement if has_prev else None),
-            _section_pair(stmt_n.autres, stmt_n_1.autres if has_prev else None),
         ],
         "variation_tresorerie_n": stmt_n.variation_tresorerie,
         "variation_tresorerie_n_1": stmt_n_1.variation_tresorerie if has_prev else None,

@@ -22,7 +22,6 @@ class CashFlowResult:
     exploitation: CashFlowSection = None
     investissement: CashFlowSection = None
     financement: CashFlowSection = None
-    autres: CashFlowSection = None
     variation_tresorerie: float = 0.0
     tresorerie_debut: float = 0.0
     tresorerie_fin: float = 0.0
@@ -64,27 +63,23 @@ class CashFlowService:
             bilan_n, bilan_n_minus_1, tb_balances_n, tb_balances_n_1,
         )
 
-        total_flux = (
+        # Variation de trésorerie = somme des trois sous-totaux d'activité.
+        result.variation_tresorerie = (
             result.exploitation.total
             + result.investissement.total
             + result.financement.total
         )
 
         result.tresorerie_debut = self._sum_codes(tb_balances_n_1, self.tresorerie_comptes)
-        result.tresorerie_fin = self._sum_codes(tb_balances_n, self.tresorerie_comptes)
-        result.variation_tresorerie = result.tresorerie_fin - result.tresorerie_debut
+        # Trésorerie de clôture = ouverture + variation (identité du tableau de flux).
+        result.tresorerie_fin = result.tresorerie_debut + result.variation_tresorerie
 
-        # Catch-all: this model captures a curated subset of the balance sheet, so
-        # the three sections rarely equal the true cash movement on real data. The
-        # residual = (Δtréso − Σsections) is ventilated into one explicit line so the
-        # statement always articulates and the unmodeled movement stays visible.
-        residual = result.variation_tresorerie - total_flux
-        result.autres = CashFlowSection(
-            "Autres postes du bilan (réconciliation)",
-            [CashFlowLine("Variation des autres postes du bilan (non ventilée)", residual)],
-            residual,
+        # Contrôle: la somme des flux d'activité devrait égaler la variation des soldes
+        # de trésorerie. L'écart n'est plus plugué dans une section résiduelle — il est
+        # signalé tel quel (peut être important: le modèle ne capte qu'un sous-ensemble).
+        result.reconciliation_ecart = (
+            (result.tresorerie_fin - result.tresorerie_debut) - result.variation_tresorerie
         )
-        result.reconciliation_ecart = result.variation_tresorerie - (total_flux + residual)
         result.reconciliation_ok = abs(result.reconciliation_ecart) < 0.01
 
         return result

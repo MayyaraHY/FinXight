@@ -111,8 +111,8 @@ export default function CashFlowSection({ companyId, timeline }: Props) {
             }`}
           >
             {data.reconciliation_ok_n
-              ? "✓ Réconciliation équilibrée (résidu ventilé en « Autres postes du bilan »)."
-              : `⚠ Écart de réconciliation : ${formatCurrencyRounded(data.reconciliation_ecart_n)} (flux ≠ variation de trésorerie).`}
+              ? "✓ Réconciliation équilibrée : la somme des flux égale la variation des soldes de trésorerie."
+              : `⚠ Écart de réconciliation : ${formatCurrencyRounded(data.reconciliation_ecart_n)} (flux ≠ variation des soldes de trésorerie).`}
           </div>
 
           {data.warnings.length > 0 && (
