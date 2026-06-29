@@ -21,3 +21,4 @@ from app.models.bilan import Bilan
 from app.models.anomaly import Anomaly
 from app.models.compte_resultat import CompteResultat
 from app.models.company import Company
+from app.models.custom_metric import CustomMetric

@@ -7,6 +7,25 @@ from app.models.compte_resultat import CompteResultat
 from app.models.upload import Upload
 
 
+def _flatten_bilan(nested: dict) -> dict[str, float]:
+    """Flatten the bilan tree to {"<parent>.<leaf>": amount} (parent = immediate
+    parent key, spaces → underscores), so leaves can be looked up by a stable key."""
+    flat: dict[str, float] = {}
+
+    def walk(node: dict, parent_key: str | None) -> None:
+        for key, value in node.items():
+            if not isinstance(value, dict):
+                continue
+            if "amount" in value:  # leaf
+                if parent_key is not None:
+                    flat[f"{parent_key.replace(' ', '_')}.{key}"] = value["amount"]
+            else:
+                walk(value, key)
+
+    walk(nested, None)
+    return flat
+
+
 def get_timeline_data(db: Session, company_id: int, user_id: PyUUID) -> list[dict]:
     rows = (
         db.query(Upload, Bilan, CompteResultat)
@@ -36,10 +55,13 @@ def get_timeline_data(db: Session, company_id: int, user_id: PyUUID) -> list[dic
         actif = totals.get("actif", {})
         passif = totals.get("passif", {})
 
-        resultat_net = None
-        if cr and cr.data:
-            cr_totals = cr.data.get("totals", {})
-            resultat_net = cr_totals.get("resultat_net")
+        # Named bilan leaves (for custom-metric formula variables).
+        leaves = (
+            _flatten_bilan(bilan.data.get("bilan", {}))
+            if bilan and bilan.data else {}
+        )
+
+        cr_totals = cr.data.get("totals", {}) if cr and cr.data else {}
 
         result.append(
             {
@@ -54,7 +76,21 @@ def get_timeline_data(db: Session, company_id: int, user_id: PyUUID) -> list[dic
                 "capitaux_propres": passif.get("capitaux_propres"),
                 "passifs_non_courants": passif.get("passifs_non_courants"),
                 "passifs_courants": passif.get("passifs_courants"),
-                "resultat_net": resultat_net,
+                "resultat_net": cr_totals.get("resultat_net"),
+                # CR lines (named statement variables)
+                "produits_exploitation": cr_totals.get("total_produits_exploitation"),
+                "charges_exploitation": cr_totals.get("total_charges_exploitation"),
+                "resultat_exploitation": cr_totals.get("resultat_exploitation"),
+                # Bilan leaves (named statement variables)
+                "stocks": leaves.get("actifs_courants.stocks"),
+                "clients": leaves.get("actifs_courants.clients_et_comptes_rattaches"),
+                "fournisseurs": leaves.get("passifs_courant.fournisseurs_et_comptes_rattaches"),
+                "autres_actifs_courants": leaves.get("actifs_courants.autres_actifs_courants"),
+                "autres_passifs_courants": leaves.get("passifs_courant.autres_passifs_courants"),
+                "liquidites": leaves.get("actifs_courants.liquidites_et_equivalents_de_liquidites"),
+                "concours_bancaires": leaves.get(
+                    "passifs_courant.conours_bancaires_et_autres_passif_financier"
+                ),
                 "has_bilan": bilan is not None,
                 "has_cr": cr is not None,
             }

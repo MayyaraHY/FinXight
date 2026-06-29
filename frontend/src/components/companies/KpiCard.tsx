@@ -3,8 +3,12 @@
 import Badge from "@/components/ui/badge/Badge";
 import { ArrowDownIcon, ArrowUpIcon } from "@/icons";
 
-function fmtTND(val: number | null | undefined): string {
+type KpiFormat = "currency" | "ratio" | "percent";
+
+function fmtValue(val: number | null | undefined, format: KpiFormat): string {
   if (val == null || !Number.isFinite(val)) return "—";
+  if (format === "percent") return `${(val * 100).toFixed(1)}%`;
+  if (format === "ratio") return val.toFixed(2);
   return new Intl.NumberFormat("fr-TN", { maximumFractionDigits: 0 }).format(val);
 }
 
@@ -15,6 +19,8 @@ interface Props {
   delta?: number | null;
   /** Percentage change. null when the base is 0 (avoids NaN%). */
   pct?: number | null;
+  /** Display format of the main value. Defaults to currency. */
+  format?: KpiFormat;
   /** When true, shows a remove (×) button. */
   editing?: boolean;
   onRemove?: () => void;
@@ -25,7 +31,7 @@ interface Props {
  * (green up / red down). Renders "—" instead of a badge when there is no
  * comparison or the base is null, never "NaN%".
  */
-export default function KpiCard({ label, value, delta, pct, editing, onRemove }: Props) {
+export default function KpiCard({ label, value, delta, pct, format = "currency", editing, onRemove }: Props) {
   const hasDelta = delta != null && Number.isFinite(delta) && delta !== 0;
   const up = (delta ?? 0) > 0;
   const pctText =
@@ -46,12 +52,12 @@ export default function KpiCard({ label, value, delta, pct, editing, onRemove }:
       <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
       <div className="mt-2 flex items-end justify-between gap-2">
         <h4 className="font-bold text-gray-800 text-title-sm dark:text-white/90">
-          {fmtTND(value)}
+          {fmtValue(value, format)}
         </h4>
         {hasDelta ? (
           <Badge color={up ? "success" : "error"}>
             {up ? <ArrowUpIcon /> : <ArrowDownIcon className="text-error-500" />}
-            {pctText ?? fmtTND(Math.abs(delta as number))}
+            {pctText ?? fmtValue(Math.abs(delta as number), format)}
           </Badge>
         ) : (
           <span className="text-xs text-gray-400 dark:text-gray-500">—</span>

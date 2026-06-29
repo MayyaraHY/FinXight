@@ -18,8 +18,31 @@ export type TimelinePeriod = {
   passifs_non_courants: number | null;
   passifs_courants: number | null;
   resultat_net: number | null;
+  // Named statement lines (formula variables) — optional: present on enriched timelines.
+  produits_exploitation?: number | null;
+  charges_exploitation?: number | null;
+  resultat_exploitation?: number | null;
+  stocks?: number | null;
+  clients?: number | null;
+  fournisseurs?: number | null;
+  autres_actifs_courants?: number | null;
+  autres_passifs_courants?: number | null;
+  liquidites?: number | null;
+  concours_bancaires?: number | null;
   has_bilan: boolean;
   has_cr: boolean;
+};
+
+export type CustomMetric = {
+  id: number;
+  company_id: number;
+  name: string;
+  formula: string;
+  kind: "kpi" | "ratio";
+  format: "currency" | "ratio" | "percent" | null;
+  higher_better: boolean;
+  threshold: number | null;
+  created_at?: string;
 };
 
 export type ComparisonValue = {

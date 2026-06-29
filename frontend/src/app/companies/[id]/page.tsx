@@ -28,6 +28,10 @@ import RatioAnalysis from "@/components/companies/RatioAnalysis";
 import PeriodsTable from "@/components/companies/PeriodsTable";
 import { KPI_CATALOG, KPI_KEYS } from "@/components/companies/kpiCatalog";
 import { useDashboardKpis } from "@/hooks/useDashboardKpis";
+import { useCustomMetrics } from "@/hooks/useCustomMetrics";
+import CustomMetricModal from "@/components/companies/CustomMetricModal";
+import { periodVars } from "@/components/companies/metricVariables";
+import { evalFormula } from "@/lib/formula";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
@@ -70,9 +74,14 @@ export default function CompanyDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [comparison, setComparison] = useState<TimelineComparison | null>(null);
   const kpis = useDashboardKpis(companyId);
+  const customMetrics = useCustomMetrics(companyId);
   const [editingKpis, setEditingKpis] = useState(false);
   const [addKpiOpen, setAddKpiOpen] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [metricModal, setMetricModal] = useState<{ open: boolean; kind: "kpi" | "ratio" }>({
+    open: false,
+    kind: "kpi",
+  });
 
   const [addModal, setAddModal] = useState<{
     isOpen: boolean;
@@ -229,6 +238,38 @@ export default function CompanyDetailPage() {
 
   const latestPeriod = timeline.length > 0 ? timeline[timeline.length - 1] : null;
 
+  // Resolve a KPI selection key (builtin catalog key or `custom:{id}`) to a card.
+  const customKpis = customMetrics.metrics.filter((m) => m.kind === "kpi");
+  const customRatios = customMetrics.metrics.filter((m) => m.kind === "ratio");
+  const customKpiById = new Map(customKpis.map((m) => [`custom:${m.id}`, m]));
+
+  const resolveKpi = (key: string) => {
+    const cat = KPI_CATALOG[key as keyof typeof KPI_CATALOG];
+    if (cat) {
+      return {
+        label: cat.label,
+        value: cat.value(latestPeriod),
+        delta: cat.delta(comparison),
+        pct: cat.pct(comparison),
+        format: "currency" as const,
+      };
+    }
+    const cm = customKpiById.get(key);
+    if (!cm) return null;
+    const value = evalFormula(cm.formula, periodVars(latestPeriod));
+    let delta: number | null = null;
+    let pct: number | null = null;
+    if (comparison) {
+      const a = evalFormula(cm.formula, periodVars(comparison.period_a));
+      const b = evalFormula(cm.formula, periodVars(comparison.period_b));
+      if (a != null && b != null) {
+        delta = b - a;
+        pct = a !== 0 ? ((b - a) / Math.abs(a)) * 100 : null;
+      }
+    }
+    return { label: cm.name, value, delta, pct, format: (cm.format ?? "currency") as "currency" | "ratio" | "percent" };
+  };
+
   const openEditDrawer = (upload: Upload) => {
     setEditDrawer({
       isOpen: true,
@@ -356,8 +397,8 @@ export default function CompanyDetailPage() {
 
                   <div className="grid grid-cols-12 gap-4 md:gap-6">
                     {kpis.keys.map((key, i) => {
-                      const cat = KPI_CATALOG[key];
-                      if (!cat) return null;
+                      const r = resolveKpi(key);
+                      if (!r) return null;
                       return (
                         <div
                           key={key}
@@ -376,10 +417,11 @@ export default function CompanyDetailPage() {
                           onDragEnd={() => setDragIndex(null)}
                         >
                           <KpiCard
-                            label={cat.label}
-                            value={cat.value(latestPeriod)}
-                            delta={cat.delta(comparison)}
-                            pct={cat.pct(comparison)}
+                            label={r.label}
+                            value={r.value}
+                            delta={r.delta}
+                            pct={r.pct}
+                            format={r.format}
                             editing={editingKpis}
                             onRemove={() => kpis.remove(key)}
                           />
@@ -412,11 +454,28 @@ export default function CompanyDetailPage() {
                                 {KPI_CATALOG[k].label}
                               </DropdownItem>
                             ))}
-                            {KPI_KEYS.every((k) => kpis.keys.includes(k)) && (
-                              <p className="px-4 py-2 text-xs text-gray-400">
-                                Tous les KPI sont déjà affichés.
-                              </p>
-                            )}
+                            {customKpis
+                              .filter((m) => !kpis.keys.includes(`custom:${m.id}`))
+                              .map((m) => (
+                                <DropdownItem
+                                  key={m.id}
+                                  onClick={() => {
+                                    kpis.add(`custom:${m.id}`);
+                                    setAddKpiOpen(false);
+                                  }}
+                                >
+                                  {m.name}
+                                </DropdownItem>
+                              ))}
+                            <DropdownItem
+                              className="text-brand-500 border-t border-gray-100 dark:border-gray-800 mt-1"
+                              onClick={() => {
+                                setAddKpiOpen(false);
+                                setMetricModal({ open: true, kind: "kpi" });
+                              }}
+                            >
+                              + Créer un KPI personnalisé…
+                            </DropdownItem>
                           </Dropdown>
                         </div>
                       </div>
@@ -495,8 +554,11 @@ export default function CompanyDetailPage() {
                     {latestPeriod && (
                       <ComponentCard title="Ratios financiers">
                         <RatioAnalysis
+                          companyId={companyId}
                           periodN={comparison?.period_b ?? latestPeriod}
                           periodN1={comparison?.period_a ?? null}
+                          customRatios={customRatios}
+                          onCreateCustom={() => setMetricModal({ open: true, kind: "ratio" })}
                         />
                       </ComponentCard>
                     )}
@@ -769,6 +831,20 @@ export default function CompanyDetailPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Custom KPI / ratio builder */}
+      <CustomMetricModal
+        isOpen={metricModal.open}
+        onClose={() => setMetricModal((m) => ({ ...m, open: false }))}
+        defaultKind={metricModal.kind}
+        latestPeriod={latestPeriod}
+        onSubmit={async (body) => {
+          const created = await customMetrics.create(body);
+          if (created.kind === "kpi") kpis.add(`custom:${created.id}`);
+          // ratio selection is managed inside RatioAnalysis (its own hook); the new
+          // ratio appears in its add-menu. KPIs are added here so they show immediately.
+        }}
+      />
     </AuthGuard>
   );
 }

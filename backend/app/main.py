@@ -12,6 +12,7 @@ from app.controllers.export_controller import router as export_router
 from app.controllers.validation_controller import router as validation_router
 from app.controllers.timeline_controller import router as timeline_router
 from app.controllers.cashflow_controller import router as cashflow_router
+from app.controllers.custom_metric_controller import router as custom_metric_router
 from app.cors.cors_config import setup_cors
 from app.db.cnx import Base, engine
 
@@ -46,6 +47,7 @@ app.include_router(cr_router)
 app.include_router(company_router)
 app.include_router(timeline_router)
 app.include_router(cashflow_router)
+app.include_router(custom_metric_router)
 app.include_router(export_router)
 app.include_router(validation_router)
 # ── Public health endpoints ───────────────────────────────────────────
