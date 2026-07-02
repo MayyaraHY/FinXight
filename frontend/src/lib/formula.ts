@@ -1,22 +1,37 @@
 /**
  * Tiny, safe arithmetic formula engine for custom metrics.
  *
+ * PREVIEW-ONLY / NON-AUTHORITATIVE. Displayed metric values are computed
+ * server-side (backend app/services/metric_engine.py, which mirrors this file's
+ * semantics exactly). The only remaining caller of `evalFormula` is the live
+ * preview while editing a formula in CustomMetricModal; `validateFormula` still
+ * backs the editor's inline validation. Keep this in sync with the backend
+ * grammar (app/core/formula.py) — the parity tests guard the two.
+ *
  * Supports: numbers, identifiers (variable names), + - * / and parentheses,
- * and unary minus. No `eval` / `Function` — a hand-written tokenizer +
- * shunting-yard parser, evaluated against a variable map.
+ * unary minus, and the functions abs(x), min(a, b), max(a, b). No `eval` /
+ * `Function` — a hand-written tokenizer + shunting-yard parser, evaluated
+ * against a variable map.
  *
  * Returns `null` (not NaN) when a referenced variable is null/missing, on a
  * division by zero, or on any parse error — so the UI can show "—".
  */
 
+/** Supported functions and their (fixed) arity. */
+export const FUNCTIONS: Record<string, number> = { abs: 1, min: 2, max: 2 };
+
+type FuncName = keyof typeof FUNCTIONS;
+
 type Token =
   | { t: "num"; v: number }
   | { t: "id"; v: string }
+  | { t: "func"; v: FuncName }
   | { t: "op"; v: "+" | "-" | "*" | "/" | "u-" }
+  | { t: "comma" }
   | { t: "lp" }
   | { t: "rp" };
 
-const TOKEN_RE = /\s*([0-9]*\.?[0-9]+|[A-Za-z_][A-Za-z0-9_]*|[()+\-*/])/y;
+const TOKEN_RE = /\s*([0-9]*\.?[0-9]+|[A-Za-z_][A-Za-z0-9_]*|[(),+\-*/])/y;
 
 function tokenize(input: string): Token[] | null {
   const tokens: Token[] = [];
@@ -32,9 +47,11 @@ function tokenize(input: string): Token[] | null {
     const raw = m[1];
     pos = TOKEN_RE.lastIndex;
     if (/^[0-9]/.test(raw) || raw.startsWith(".")) tokens.push({ t: "num", v: parseFloat(raw) });
-    else if (/^[A-Za-z_]/.test(raw)) tokens.push({ t: "id", v: raw });
+    else if (/^[A-Za-z_]/.test(raw))
+      tokens.push(raw in FUNCTIONS ? { t: "func", v: raw as FuncName } : { t: "id", v: raw });
     else if (raw === "(") tokens.push({ t: "lp" });
     else if (raw === ")") tokens.push({ t: "rp" });
+    else if (raw === ",") tokens.push({ t: "comma" });
     else tokens.push({ t: "op", v: raw as "+" | "-" | "*" | "/" });
   }
   return tokens;
@@ -51,6 +68,13 @@ function toRpn(tokens: Token[]): Token[] | null {
     if (tok.t === "num" || tok.t === "id") {
       out.push(tok);
       prevValueLike = true;
+    } else if (tok.t === "func") {
+      ops.push(tok);
+      prevValueLike = false;
+    } else if (tok.t === "comma") {
+      while (ops.length && ops[ops.length - 1].t !== "lp") out.push(ops.pop()!);
+      if (!ops.length) return null; // comma outside parentheses
+      prevValueLike = false;
     } else if (tok.t === "op") {
       let op = tok.v;
       if (op === "-" && !prevValueLike) op = "u-";
@@ -68,12 +92,14 @@ function toRpn(tokens: Token[]): Token[] | null {
       while (ops.length && ops[ops.length - 1].t !== "lp") out.push(ops.pop()!);
       if (!ops.length) return null; // unbalanced
       ops.pop(); // discard "("
+      // A "(" directly preceded by a function name closes its argument list.
+      if (ops.length && ops[ops.length - 1].t === "func") out.push(ops.pop()!);
       prevValueLike = true;
     }
   }
   while (ops.length) {
     const op = ops.pop()!;
-    if (op.t === "lp") return null; // unbalanced
+    if (op.t === "lp" || op.t === "func") return null; // unbalanced / function without (…)
     out.push(op);
   }
   return out;
@@ -89,6 +115,24 @@ function evalRpn(rpn: Token[], vars: Record<string, number | null>): Val | null 
     else if (tok.t === "id") {
       const v = vars[tok.v];
       st.push(v == null || !Number.isFinite(v) ? NULL : v);
+    } else if (tok.t === "func") {
+      const arity = FUNCTIONS[tok.v];
+      if (st.length < arity) return null;
+      const args: Val[] = [];
+      for (let i = 0; i < arity; i++) args.unshift(st.pop()!);
+      if (args.some((a) => a === NULL)) {
+        st.push(NULL);
+        continue;
+      }
+      const nums = args as number[];
+      let r: number;
+      switch (tok.v) {
+        case "abs": r = Math.abs(nums[0]); break;
+        case "min": r = Math.min(nums[0], nums[1]); break;
+        case "max": r = Math.max(nums[0], nums[1]); break;
+        default: return null;
+      }
+      st.push(Number.isFinite(r) ? r : NULL);
     } else if (tok.t === "op") {
       if (tok.v === "u-") {
         if (!st.length) return null;
@@ -147,6 +191,23 @@ export function validateFormula(formula: string, allowedVars: string[]): Formula
       if (!used.includes(tok.v)) used.push(tok.v);
     }
   }
-  if (!toRpn(tokens)) return { ok: false, error: "Parenthèses ou opérateurs invalides.", usedVars: used };
+  const rpn = toRpn(tokens);
+  if (!rpn) return { ok: false, error: "Parenthèses ou opérateurs invalides.", usedVars: used };
+  // Simulate the RPN stack depth to catch wrong arity / missing or extra
+  // operands (e.g. `min(a,)`, `max(a, b, c)`) that parse but can't evaluate.
+  let depth = 0;
+  for (const tok of rpn) {
+    if (tok.t === "num" || tok.t === "id") depth += 1;
+    else if (tok.t === "func") {
+      const arity = FUNCTIONS[tok.v];
+      if (depth < arity) return { ok: false, error: `Arguments manquants pour ${tok.v}().`, usedVars: used };
+      depth -= arity - 1;
+    } else if (tok.t === "op") {
+      const need = tok.v === "u-" ? 1 : 2;
+      if (depth < need) return { ok: false, error: "Opérateur sans opérande.", usedVars: used };
+      depth -= need - 1;
+    }
+  }
+  if (depth !== 1) return { ok: false, error: "Formule incomplète.", usedVars: used };
   return { ok: true, usedVars: used };
 }

@@ -16,6 +16,11 @@ class Settings:
     # GROQ — used by classifier_client for cheap CSV column classification
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+    # Separate GROQ key for custom-metric formula generation. Use a key from a
+    # DIFFERENT Groq account/org to isolate rate limits (Groq meters per account,
+    # not per key). Falls back to GROQ_API_KEY when unset (dev convenience).
+    GROQ_FORMULA_API_KEY = os.getenv("GROQ_FORMULA_API_KEY")
+
     # ----------------------------------------------------------------
     # Service URLs — every cross-service call reads from here, never
     # hardcodes a host. Set in .env. Missing values fail fast at startup

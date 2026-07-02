@@ -163,6 +163,7 @@ export default function PeriodCompare({ companyId, timeline }: Props) {
             <tbody>
               {METRICS.map(({ key, label }) => {
                 const cv = result.comparison[key];
+                if (!cv) return null; // named keys are always present; guards the custom-key index type
                 return (
                   <tr
                     key={key}

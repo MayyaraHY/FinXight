@@ -3,11 +3,35 @@ from uuid import UUID as PyUUID
 
 from sqlalchemy.orm import Session
 
+from app.core import metric_variables
+from app.repositories.custom_metric_repository import CustomMetricRepository
 from app.repositories.timeline_repository import get_timeline_data
+from app.services import metric_engine
+
+
+def _delta_pct(a: float | None, b: float | None) -> dict:
+    """Authoritative a/b/delta/pct block, shared by base KPIs and custom metrics."""
+    delta = (b - a) if a is not None and b is not None else None
+    pct = round((b - a) / abs(a) * 100, 2) if a is not None and b is not None and a != 0 else None
+    return {"a": a, "b": b, "delta": delta, "pct": pct}
+
+
+def _attach_metric_values(period: dict, metrics: list) -> None:
+    """Compute every custom metric for this period server-side and attach them as
+    `metric_values: {metric_id(str): value|None}` — the authoritative values the
+    frontend renders (no more client-side formula evaluation)."""
+    var_map = metric_variables.build_var_map(period)
+    period["metric_values"] = {
+        str(m.id): metric_engine.evaluate(m.formula, var_map) for m in metrics
+    }
 
 
 def get_company_timeline(db: Session, company_id: int, user_id: PyUUID) -> dict:
     periods = get_timeline_data(db, company_id, user_id)
+    # Global library metrics (user-scoped) computed against this company's data.
+    metrics = CustomMetricRepository(db).get_by_user(user_id)
+    for p in periods:
+        _attach_metric_values(p, metrics)
 
     seen: dict[tuple, list[int]] = defaultdict(list)
     for p in periods:
@@ -63,14 +87,18 @@ def compare_periods(
         "resultat_net",
     ]
 
-    comparison = {}
-    for key in keys:
-        a = period_a.get(key)
-        b = period_b.get(key)
-        if a is not None and b is not None and a != 0:
-            pct = round((b - a) / abs(a) * 100, 2)
-        else:
-            pct = None
-        comparison[key] = {"a": a, "b": b, "delta": (b - a) if a is not None and b is not None else None, "pct": pct}
+    comparison = {key: _delta_pct(period_a.get(key), period_b.get(key)) for key in keys}
+
+    # Custom metrics: authoritative value + delta/pct, keyed "custom:{id}".
+    metrics = CustomMetricRepository(db).get_by_user(user_id)
+    var_a = metric_variables.build_var_map(period_a)
+    var_b = metric_variables.build_var_map(period_b)
+    for m in metrics:
+        va = metric_engine.evaluate(m.formula, var_a)
+        vb = metric_engine.evaluate(m.formula, var_b)
+        comparison[f"custom:{m.id}"] = _delta_pct(va, vb)
+
+    _attach_metric_values(period_a, metrics)
+    _attach_metric_values(period_b, metrics)
 
     return {"period_a": period_a, "period_b": period_b, "comparison": comparison}

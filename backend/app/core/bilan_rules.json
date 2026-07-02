@@ -125,7 +125,7 @@
               "46 CR", "472", "48"
             ]
           },
-          "conours_bancaires_et_autres_passif_financier": {
+          "concours_bancaires_et_autres_passif_financier": {
             "label": "Concours bancaires et autres passifs financiers",
             "comptes_affectation": ["501", "505", "506", "507", "508", "532 CR", "537 CR"]
           }

@@ -45,6 +45,11 @@ const navItems: NavItem[] = [
     path: "/companies",
   },
   {
+    icon: <PieChartIcon />,
+    name: "KPI & Ratios",
+    path: "/metrics",
+  },
+  {
     icon: <CalenderIcon />,
     name: "Calendar",
     path: "/calendar",

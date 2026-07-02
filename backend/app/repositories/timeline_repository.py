@@ -2,28 +2,10 @@ from uuid import UUID as PyUUID
 
 from sqlalchemy.orm import Session
 
+from app.core import bilan_keys as bk
 from app.models.bilan import Bilan
 from app.models.compte_resultat import CompteResultat
 from app.models.upload import Upload
-
-
-def _flatten_bilan(nested: dict) -> dict[str, float]:
-    """Flatten the bilan tree to {"<parent>.<leaf>": amount} (parent = immediate
-    parent key, spaces → underscores), so leaves can be looked up by a stable key."""
-    flat: dict[str, float] = {}
-
-    def walk(node: dict, parent_key: str | None) -> None:
-        for key, value in node.items():
-            if not isinstance(value, dict):
-                continue
-            if "amount" in value:  # leaf
-                if parent_key is not None:
-                    flat[f"{parent_key.replace(' ', '_')}.{key}"] = value["amount"]
-            else:
-                walk(value, key)
-
-    walk(nested, None)
-    return flat
 
 
 def get_timeline_data(db: Session, company_id: int, user_id: PyUUID) -> list[dict]:
@@ -57,7 +39,7 @@ def get_timeline_data(db: Session, company_id: int, user_id: PyUUID) -> list[dic
 
         # Named bilan leaves (for custom-metric formula variables).
         leaves = (
-            _flatten_bilan(bilan.data.get("bilan", {}))
+            bk.flatten_bilan(bilan.data.get("bilan", {}))
             if bilan and bilan.data else {}
         )
 
@@ -82,15 +64,14 @@ def get_timeline_data(db: Session, company_id: int, user_id: PyUUID) -> list[dic
                 "charges_exploitation": cr_totals.get("total_charges_exploitation"),
                 "resultat_exploitation": cr_totals.get("resultat_exploitation"),
                 # Bilan leaves (named statement variables)
-                "stocks": leaves.get("actifs_courants.stocks"),
-                "clients": leaves.get("actifs_courants.clients_et_comptes_rattaches"),
-                "fournisseurs": leaves.get("passifs_courant.fournisseurs_et_comptes_rattaches"),
-                "autres_actifs_courants": leaves.get("actifs_courants.autres_actifs_courants"),
-                "autres_passifs_courants": leaves.get("passifs_courant.autres_passifs_courants"),
-                "liquidites": leaves.get("actifs_courants.liquidites_et_equivalents_de_liquidites"),
-                "concours_bancaires": leaves.get(
-                    "passifs_courant.conours_bancaires_et_autres_passif_financier"
-                ),
+                "stocks": leaves.get(bk.STOCKS),
+                "clients": leaves.get(bk.CLIENTS),
+                "fournisseurs": leaves.get(bk.FOURNISSEURS),
+                "autres_actifs_courants": leaves.get(bk.AUTRES_ACTIFS_COURANTS),
+                "autres_passifs_courants": leaves.get(bk.AUTRES_PASSIFS_COURANTS),
+                "liquidites": leaves.get(bk.LIQUIDITES),
+                # Corrected + legacy spelling (stored data predating the fix).
+                "concours_bancaires": bk.leaf(leaves, *bk.CONCOURS_BANCAIRES_KEYS),
                 "has_bilan": bilan is not None,
                 "has_cr": cr is not None,
             }

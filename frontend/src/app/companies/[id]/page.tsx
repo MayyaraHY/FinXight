@@ -10,7 +10,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import ComponentCard from "@/components/common/ComponentCard";
 import { Modal } from "@/components/ui/modal";
 import Alert from "@/components/ui/alert/Alert";
-import { Company, TimelinePeriod, TimelineWarning, TimelineComparison } from "@/models/Company";
+import { Company, CustomMetric, TimelinePeriod, TimelineWarning, TimelineComparison } from "@/models/Company";
 import { Upload } from "@/models/Upload";
 import { getCompany, getCompanies, getTimeline, compareTimeline } from "@/services/companyService";
 import {
@@ -28,10 +28,9 @@ import RatioAnalysis from "@/components/companies/RatioAnalysis";
 import PeriodsTable from "@/components/companies/PeriodsTable";
 import { KPI_CATALOG, KPI_KEYS } from "@/components/companies/kpiCatalog";
 import { useDashboardKpis } from "@/hooks/useDashboardKpis";
-import { useCustomMetrics } from "@/hooks/useCustomMetrics";
+import { useMetricLibrary } from "@/hooks/useMetricLibrary";
+import { generateMetric } from "@/services/metricLibraryService";
 import CustomMetricModal from "@/components/companies/CustomMetricModal";
-import { periodVars } from "@/components/companies/metricVariables";
-import { evalFormula } from "@/lib/formula";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
@@ -73,14 +72,19 @@ export default function CompanyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [comparison, setComparison] = useState<TimelineComparison | null>(null);
-  const kpis = useDashboardKpis(companyId);
-  const customMetrics = useCustomMetrics(companyId);
+  const kpis = useDashboardKpis();
+  const customMetrics = useMetricLibrary();
   const [editingKpis, setEditingKpis] = useState(false);
   const [addKpiOpen, setAddKpiOpen] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [metricModal, setMetricModal] = useState<{ open: boolean; kind: "kpi" | "ratio" }>({
+  const [metricModal, setMetricModal] = useState<{
+    open: boolean;
+    kind: "kpi" | "ratio";
+    editing: CustomMetric | null;
+  }>({
     open: false,
     kind: "kpi",
+    editing: null,
   });
 
   const [addModal, setAddModal] = useState<{
@@ -256,18 +260,27 @@ export default function CompanyDetailPage() {
     }
     const cm = customKpiById.get(key);
     if (!cm) return null;
-    const value = evalFormula(cm.formula, periodVars(latestPeriod));
-    let delta: number | null = null;
-    let pct: number | null = null;
-    if (comparison) {
-      const a = evalFormula(cm.formula, periodVars(comparison.period_a));
-      const b = evalFormula(cm.formula, periodVars(comparison.period_b));
-      if (a != null && b != null) {
-        delta = b - a;
-        pct = a !== 0 ? ((b - a) / Math.abs(a)) * 100 : null;
-      }
-    }
-    return { label: cm.name, value, delta, pct, format: (cm.format ?? "currency") as "currency" | "ratio" | "percent" };
+    // Authoritative values come from the server (period.metric_values + the
+    // comparison payload) — no client-side formula evaluation here.
+    const value = latestPeriod?.metric_values?.[String(cm.id)] ?? null;
+    const cmp = comparison?.comparison[`custom:${cm.id}`];
+    return {
+      label: cm.name,
+      value,
+      delta: cmp?.delta ?? null,
+      pct: cmp?.pct ?? null,
+      format: (cm.format ?? "currency") as "currency" | "ratio" | "percent",
+    };
+  };
+
+  // Open the builder in edit mode for an existing custom metric.
+  const editMetric = (cm: CustomMetric) =>
+    setMetricModal({ open: true, kind: cm.kind, editing: cm });
+
+  // Delete a custom metric definition (server-side) and drop it from any selection.
+  const deleteMetric = async (cm: CustomMetric) => {
+    kpis.remove(`custom:${cm.id}`);
+    await customMetrics.remove(cm.id);
   };
 
   const openEditDrawer = (upload: Upload) => {
@@ -399,10 +412,11 @@ export default function CompanyDetailPage() {
                     {kpis.keys.map((key, i) => {
                       const r = resolveKpi(key);
                       if (!r) return null;
+                      const cm = customKpiById.get(key);
                       return (
                         <div
                           key={key}
-                          className={`col-span-12 sm:col-span-6 xl:col-span-3 ${
+                          className={`col-span-12 sm:col-span-6 xl:col-span-3 h-full ${
                             editingKpis ? "cursor-move" : ""
                           } ${dragIndex === i ? "opacity-50" : ""}`}
                           draggable={editingKpis}
@@ -424,6 +438,9 @@ export default function CompanyDetailPage() {
                             format={r.format}
                             editing={editingKpis}
                             onRemove={() => kpis.remove(key)}
+                            isCustom={!!cm}
+                            onEdit={cm ? () => editMetric(cm) : undefined}
+                            onDelete={cm ? () => deleteMetric(cm) : undefined}
                           />
                         </div>
                       );
@@ -471,7 +488,7 @@ export default function CompanyDetailPage() {
                               className="text-brand-500 border-t border-gray-100 dark:border-gray-800 mt-1"
                               onClick={() => {
                                 setAddKpiOpen(false);
-                                setMetricModal({ open: true, kind: "kpi" });
+                                setMetricModal({ open: true, kind: "kpi", editing: null });
                               }}
                             >
                               + Créer un KPI personnalisé…
@@ -554,11 +571,12 @@ export default function CompanyDetailPage() {
                     {latestPeriod && (
                       <ComponentCard title="Ratios financiers">
                         <RatioAnalysis
-                          companyId={companyId}
                           periodN={comparison?.period_b ?? latestPeriod}
                           periodN1={comparison?.period_a ?? null}
                           customRatios={customRatios}
-                          onCreateCustom={() => setMetricModal({ open: true, kind: "ratio" })}
+                          onCreateCustom={() => setMetricModal({ open: true, kind: "ratio", editing: null })}
+                          onEditCustom={editMetric}
+                          onDeleteCustom={(cm) => customMetrics.remove(cm.id)}
                         />
                       </ComponentCard>
                     )}
@@ -835,14 +853,24 @@ export default function CompanyDetailPage() {
       {/* Custom KPI / ratio builder */}
       <CustomMetricModal
         isOpen={metricModal.open}
-        onClose={() => setMetricModal((m) => ({ ...m, open: false }))}
+        onClose={() => setMetricModal((m) => ({ ...m, open: false, editing: null }))}
         defaultKind={metricModal.kind}
+        editing={metricModal.editing}
         latestPeriod={latestPeriod}
+        onGenerate={(name) => generateMetric(name)}
         onSubmit={async (body) => {
+          if (metricModal.editing) {
+            await customMetrics.update(metricModal.editing.id, body);
+            await fetchAll(); // refresh server-computed metric_values for the edited formula
+            return;
+          }
           const created = await customMetrics.create(body);
           if (created.kind === "kpi") kpis.add(`custom:${created.id}`);
           // ratio selection is managed inside RatioAnalysis (its own hook); the new
           // ratio appears in its add-menu. KPIs are added here so they show immediately.
+          // Refetch the timeline so its metric_values include the new metric's value
+          // (values are computed server-side; the current timeline predates it).
+          await fetchAll();
         }}
       />
     </AuthGuard>

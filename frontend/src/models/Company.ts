@@ -29,6 +29,9 @@ export type TimelinePeriod = {
   autres_passifs_courants?: number | null;
   liquidites?: number | null;
   concours_bancaires?: number | null;
+  // Authoritative server-computed custom-metric values, keyed by metric id
+  // (as string). The frontend renders these directly — see metric_engine.py.
+  metric_values?: Record<string, number | null>;
   has_bilan: boolean;
   has_cr: boolean;
 };
@@ -110,5 +113,6 @@ export type TimelineComparison = {
     actifs_courants: ComparisonValue;
     passifs_non_courants: ComparisonValue;
     passifs_courants: ComparisonValue;
-  };
+    // Custom metrics, keyed "custom:{id}" (computed server-side).
+  } & Record<`custom:${number}`, ComparisonValue | undefined>;
 };

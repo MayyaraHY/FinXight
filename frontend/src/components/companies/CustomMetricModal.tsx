@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal } from "@/components/ui/modal";
-import { TimelinePeriod } from "@/models/Company";
-import { CustomMetricInput } from "@/services/customMetricService";
+import { CustomMetric, TimelinePeriod } from "@/models/Company";
+import { CustomMetricInput, GeneratedMetric } from "@/services/customMetricService";
 import { METRIC_VARIABLES, METRIC_VARIABLE_KEYS, periodVars } from "@/components/companies/metricVariables";
 import { evalFormula, validateFormula } from "@/lib/formula";
 
@@ -14,8 +14,12 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   defaultKind: Kind;
+  /** When set, the modal edits this metric instead of creating a new one. */
+  editing?: CustomMetric | null;
   latestPeriod: TimelinePeriod | null;
   onSubmit: (body: CustomMetricInput) => Promise<unknown>;
+  /** When provided, shows a "Générer avec l'IA" button that drafts the fields from the name. */
+  onGenerate?: (name: string) => Promise<GeneratedMetric>;
 }
 
 function fmtPreview(v: number | null, format: Format): string {
@@ -25,7 +29,15 @@ function fmtPreview(v: number | null, format: Format): string {
   return v.toFixed(2);
 }
 
-export default function CustomMetricModal({ isOpen, onClose, defaultKind, latestPeriod, onSubmit }: Props) {
+export default function CustomMetricModal({
+  isOpen,
+  onClose,
+  defaultKind,
+  editing,
+  latestPeriod,
+  onSubmit,
+  onGenerate,
+}: Props) {
   const [name, setName] = useState("");
   const [kind, setKind] = useState<Kind>(defaultKind);
   const [format, setFormat] = useState<Format>(defaultKind === "ratio" ? "ratio" : "currency");
@@ -33,7 +45,30 @@ export default function CustomMetricModal({ isOpen, onClose, defaultKind, latest
   const [higherBetter, setHigherBetter] = useState(true);
   const [threshold, setThreshold] = useState("");
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Prefill from the edited metric (or reset to defaults) each time the modal opens.
+  useEffect(() => {
+    if (!isOpen) return;
+    if (editing) {
+      setName(editing.name);
+      setKind(editing.kind);
+      setFormat(editing.format ?? (editing.kind === "ratio" ? "ratio" : "currency"));
+      setFormula(editing.formula);
+      setHigherBetter(editing.higher_better);
+      setThreshold(editing.threshold != null ? String(editing.threshold) : "");
+    } else {
+      setName("");
+      setKind(defaultKind);
+      setFormat(defaultKind === "ratio" ? "ratio" : "currency");
+      setFormula("");
+      setHigherBetter(true);
+      setThreshold("");
+    }
+    setError(null);
+    setGenerating(false);
+  }, [isOpen, editing, defaultKind]);
 
   const validation = useMemo(() => validateFormula(formula, METRIC_VARIABLE_KEYS), [formula]);
   const preview = useMemo(
@@ -54,6 +89,27 @@ export default function CustomMetricModal({ isOpen, onClose, defaultKind, latest
   const handleClose = () => {
     reset();
     onClose();
+  };
+
+  const canGenerate = !!onGenerate && name.trim().length > 0 && !generating && !saving;
+
+  const handleGenerate = async () => {
+    if (!canGenerate || !onGenerate) return;
+    setGenerating(true);
+    setError(null);
+    try {
+      const g = await onGenerate(name.trim());
+      if (g.name) setName(g.name);
+      setKind(g.kind);
+      setFormat(g.format);
+      setFormula(g.formula);
+      setHigherBetter(g.higher_better);
+      setThreshold(g.threshold == null ? "" : String(g.threshold));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Échec de la génération.");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const canSave = name.trim().length > 0 && validation.ok && !saving;
@@ -87,13 +143,31 @@ export default function CustomMetricModal({ isOpen, onClose, defaultKind, latest
     <Modal isOpen={isOpen} onClose={handleClose} className="max-w-lg" showBackdrop>
       <div className="p-6 pt-8 max-h-[85vh] overflow-y-auto">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Nouveau {kind === "kpi" ? "KPI" : "ratio"} personnalisé
+          {editing ? "Modifier le" : "Nouveau"} {kind === "kpi" ? "KPI" : "ratio"} personnalisé
         </h3>
 
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom</label>
-            <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="ex. Marge d'exploitation" />
+            <div className="flex gap-2">
+              <input
+                className={inputCls}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="ex. Marge d'exploitation"
+              />
+              {onGenerate && (
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  disabled={!canGenerate}
+                  title="Générer le type, le format et la formule à partir du nom"
+                  className="flex-shrink-0 whitespace-nowrap px-3 py-2 text-sm rounded-lg bg-brand-50 text-brand-600 border border-brand-200 hover:bg-brand-100 transition disabled:opacity-50 disabled:cursor-not-allowed dark:bg-brand-500/10 dark:text-brand-400 dark:border-brand-500/30"
+                >
+                  {generating ? "Génération…" : "✨ Générer avec l'IA"}
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-3">
@@ -136,6 +210,9 @@ export default function CustomMetricModal({ isOpen, onClose, defaultKind, latest
                 </button>
               ))}
             </div>
+            <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
+              Fonctions : abs(x), min(a, b), max(a, b)
+            </p>
             {formula.trim() !== "" && !validation.ok && (
               <p className="mt-1 text-xs text-error-500">{validation.error}</p>
             )}
@@ -175,7 +252,7 @@ export default function CustomMetricModal({ isOpen, onClose, defaultKind, latest
               disabled={!canSave}
               className="flex-1 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? "Enregistrement…" : "Créer"}
+              {saving ? "Enregistrement…" : editing ? "Enregistrer" : "Créer"}
             </button>
           </div>
         </div>

@@ -7,7 +7,9 @@ class CustomMetric(Base):
     __tablename__ = "custom_metrics"
 
     id            = Column(Integer, primary_key=True, index=True)
-    company_id    = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    # NULL company_id = a global, user-scoped library metric (applies to every
+    # company the user owns). A non-null company_id is a legacy company-scoped row.
+    company_id    = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=True, index=True)
     user_id       = Column(UUID(as_uuid=True), nullable=False, index=True)
     name          = Column(String, nullable=False)
     formula       = Column(String, nullable=False)

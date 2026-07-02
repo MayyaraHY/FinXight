@@ -7,8 +7,6 @@ import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 import { CustomMetric, TimelinePeriod } from "@/models/Company";
 import { RATIO_CATALOG, RATIO_KEYS } from "@/components/companies/ratioCatalog";
 import { useDashboardRatios } from "@/hooks/useDashboardRatios";
-import { periodVars } from "@/components/companies/metricVariables";
-import { evalFormula } from "@/lib/formula";
 
 type Fmt = "ratio" | "percent" | "currency";
 
@@ -30,15 +28,24 @@ interface ResolvedRow {
 }
 
 interface Props {
-  companyId: number;
   periodN: TimelinePeriod;
   periodN1?: TimelinePeriod | null;
   customRatios: CustomMetric[];
   onCreateCustom: () => void;
+  onEditCustom: (cm: CustomMetric) => void;
+  /** Delete the definition server-side. Returns once removed. */
+  onDeleteCustom: (cm: CustomMetric) => Promise<void>;
 }
 
-export default function RatioAnalysis({ companyId, periodN, periodN1, customRatios, onCreateCustom }: Props) {
-  const sel = useDashboardRatios(companyId);
+export default function RatioAnalysis({
+  periodN,
+  periodN1,
+  customRatios,
+  onCreateCustom,
+  onEditCustom,
+  onDeleteCustom,
+}: Props) {
+  const sel = useDashboardRatios();
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -62,8 +69,9 @@ export default function RatioAnalysis({ companyId, periodN, periodN1, customRati
     }
     const cm = customById.get(key);
     if (cm) {
-      const vN = evalFormula(cm.formula, periodVars(periodN));
-      const vN1 = periodN1 ? evalFormula(cm.formula, periodVars(periodN1)) : null;
+      // Authoritative values computed server-side (period.metric_values).
+      const vN = periodN.metric_values?.[String(cm.id)] ?? null;
+      const vN1 = periodN1 ? periodN1.metric_values?.[String(cm.id)] ?? null : null;
       const format: Fmt = (cm.format as Fmt) ?? "ratio";
       let healthy: boolean | null = null;
       if (vN != null && cm.threshold != null)
@@ -74,6 +82,12 @@ export default function RatioAnalysis({ companyId, periodN, periodN1, customRati
   };
 
   const rows = sel.keys.map(resolve).filter((r): r is ResolvedRow => r !== null);
+
+  // Delete a custom ratio: drop it from the selection, then remove the definition.
+  const handleDelete = async (cm: CustomMetric) => {
+    sel.remove(`custom:${cm.id}`);
+    await onDeleteCustom(cm);
+  };
 
   const availableBuiltins = RATIO_KEYS.filter((k) => !sel.keys.includes(k));
   const availableCustoms = customRatios.filter((m) => !sel.keys.includes(`custom:${m.id}`));
@@ -186,13 +200,37 @@ export default function RatioAnalysis({ companyId, periodN, periodN1, customRati
                   </TableCell>
                   {editing && (
                     <TableCell className="py-2.5 text-right">
-                      <button
-                        onClick={() => sel.remove(r.key)}
-                        aria-label={`Retirer ${r.label}`}
-                        className="text-gray-400 hover:text-error-500"
-                      >
-                        ×
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {(() => {
+                          const cm = customById.get(r.key);
+                          if (!cm) return null;
+                          return (
+                            <>
+                              <button
+                                onClick={() => onEditCustom(cm)}
+                                aria-label={`Modifier ${r.label}`}
+                                className="text-gray-400 hover:text-brand-500"
+                              >
+                                ✎
+                              </button>
+                              <button
+                                onClick={() => handleDelete(cm)}
+                                aria-label={`Supprimer ${r.label}`}
+                                className="text-gray-400 hover:text-error-500"
+                              >
+                                🗑
+                              </button>
+                            </>
+                          );
+                        })()}
+                        <button
+                          onClick={() => sel.remove(r.key)}
+                          aria-label={`Retirer ${r.label}`}
+                          className="text-gray-400 hover:text-error-500"
+                        >
+                          ×
+                        </button>
+                      </div>
                     </TableCell>
                   )}
                 </tr>

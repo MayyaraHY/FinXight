@@ -1,17 +1,7 @@
 """
 AI prompts for bilan and CR diagnosis.
-
-Design principle: Python calculates, the LLM only translates.
-Every prompt receives pre-computed facts (detected_issues / warnings lists)
-produced by the deterministic validator. The LLM is strictly forbidden from
-inventing balances, performing arithmetic, or flagging anything not in the
-pre-computed list.
 """
 
-# ---------------------------------------------------------------------------
-# Shared sign convention — prepended to every prompt.
-# If the LLM ignores this block, the answers will be wrong.
-# ---------------------------------------------------------------------------
 _CONVENTIONS = """
 CONVENTION DE SIGNE (CRITIQUE — lire avant tout):
 - Les soldes sont stockés en convention DÉBIT POSITIF / CRÉDIT NÉGATIF.

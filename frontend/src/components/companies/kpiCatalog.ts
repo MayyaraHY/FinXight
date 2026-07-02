@@ -15,6 +15,8 @@ export type KpiKey =
 export interface KpiDef {
   key: KpiKey;
   label: string;
+  /** Human-readable formula, for display in the metrics manager. */
+  formula: string;
   value: (p: TimelinePeriod | null) => number | null;
   delta: (c: TimelineComparison | null) => number | null;
   pct: (c: TimelineComparison | null) => number | null;
@@ -27,6 +29,7 @@ function direct(key: DirectKey, label: string): KpiDef {
   return {
     key,
     label,
+    formula: key, // a direct statement line
     value: (p) => p?.[key] ?? null,
     delta: (c) => c?.comparison[key].delta ?? null,
     pct: (c) => c?.comparison[key].pct ?? null,
@@ -48,11 +51,13 @@ function frOf(p: TimelinePeriod): number | null {
 function derived(
   key: "dettes" | "fonds_de_roulement",
   label: string,
+  formula: string,
   fn: (p: TimelinePeriod) => number | null
 ): KpiDef {
   return {
     key,
     label,
+    formula,
     value: (p) => (p ? fn(p) : null),
     delta: (c) => {
       if (!c) return null;
@@ -79,8 +84,13 @@ export const KPI_CATALOG: Record<KpiKey, KpiDef> = {
   passifs_non_courants: direct("passifs_non_courants", "Passifs non courants"),
   passifs_courants: direct("passifs_courants", "Passifs courants"),
   resultat_net: direct("resultat_net", "Résultat net"),
-  dettes: derived("dettes", "Dettes", debtOf),
-  fonds_de_roulement: derived("fonds_de_roulement", "Fonds de roulement", frOf),
+  dettes: derived("dettes", "Dettes", "passifs_non_courants + passifs_courants", debtOf),
+  fonds_de_roulement: derived(
+    "fonds_de_roulement",
+    "Fonds de roulement",
+    "capitaux_propres + passifs_non_courants - actifs_non_courants",
+    frOf
+  ),
 };
 
 export const KPI_KEYS = Object.keys(KPI_CATALOG) as KpiKey[];

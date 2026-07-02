@@ -24,6 +24,10 @@ interface Props {
   /** When true, shows a remove (×) button. */
   editing?: boolean;
   onRemove?: () => void;
+  /** When true (custom metric), also shows edit + delete controls in editing mode. */
+  isCustom?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 /**
@@ -31,26 +35,61 @@ interface Props {
  * (green up / red down). Renders "—" instead of a badge when there is no
  * comparison or the base is null, never "NaN%".
  */
-export default function KpiCard({ label, value, delta, pct, format = "currency", editing, onRemove }: Props) {
+export default function KpiCard({
+  label,
+  value,
+  delta,
+  pct,
+  format = "currency",
+  editing,
+  onRemove,
+  isCustom,
+  onEdit,
+  onDelete,
+}: Props) {
   const hasDelta = delta != null && Number.isFinite(delta) && delta !== 0;
   const up = (delta ?? 0) > 0;
   const pctText =
     pct != null && Number.isFinite(pct) ? `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%` : null;
 
   return (
-    <div className="relative rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
-      {editing && onRemove && (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`Retirer ${label}`}
-          className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:border-error-300 hover:text-error-500 dark:border-gray-700 dark:bg-gray-800"
-        >
-          ×
-        </button>
+    <div className="relative flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+      {editing && (
+        <div className="absolute right-2 top-2 flex items-center gap-1">
+          {isCustom && onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              aria-label={`Modifier ${label}`}
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-xs text-gray-500 hover:border-brand-300 hover:text-brand-500 dark:border-gray-700 dark:bg-gray-800"
+            >
+              ✎
+            </button>
+          )}
+          {isCustom && onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              aria-label={`Supprimer ${label}`}
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-xs text-gray-500 hover:border-error-300 hover:text-error-500 dark:border-gray-700 dark:bg-gray-800"
+            >
+              🗑
+            </button>
+          )}
+          {onRemove && (
+            <button
+              type="button"
+              onClick={onRemove}
+              aria-label={`Retirer ${label}`}
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:border-error-300 hover:text-error-500 dark:border-gray-700 dark:bg-gray-800"
+            >
+              ×
+            </button>
+          )}
+        </div>
       )}
       <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
-      <div className="mt-2 flex items-end justify-between gap-2">
+      <div className="mt-auto flex items-end justify-between gap-2 pt-2">
         <h4 className="font-bold text-gray-800 text-title-sm dark:text-white/90">
           {fmtValue(value, format)}
         </h4>

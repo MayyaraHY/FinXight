@@ -5,6 +5,7 @@ from uuid import UUID as PyUUID
 
 from sqlalchemy.orm import Session
 
+from app.core import bilan_keys as bk
 from app.models.upload import Upload
 from app.repositories.cashflow_repository import get_cashflow_periods
 from app.services.balance import signed_balance
@@ -28,24 +29,8 @@ def _load_rules() -> dict:
     return json.loads(CASHFLOW_RULES_PATH.read_text(encoding="utf-8"))
 
 
-def _flatten_bilan(nested: dict) -> dict[str, float]:
-    """Flatten a bilan tree to {"<parent>.<leaf>": amount}, where <parent> is the
-    leaf's immediate parent key with spaces replaced by underscores — matching the
-    `ref` spellings in cashflow_rules.json (e.g. "passifs_courant.fournisseurs...")."""
-    flat: dict[str, float] = {}
-
-    def walk(node: dict, parent_key: str | None) -> None:
-        for key, value in node.items():
-            if not isinstance(value, dict):
-                continue
-            if "amount" in value:  # leaf
-                if parent_key is not None:
-                    flat[f"{parent_key.replace(' ', '_')}.{key}"] = float(value["amount"])
-            else:
-                walk(value, key)
-
-    walk(nested, None)
-    return flat
+# Shared flattener (was duplicated here); kept as a module alias for readability.
+_flatten_bilan = bk.flatten_bilan
 
 
 class CashFlowOrchestrator:
@@ -107,12 +92,13 @@ class CashFlowOrchestrator:
     # Bilan leaves that legitimately have no flux line: the cash target itself and
     # equity result lines (they articulate via résultat net), so don't flag them.
     _AUDIT_DENYLIST = {
-        "actifs_courants.liquidites_et_equivalents_de_liquidites",
+        bk.LIQUIDITES,
         "capitaux_propres.resultat_de_l_exercice",
         "capitaux_propres.resultat_reportes",
         # Split-handled, not dropped: its 50x go to dettes_court_terme (tb_codes),
-        # its 532/537 CR are part of the treasury reconciliation.
-        "passifs_courant.conours_bancaires_et_autres_passif_financier",
+        # its 532/537 CR are part of the treasury reconciliation. Both spellings
+        # (corrected + legacy) so freshly-computed and stored trees are covered.
+        *bk.CONCOURS_BANCAIRES_KEYS,
     }
 
     def _referenced_leaves(self) -> set[str]:

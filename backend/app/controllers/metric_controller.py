@@ -1,3 +1,10 @@
+"""User-scoped global metric library (KPIs & ratios) — the /metrics API.
+
+A metric defined here belongs to the user, not a company, and applies to every
+company they own (custom_metrics rows with company_id IS NULL). Mirrors the
+company-scoped custom_metric_controller but drops the company from the path.
+"""
+
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,7 +16,7 @@ from app.db.cnx import get_db
 from app.services.custom_metric_service import CustomMetricService
 
 
-class CustomMetricCreate(BaseModel):
+class MetricCreate(BaseModel):
     name: str
     formula: str
     kind: str  # 'kpi' | 'ratio'
@@ -18,7 +25,7 @@ class CustomMetricCreate(BaseModel):
     threshold: Optional[float] = None
 
 
-class CustomMetricUpdate(BaseModel):
+class MetricUpdate(BaseModel):
     name: Optional[str] = None
     formula: Optional[str] = None
     kind: Optional[str] = None
@@ -34,34 +41,28 @@ class GenerateMetricRequest(BaseModel):
 
 
 router = APIRouter(
-    prefix="/companies/{company_id}/custom-metrics",
-    tags=["Custom Metrics"],
+    prefix="/metrics",
+    tags=["Metric Library"],
     dependencies=[Depends(current_user)],
 )
 
 
 @router.get("/")
-def list_custom_metrics(
-    company_id: int,
+def list_metrics(
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(current_user),
 ):
-    try:
-        data = CustomMetricService(db).list_metrics(company_id, user.id)
-        return {"success": True, "data": data}
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return {"success": True, "data": CustomMetricService(db).list_library(user.id)}
 
 
 @router.post("/")
-def create_custom_metric(
-    company_id: int,
-    body: CustomMetricCreate,
+def create_metric(
+    body: MetricCreate,
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(current_user),
 ):
     try:
-        data = CustomMetricService(db).create_metric(company_id, user.id, body.dict())
+        data = CustomMetricService(db).create_library(user.id, body.dict())
         return {"success": True, "data": data}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -69,46 +70,39 @@ def create_custom_metric(
 
 @router.post("/generate")
 def generate_metric(
-    company_id: int,
     body: GenerateMetricRequest,
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(current_user),
 ):
     try:
-        data = CustomMetricService(db).generate_metric(
-            company_id, user.id, body.name, body.variables
-        )
+        data = CustomMetricService(db).generate_library(user.id, body.name, body.variables)
         return {"success": True, "data": data}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.put("/{metric_id}")
-def update_custom_metric(
-    company_id: int,
+def update_metric(
     metric_id: int,
-    body: CustomMetricUpdate,
+    body: MetricUpdate,
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(current_user),
 ):
     try:
-        data = CustomMetricService(db).update_metric(
-            metric_id, company_id, user.id, body.dict(exclude_unset=True)
-        )
+        data = CustomMetricService(db).update_library(metric_id, user.id, body.dict(exclude_unset=True))
         return {"success": True, "data": data}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/{metric_id}")
-def delete_custom_metric(
-    company_id: int,
+def delete_metric(
     metric_id: int,
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(current_user),
 ):
     try:
-        CustomMetricService(db).delete_metric(metric_id, company_id, user.id)
+        CustomMetricService(db).delete_library(metric_id, user.id)
         return {"success": True}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
