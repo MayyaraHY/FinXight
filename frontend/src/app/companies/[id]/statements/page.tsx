@@ -66,15 +66,32 @@ export default function StatementsPage() {
         <div className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}>
           <AppHeader />
           <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <button
-                onClick={() => router.push(`/companies/${companyId}`)}
-                className="text-sm text-gray-500 hover:text-brand-500 transition"
-              >
-                ← {company?.name ?? "Société"}
-              </button>
-              <span className="text-gray-300 dark:text-gray-600">/</span>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">États financiers</h1>
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                {company?.name ?? "…"}
+              </h1>
+            </div>
+
+            {/* Nav tabs */}
+            <div className="flex items-center gap-1 mb-6 border-b border-gray-200 dark:border-gray-700">
+              {[
+                { label: "Dashboard", href: `/companies/${companyId}` },
+                { label: "États financiers", href: `/companies/${companyId}/statements` },
+                { label: "Périodes", href: `/companies/${companyId}/period` },
+                { label: "Synthèse", href: `/companies/${companyId}/synthese` },
+              ].map((tab) => (
+                <button
+                  key={tab.href}
+                  onClick={() => router.push(tab.href)}
+                  className={`px-4 py-2 text-sm font-medium rounded-t-lg transition -mb-px border-b-2 ${
+                    tab.href === `/companies/${companyId}/statements`
+                      ? "border-brand-500 text-brand-600 dark:text-brand-400"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
             {error && (

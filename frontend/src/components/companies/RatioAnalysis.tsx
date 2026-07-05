@@ -30,27 +30,31 @@ interface ResolvedRow {
 interface Props {
   periodN: TimelinePeriod;
   periodN1?: TimelinePeriod | null;
-  customRatios: CustomMetric[];
+  /** The full custom-metric library — any of them can be shown as a ratio row,
+   *  regardless of kind (placement is driven by the selection). */
+  customMetrics: CustomMetric[];
   onCreateCustom: () => void;
   onEditCustom: (cm: CustomMetric) => void;
   /** Delete the definition server-side. Returns once removed. */
   onDeleteCustom: (cm: CustomMetric) => Promise<void>;
+  companyId?: number;
 }
 
 export default function RatioAnalysis({
   periodN,
   periodN1,
-  customRatios,
+  customMetrics,
   onCreateCustom,
   onEditCustom,
   onDeleteCustom,
+  companyId,
 }: Props) {
-  const sel = useDashboardRatios();
+  const sel = useDashboardRatios(companyId);
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  const customById = new Map(customRatios.map((m) => [`custom:${m.id}`, m]));
+  const customById = new Map(customMetrics.map((m) => [`custom:${m.id}`, m]));
 
   const resolve = (key: string): ResolvedRow | null => {
     const builtin = RATIO_CATALOG[key];
@@ -90,7 +94,7 @@ export default function RatioAnalysis({
   };
 
   const availableBuiltins = RATIO_KEYS.filter((k) => !sel.keys.includes(k));
-  const availableCustoms = customRatios.filter((m) => !sel.keys.includes(`custom:${m.id}`));
+  const availableCustoms = customMetrics.filter((m) => !sel.keys.includes(`custom:${m.id}`));
 
   const cellTh = "py-2 font-medium text-gray-500 text-theme-xs dark:text-gray-400";
 

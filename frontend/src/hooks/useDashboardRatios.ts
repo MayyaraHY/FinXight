@@ -2,10 +2,11 @@ import { DEFAULT_RATIOS, RATIO_CATALOG } from "@/components/companies/ratioCatal
 import { useMetricSelection } from "@/hooks/useMetricSelection";
 
 /**
- * Global ratio dashboard selection (builtin keys + `custom:{id}`), persisted to
- * localStorage under `metrics:ratios`. Shared by every company dashboard and the
- * metric-management hub, so visibility/order is managed in one place.
+ * Ratio dashboard selection persisted to localStorage.
+ * When companyId is provided the key is per-company (`metrics:ratios:{id}`),
+ * otherwise falls back to the global key for non-company contexts.
  */
-export function useDashboardRatios() {
-  return useMetricSelection("metrics:ratios", DEFAULT_RATIOS, (k) => k in RATIO_CATALOG);
+export function useDashboardRatios(companyId?: number) {
+  const key = companyId != null ? `metrics:ratios:${companyId}` : "metrics:ratios";
+  return useMetricSelection(key, DEFAULT_RATIOS, (k) => k in RATIO_CATALOG);
 }

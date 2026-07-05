@@ -10,7 +10,9 @@ export type KpiKey =
   | "passifs_courants"
   | "resultat_net"
   | "dettes"
-  | "fonds_de_roulement";
+  | "fonds_de_roulement"
+  | "produits_exploitation"
+  | "resultat_exploitation";
 
 export interface KpiDef {
   key: KpiKey;
@@ -23,7 +25,7 @@ export interface KpiDef {
 }
 
 // One of the 8 metrics that `/compare` returns directly (a/b/delta/pct).
-type DirectKey = Exclude<KpiKey, "dettes" | "fonds_de_roulement">;
+type DirectKey = Exclude<KpiKey, "dettes" | "fonds_de_roulement" | "produits_exploitation" | "resultat_exploitation">;
 
 function direct(key: DirectKey, label: string): KpiDef {
   return {
@@ -45,6 +47,32 @@ function frOf(p: TimelinePeriod): number | null {
   if (p.capitaux_propres == null && p.passifs_non_courants == null && p.actifs_non_courants == null)
     return null;
   return (p.capitaux_propres ?? 0) + (p.passifs_non_courants ?? 0) - (p.actifs_non_courants ?? 0);
+}
+
+// P&L optional field: not in the /compare payload, so delta/pct are computed from period_a/period_b.
+function plDirect(
+  key: "produits_exploitation" | "resultat_exploitation",
+  label: string
+): KpiDef {
+  return {
+    key: key as KpiKey,
+    label,
+    formula: key,
+    value: (p) => p?.[key] ?? null,
+    delta: (c) => {
+      if (!c) return null;
+      const a = c.period_a[key] ?? null;
+      const b = c.period_b[key] ?? null;
+      return a == null || b == null ? null : b - a;
+    },
+    pct: (c) => {
+      if (!c) return null;
+      const a = c.period_a[key] ?? null;
+      const b = c.period_b[key] ?? null;
+      if (a == null || b == null || a === 0) return null;
+      return ((b - a) / Math.abs(a)) * 100;
+    },
+  };
 }
 
 // Derived metric: value from the latest period, delta/pct from the compared periods.
@@ -91,6 +119,8 @@ export const KPI_CATALOG: Record<KpiKey, KpiDef> = {
     "capitaux_propres + passifs_non_courants - actifs_non_courants",
     frOf
   ),
+  produits_exploitation: plDirect("produits_exploitation", "Chiffre d'affaires"),
+  resultat_exploitation: plDirect("resultat_exploitation", "Résultat d'exploitation"),
 };
 
 export const KPI_KEYS = Object.keys(KPI_CATALOG) as KpiKey[];

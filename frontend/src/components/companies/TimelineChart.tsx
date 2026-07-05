@@ -7,12 +7,13 @@ import { periodLabel } from "@/lib/periodLabel";
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-type SeriesKey = "total_actif" | "capitaux_propres" | "resultat_net";
+type SeriesKey = "total_actif" | "capitaux_propres" | "resultat_net" | "produits_exploitation";
 
 const SERIES_CONFIG: { key: SeriesKey; label: string; color: string }[] = [
   { key: "total_actif", label: "Total Actif", color: "#465FFF" },
   { key: "capitaux_propres", label: "Capitaux propres", color: "#10B981" },
   { key: "resultat_net", label: "Résultat net", color: "#F59E0B" },
+  { key: "produits_exploitation", label: "Chiffre d'affaires", color: "#8B5CF6" },
 ];
 
 function fmtTND(val: number): string {
@@ -25,7 +26,7 @@ interface Props {
 
 export default function TimelineChart({ timeline }: Props) {
   const [visible, setVisible] = useState<Set<SeriesKey>>(
-    new Set(["total_actif", "capitaux_propres", "resultat_net"])
+    new Set<SeriesKey>(["total_actif", "capitaux_propres", "resultat_net"])
   );
 
   const toggle = (key: SeriesKey) => {

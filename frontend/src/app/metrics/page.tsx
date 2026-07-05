@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
@@ -83,9 +83,6 @@ export default function MetricsPage() {
       .catch(() => setPreviewPeriod(null));
   }, [previewCompanyId, library.metrics]);
 
-  const customKpis = useMemo(() => library.metrics.filter((m) => m.kind === "kpi"), [library.metrics]);
-  const customRatios = useMemo(() => library.metrics.filter((m) => m.kind === "ratio"), [library.metrics]);
-
   const liveCustom = (cm: CustomMetric): number | null =>
     previewPeriod?.metric_values?.[String(cm.id)] ?? null;
 
@@ -99,7 +96,8 @@ export default function MetricsPage() {
       isCustom: false,
       liveValue: previewPeriod ? KPI_CATALOG[k].value(previewPeriod) : null,
     })),
-    ...customKpis.map((cm) => ({
+    // Every custom metric can be shown as a KPI card, regardless of its kind.
+    ...library.metrics.map((cm) => ({
       key: `custom:${cm.id}`,
       label: cm.name,
       formula: cm.formula,
@@ -121,7 +119,8 @@ export default function MetricsPage() {
       isCustom: false,
       liveValue: previewPeriod ? RATIO_CATALOG[k].value(previewPeriod) : null,
     })),
-    ...customRatios.map((cm) => ({
+    // Every custom metric can also be shown as a ratio row.
+    ...library.metrics.map((cm) => ({
       key: `custom:${cm.id}`,
       label: cm.name,
       formula: cm.formula,
@@ -142,12 +141,15 @@ export default function MetricsPage() {
       return;
     }
     const created = await library.create(body);
-    // Show new metrics on dashboards by default.
-    (created.kind === "kpi" ? kpiSel : ratioSel).add(`custom:${created.id}`);
+    // Show the new metric on dashboards in the section it was created from
+    // (KPI card vs ratio row), regardless of its kind.
+    (modal.kind === "kpi" ? kpiSel : ratioSel).add(`custom:${created.id}`);
   };
 
   const handleDelete = async (cm: CustomMetric) => {
-    (cm.kind === "kpi" ? kpiSel : ratioSel).remove(`custom:${cm.id}`);
+    // A metric may be shown in either/both sections — drop it from both.
+    kpiSel.remove(`custom:${cm.id}`);
+    ratioSel.remove(`custom:${cm.id}`);
     await library.remove(cm.id);
   };
 
