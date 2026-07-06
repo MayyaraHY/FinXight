@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 import { CustomMetric, TimelinePeriod } from "@/models/Company";
 import { RATIO_CATALOG, RATIO_KEYS } from "@/components/companies/ratioCatalog";
 import { useDashboardRatios } from "@/hooks/useDashboardRatios";
+import { METRIC_VARIABLES, periodVars } from "@/components/companies/metricVariables";
+import { getComponents, ComponentLine } from "@/lib/metricComponents";
+import { metricSourceHref } from "@/lib/metricSource";
+import SourceLink from "@/components/companies/SourceLink";
 
 type Fmt = "ratio" | "percent" | "currency";
 
@@ -25,6 +29,7 @@ interface ResolvedRow {
   healthy: boolean | null;
   higherBetter: boolean;
   format: Fmt;
+  components: ComponentLine[] | null;
 }
 
 interface Props {
@@ -53,6 +58,9 @@ export default function RatioAnalysis({
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+
+  const vars = periodVars(periodN);
 
   const customById = new Map(customMetrics.map((m) => [`custom:${m.id}`, m]));
 
@@ -69,6 +77,7 @@ export default function RatioAnalysis({
         healthy: vN != null && builtin.healthy ? builtin.healthy(vN) : null,
         higherBetter: builtin.higherBetter,
         format: builtin.format,
+        components: getComponents(builtin.formula, vars, METRIC_VARIABLES),
       };
     }
     const cm = customById.get(key);
@@ -80,7 +89,16 @@ export default function RatioAnalysis({
       let healthy: boolean | null = null;
       if (vN != null && cm.threshold != null)
         healthy = cm.higher_better ? vN >= cm.threshold : vN <= cm.threshold;
-      return { key, label: cm.name, vN, vN1, healthy, higherBetter: cm.higher_better, format };
+      return {
+        key,
+        label: cm.name,
+        vN,
+        vN1,
+        healthy,
+        higherBetter: cm.higher_better,
+        format,
+        components: getComponents(cm.formula, vars, METRIC_VARIABLES),
+      };
     }
     return null;
   };
@@ -174,70 +192,117 @@ export default function RatioAnalysis({
                   : r.healthy
                   ? "text-success-600 dark:text-success-500"
                   : "text-warning-600 dark:text-warning-500";
+              const isExpanded = expandedKey === r.key;
+              const hasComponents = r.components != null && r.components.length > 0;
+              const colSpan = (periodN1 ? 1 : 0) + (editing ? 1 : 0) + 3;
               return (
-                <tr
-                  key={r.key}
-                  className={`${editing ? "cursor-move" : ""} ${dragIndex === i ? "opacity-50" : ""}`}
-                  draggable={editing}
-                  onDragStart={() => setDragIndex(i)}
-                  onDragOver={(e) => { if (editing) e.preventDefault(); }}
-                  onDrop={() => { if (dragIndex != null) sel.move(dragIndex, i); setDragIndex(null); }}
-                  onDragEnd={() => setDragIndex(null)}
-                >
-                  <TableCell className="py-2.5 pr-4 text-gray-700 dark:text-gray-300">{r.label}</TableCell>
-                  {periodN1 && (
-                    <TableCell className="py-2.5 pr-4 text-right text-gray-500 dark:text-gray-400">
-                      {fmtVal(r.vN1, r.format)}
-                    </TableCell>
-                  )}
-                  <TableCell className={`py-2.5 pr-4 text-right font-medium ${nCls}`}>
-                    {fmtVal(r.vN, r.format)}
-                  </TableCell>
-                  <TableCell className="py-2.5 text-right">
-                    {trend == null ? (
-                      <span className="text-gray-400 dark:text-gray-500">—</span>
-                    ) : trend === "up" ? (
-                      <span className="text-success-600 dark:text-success-500">▲</span>
-                    ) : (
-                      <span className="text-error-600 dark:text-error-500">▼</span>
-                    )}
-                  </TableCell>
-                  {editing && (
-                    <TableCell className="py-2.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {(() => {
-                          const cm = customById.get(r.key);
-                          if (!cm) return null;
-                          return (
-                            <>
-                              <button
-                                onClick={() => onEditCustom(cm)}
-                                aria-label={`Modifier ${r.label}`}
-                                className="text-gray-400 hover:text-brand-500"
-                              >
-                                ✎
-                              </button>
-                              <button
-                                onClick={() => handleDelete(cm)}
-                                aria-label={`Supprimer ${r.label}`}
-                                className="text-gray-400 hover:text-error-500"
-                              >
-                                🗑
-                              </button>
-                            </>
-                          );
-                        })()}
-                        <button
-                          onClick={() => sel.remove(r.key)}
-                          aria-label={`Retirer ${r.label}`}
-                          className="text-gray-400 hover:text-error-500"
-                        >
-                          ×
-                        </button>
+                <Fragment key={r.key}>
+                  <tr
+                    className={`${editing ? "cursor-move" : ""} ${dragIndex === i ? "opacity-50" : ""}`}
+                    draggable={editing}
+                    onDragStart={() => setDragIndex(i)}
+                    onDragOver={(e) => { if (editing) e.preventDefault(); }}
+                    onDrop={() => { if (dragIndex != null) sel.move(dragIndex, i); setDragIndex(null); }}
+                    onDragEnd={() => setDragIndex(null)}
+                  >
+                    <TableCell className="py-2.5 pr-4 text-gray-700 dark:text-gray-300">
+                      <div className="flex items-center gap-1.5">
+                        {hasComponents && (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedKey(isExpanded ? null : r.key)}
+                            aria-label={isExpanded ? "Masquer" : "Détail"}
+                            className="text-gray-300 hover:text-brand-500 transition dark:text-gray-600 dark:hover:text-brand-400 flex-shrink-0"
+                          >
+                            <svg
+                              className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                              viewBox="0 0 12 12"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                            >
+                              <path d="M4 2l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </button>
+                        )}
+                        {r.label}
                       </div>
                     </TableCell>
+                    {periodN1 && (
+                      <TableCell className="py-2.5 pr-4 text-right text-gray-500 dark:text-gray-400">
+                        {fmtVal(r.vN1, r.format)}
+                      </TableCell>
+                    )}
+                    <TableCell className={`py-2.5 pr-4 text-right font-medium ${nCls}`}>
+                      {fmtVal(r.vN, r.format)}
+                    </TableCell>
+                    <TableCell className="py-2.5 text-right">
+                      {trend == null ? (
+                        <span className="text-gray-400 dark:text-gray-500">—</span>
+                      ) : trend === "up" ? (
+                        <span className="text-success-600 dark:text-success-500">▲</span>
+                      ) : (
+                        <span className="text-error-600 dark:text-error-500">▼</span>
+                      )}
+                    </TableCell>
+                    {editing && (
+                      <TableCell className="py-2.5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {(() => {
+                            const cm = customById.get(r.key);
+                            if (!cm) return null;
+                            return (
+                              <>
+                                <button
+                                  onClick={() => onEditCustom(cm)}
+                                  aria-label={`Modifier ${r.label}`}
+                                  className="text-gray-400 hover:text-brand-500"
+                                >
+                                  ✎
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(cm)}
+                                  aria-label={`Supprimer ${r.label}`}
+                                  className="text-gray-400 hover:text-error-500"
+                                >
+                                  🗑
+                                </button>
+                              </>
+                            );
+                          })()}
+                          <button
+                            onClick={() => sel.remove(r.key)}
+                            aria-label={`Retirer ${r.label}`}
+                            className="text-gray-400 hover:text-error-500"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </tr>
+                  {hasComponents && isExpanded && (
+                    <tr className="bg-gray-50 dark:bg-white/[0.02]">
+                      <td colSpan={colSpan} className="px-4 py-2.5">
+                        <div className="flex flex-wrap gap-x-6 gap-y-1">
+                          {r.components!.map((c) => (
+                            <div key={c.key} className="flex items-center gap-1.5 text-xs">
+                              <SourceLink
+                                href={metricSourceHref(periodN, c.key)}
+                                className="text-gray-500 dark:text-gray-400"
+                              >
+                                {c.label}
+                              </SourceLink>
+                              <span className="font-medium text-gray-800 dark:text-white/80 tabular-nums">
+                                {fmtVal(c.value, c.format ?? "currency")}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
                   )}
-                </tr>
+                </Fragment>
               );
             })}
             {rows.length === 0 && (

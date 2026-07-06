@@ -34,8 +34,12 @@ import { useDashboardKpis } from "@/hooks/useDashboardKpis";
 import { useMetricLibrary } from "@/hooks/useMetricLibrary";
 import { generateMetric } from "@/services/metricLibraryService";
 import CustomMetricModal from "@/components/companies/CustomMetricModal";
+import KpiDrillPanel from "@/components/companies/KpiDrillPanel";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
+import { METRIC_VARIABLES, periodVars } from "@/components/companies/metricVariables";
+import { getComponents, ComponentLine } from "@/lib/metricComponents";
+import { KPI_DRILL_MAP } from "@/lib/kpiDrillMap";
 
 const MONTHS_FULL = [
   { value: 1, label: "January" },
@@ -89,6 +93,13 @@ export default function CompanyDetailPage() {
     kind: "kpi",
     editing: null,
   });
+
+  const [drillTarget, setDrillTarget] = useState<{
+    key: string;
+    label: string;
+    period: TimelinePeriod;
+    components?: ComponentLine[] | null;
+  } | null>(null);
 
   const [addModal, setAddModal] = useState<{
     isOpen: boolean;
@@ -250,15 +261,22 @@ export default function CompanyDetailPage() {
   // be shown as a KPI card and/or a ratio row, rendered with its own format.
   const customById = new Map(customMetrics.metrics.map((m) => [`custom:${m.id}`, m]));
 
+  const vars = periodVars(latestPeriod);
+
   const resolveKpi = (key: string) => {
     const cat = KPI_CATALOG[key as keyof typeof KPI_CATALOG];
     if (cat) {
+      const components = getComponents(cat.formula, vars, METRIC_VARIABLES);
+      const drillEntries = KPI_DRILL_MAP[key];
+      const hasDrill = !!(drillEntries?.length && latestPeriod?.has_bilan) || !!(components?.length);
       return {
         label: cat.label,
         value: cat.value(latestPeriod),
         delta: cat.delta(comparison),
         pct: cat.pct(comparison),
         format: "currency" as const,
+        components,
+        hasDrill,
       };
     }
     const cm = customById.get(key);
@@ -267,12 +285,15 @@ export default function CompanyDetailPage() {
     // comparison payload) — no client-side formula evaluation here.
     const value = latestPeriod?.metric_values?.[String(cm.id)] ?? null;
     const cmp = comparison?.comparison[`custom:${cm.id}`];
+    const components = getComponents(cm.formula, vars, METRIC_VARIABLES);
     return {
       label: cm.name,
       value,
       delta: cmp?.delta ?? null,
       pct: cmp?.pct ?? null,
       format: (cm.format ?? "currency") as "currency" | "ratio" | "percent",
+      components,
+      hasDrill: !!(components?.length),
     };
   };
 
@@ -447,6 +468,18 @@ export default function CompanyDetailPage() {
                             isCustom={!!cm}
                             onEdit={cm ? () => editMetric(cm) : undefined}
                             onDelete={cm ? () => deleteMetric(cm) : undefined}
+                            components={r.components ?? undefined}
+                            period={latestPeriod}
+                            onDrill={
+                              r.hasDrill && latestPeriod
+                                ? () => setDrillTarget({
+                                    key,
+                                    label: r.label,
+                                    period: latestPeriod,
+                                    components: r.components,
+                                  })
+                                : undefined
+                            }
                           />
                         </div>
                       );
@@ -866,6 +899,18 @@ export default function CompanyDetailPage() {
           </div>
         </div>
       </Modal>
+
+      {/* KPI source drill-down */}
+      {drillTarget && (
+        <KpiDrillPanel
+          isOpen={true}
+          onClose={() => setDrillTarget(null)}
+          kpiKey={drillTarget.key}
+          label={drillTarget.label}
+          period={drillTarget.period}
+          components={drillTarget.components}
+        />
+      )}
 
       {/* Custom KPI / ratio builder */}
       <CustomMetricModal

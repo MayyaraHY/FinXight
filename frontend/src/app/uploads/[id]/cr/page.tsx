@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { generateCR, getCR, analyzeCR } from "@/services/compteResultatService";
 import { formatCurrency } from "@/utils/formatters";
 import Button from "@/components/ui/button/Button";
@@ -66,8 +66,9 @@ type InventoryMethod = "permanent" | "intermittent";
 
 // ── Page ──
 
-export default function CompteResultatPage() {
+function CompteResultatPageInner() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const uploadId = Number(params.id);
 
   const [crData, setCRData] = useState<CRData | null>(null);
@@ -77,6 +78,8 @@ export default function CompteResultatPage() {
   const [diagnosing, setDiagnosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedLines, setExpandedLines] = useState<Set<number>>(new Set());
+  // Line highlighted after arriving via a KPI/ratio source deep-link (`?focus=line:N`).
+  const [flashLine, setFlashLine] = useState<number | null>(null);
   const { isOpen: exportOpen, openModal: openExport, closeModal: closeExport } = useModal();
   const warnings = useDismissibleWarnings(`cr:${uploadId}`);
 
@@ -142,6 +145,33 @@ export default function CompteResultatPage() {
   useEffect(() => {
     loadCR();
   }, [loadCR]);
+
+  // Deep-link focus: when arriving with `?focus=line:N`, expand (if it has a
+  // breakdown), scroll to and briefly flash the target line.
+  const focus = searchParams.get("focus");
+  useEffect(() => {
+    if (!crData || !focus) return;
+    const m = /^line:(\d+)$/.exec(focus);
+    if (!m) return;
+    const lineId = Number(m[1]);
+    const line = Object.values(crData.lines).find((l) => l.line_id === lineId);
+    if (!line) return;
+
+    if ((line.account_breakdown?.length ?? 0) > 0) {
+      setExpandedLines((prev) => new Set(prev).add(lineId));
+    }
+    setFlashLine(lineId);
+    const raf = requestAnimationFrame(() => {
+      document
+        .getElementById(`cr-line-${lineId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    const timer = setTimeout(() => setFlashLine(null), 2200);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [crData, focus]);
 
   if (loading)
     return (
@@ -337,6 +367,7 @@ export default function CompteResultatPage() {
                   line={line}
                   expanded={expandedLines.has(line.line_id)}
                   onToggle={() => toggleLine(line.line_id)}
+                  flash={flashLine === line.line_id}
                 />
               </React.Fragment>
             ))}
@@ -347,17 +378,29 @@ export default function CompteResultatPage() {
   );
 }
 
+export default function CompteResultatPage() {
+  return (
+    <Suspense>
+      <CompteResultatPageInner />
+    </Suspense>
+  );
+}
+
 // ── LineRow ──
 
 interface LineRowProps {
   line: CRLine;
   expanded: boolean;
   onToggle: () => void;
+  /** Briefly highlighted after arriving via a source deep-link. */
+  flash?: boolean;
 }
 
-function LineRow({ line, expanded, onToggle }: LineRowProps) {
+function LineRow({ line, expanded, onToggle, flash }: LineRowProps) {
   const isResult = RESULT_LINE_IDS.has(line.line_id);
   const isSubtotal = SUBTOTAL_LINE_IDS.has(line.line_id);
+  const rowId = `cr-line-${line.line_id}`;
+  const flashCls = flash ? " source-flash" : "";
 
   // Formula lines (subtotals/results) have no direct accounts — no toggle
   const hasBreakdown = (line.account_breakdown?.length ?? 0) > 0;
@@ -395,10 +438,11 @@ function LineRow({ line, expanded, onToggle }: LineRowProps) {
     return (
       <>
         <tr
+          id={rowId}
           onClick={hasBreakdown ? onToggle : undefined}
           className={`border-t-2 border-gray-200 dark:border-gray-700 bg-brand-50/40 dark:bg-brand-500/5 ${
             hasBreakdown ? "cursor-pointer hover:bg-brand-50/60 dark:hover:bg-brand-500/10" : ""
-          } transition-colors`}
+          } transition-colors${flashCls}`}
         >
           <td className="px-5 py-3.5 text-sm font-bold text-brand-700 dark:text-brand-400">
             {line.line_id}
@@ -428,10 +472,11 @@ function LineRow({ line, expanded, onToggle }: LineRowProps) {
     return (
       <>
         <tr
+          id={rowId}
           onClick={hasBreakdown ? onToggle : undefined}
           className={`border-t border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-white/[0.015] ${
             hasBreakdown ? "cursor-pointer hover:bg-gray-100/60 dark:hover:bg-white/[0.025]" : ""
-          } transition-colors`}
+          } transition-colors${flashCls}`}
         >
           <td className="px-5 py-3 text-sm font-semibold text-gray-500 dark:text-gray-400">
             {line.line_id}
@@ -454,12 +499,13 @@ function LineRow({ line, expanded, onToggle }: LineRowProps) {
   return (
     <>
       <tr
+        id={rowId}
         onClick={hasBreakdown ? onToggle : undefined}
         className={`border-t border-gray-100 dark:border-gray-800 ${
           hasBreakdown
             ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
             : "hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-        } transition-colors`}
+        } transition-colors${flashCls}`}
       >
         <td className="px-5 py-3 text-xs text-gray-400 dark:text-gray-500">
           {line.line_id}

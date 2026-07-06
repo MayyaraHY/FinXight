@@ -750,3 +750,21 @@ span.flatpickr-weekday,
   opacity: 0.8;
   cursor: grabbing; /* Changes the cursor to indicate dragging */
 }
+
+/* One-shot highlight applied when navigating from a KPI/ratio operand to its
+   source line in the bilan / compte de résultat. Fades from a brand tint to
+   transparent. */
+@keyframes source-flash {
+  0% {
+    background-color: rgba(70, 95, 255, 0.18);
+    box-shadow: inset 0 0 0 2px rgba(70, 95, 255, 0.5);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 2px transparent;
+  }
+}
+.source-flash {
+  animation: source-flash 2.2s ease-out;
+  border-radius: 0.5rem;
+}

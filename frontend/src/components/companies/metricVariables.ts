@@ -1,27 +1,33 @@
 import { TimelinePeriod } from "@/models/Company";
 
-/** Variables a custom formula may reference, with display labels. */
-export const METRIC_VARIABLES: { key: string; label: string }[] = [
-  { key: "total_actif", label: "Total Actif" },
-  { key: "actifs_non_courants", label: "Actifs non courants" },
-  { key: "actifs_courants", label: "Actifs courants" },
-  { key: "total_passif", label: "Total Passif" },
-  { key: "capitaux_propres", label: "Capitaux propres" },
-  { key: "passifs_non_courants", label: "Passifs non courants" },
-  { key: "passifs_courants", label: "Passifs courants" },
-  { key: "resultat_net", label: "Résultat net" },
-  { key: "produits_exploitation", label: "Produits d'exploitation" },
-  { key: "charges_exploitation", label: "Charges d'exploitation" },
-  { key: "resultat_exploitation", label: "Résultat d'exploitation" },
-  { key: "stocks", label: "Stocks" },
-  { key: "clients", label: "Clients" },
-  { key: "fournisseurs", label: "Fournisseurs" },
-  { key: "autres_actifs_courants", label: "Autres actifs courants" },
-  { key: "autres_passifs_courants", label: "Autres passifs courants" },
-  { key: "liquidites", label: "Liquidités" },
-  { key: "concours_bancaires", label: "Concours bancaires" },
-  { key: "dettes", label: "Dettes (PNC + PC)" },
-  { key: "fonds_de_roulement", label: "Fonds de roulement" },
+/** Display format for a metric variable / operand value. */
+export type MetricFormat = "currency" | "ratio" | "percent";
+
+/** Variables a custom formula may reference, with display labels and their own
+ *  natural display format. Every statement variable is a monetary amount, so
+ *  operands must be shown as currency even when the parent metric is a percent
+ *  (otherwise a money operand would be rendered as e.g. "50000000.0%"). */
+export const METRIC_VARIABLES: { key: string; label: string; format: MetricFormat }[] = [
+  { key: "total_actif", label: "Total Actif", format: "currency" },
+  { key: "actifs_non_courants", label: "Actifs non courants", format: "currency" },
+  { key: "actifs_courants", label: "Actifs courants", format: "currency" },
+  { key: "total_passif", label: "Total Passif", format: "currency" },
+  { key: "capitaux_propres", label: "Capitaux propres", format: "currency" },
+  { key: "passifs_non_courants", label: "Passifs non courants", format: "currency" },
+  { key: "passifs_courants", label: "Passifs courants", format: "currency" },
+  { key: "resultat_net", label: "Résultat net", format: "currency" },
+  { key: "produits_exploitation", label: "Produits d'exploitation", format: "currency" },
+  { key: "charges_exploitation", label: "Charges d'exploitation", format: "currency" },
+  { key: "resultat_exploitation", label: "Résultat d'exploitation", format: "currency" },
+  { key: "stocks", label: "Stocks", format: "currency" },
+  { key: "clients", label: "Clients", format: "currency" },
+  { key: "fournisseurs", label: "Fournisseurs", format: "currency" },
+  { key: "autres_actifs_courants", label: "Autres actifs courants", format: "currency" },
+  { key: "autres_passifs_courants", label: "Autres passifs courants", format: "currency" },
+  { key: "liquidites", label: "Liquidités", format: "currency" },
+  { key: "concours_bancaires", label: "Concours bancaires", format: "currency" },
+  { key: "dettes", label: "Dettes (PNC + PC)", format: "currency" },
+  { key: "fonds_de_roulement", label: "Fonds de roulement", format: "currency" },
 ];
 
 export const METRIC_VARIABLE_KEYS = METRIC_VARIABLES.map((v) => v.key);

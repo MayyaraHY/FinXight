@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { getBilan, generateBilan, analyzeBilan } from "@/services/bilanService";
 import { formatCurrency, formatCurrencyRounded } from "@/utils/formatters";
 import Button from "@/components/ui/button/Button";
@@ -143,7 +143,8 @@ function renderItemsHelper(
   items: ItemRecord,
   expandedItems: Set<string>,
   toggleExpanded: (key: string) => void,
-  reconMap: ReconMap
+  reconMap: ReconMap,
+  flashAnchor: string | null
 ): React.ReactNode[] {
   return Object.entries(items)
     .map(([key, item]) => {
@@ -153,6 +154,8 @@ function renderItemsHelper(
         return (
           <ExpandableRow
             key={key}
+            anchorId={`bilan-leaf-${key}`}
+            flash={flashAnchor === `bilan-leaf-${key}`}
             label={item.label}
             amount={item.amount}
             breakdown={item.amount_details?.breakdown || []}
@@ -172,6 +175,8 @@ function renderItemsHelper(
               return (
                 <ExpandableRow
                   key={subKey}
+                  anchorId={`bilan-leaf-${subKey}`}
+                  flash={flashAnchor === `bilan-leaf-${subKey}`}
                   label={subItem.label}
                   amount={subItem.amount}
                   breakdown={subItem.amount_details?.breakdown || []}
@@ -192,13 +197,16 @@ function renderItemsHelper(
 
 // ===== PAGE =====
 
-export default function BilanPage() {
+function BilanPageInner() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const uploadId = Number(params.id);
 
   const [bilanData, setBilanData] = useState<BilanData | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("classes");
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  // DOM id highlighted after arriving via a KPI/ratio source deep-link (`?focus=`).
+  const [flashAnchor, setFlashAnchor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [diagnosing, setDiagnosing] = useState(false);
@@ -274,6 +282,36 @@ export default function BilanPage() {
     loadBilan();
   }, [loadBilan]);
 
+  // Deep-link focus: `?focus=leaf:<ruleKey>` or `?focus=section:<id>`. Force the
+  // classes view (which has the expandable leaves + section cards), expand the
+  // target leaf, then scroll to and briefly flash it.
+  const focus = searchParams.get("focus");
+  useEffect(() => {
+    if (!bilanData || !focus) return;
+    let anchorId: string | null = null;
+    const leaf = /^leaf:(.+)$/.exec(focus);
+    const section = /^section:(.+)$/.exec(focus);
+    if (leaf) {
+      const key = leaf[1];
+      setViewMode("classes");
+      setExpandedItems((prev) => new Set(prev).add(key));
+      anchorId = `bilan-leaf-${key}`;
+    } else if (section) {
+      setViewMode("classes");
+      anchorId = `bilan-section-${section[1]}`;
+    }
+    if (!anchorId) return;
+    setFlashAnchor(anchorId);
+    const raf = requestAnimationFrame(() => {
+      document.getElementById(anchorId!)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    const timer = setTimeout(() => setFlashAnchor(null), 2200);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [bilanData, focus]);
+
   const toggleExpanded = (key: string) => {
     setExpandedItems((prev) => {
       const next = new Set(prev);
@@ -283,7 +321,7 @@ export default function BilanPage() {
   };
 
   const renderItems = (items: ItemRecord) =>
-    renderItemsHelper(items, expandedItems, toggleExpanded, reconMap);
+    renderItemsHelper(items, expandedItems, toggleExpanded, reconMap, flashAnchor);
 
   if (loading)
     return (
@@ -490,12 +528,16 @@ export default function BilanPage() {
             <SectionCard
               title="Actifs Non-Courants"
               total={bilanData.totals.actif.actifs_non_courants}
+              anchorId="bilan-section-actifs_non_courants"
+              flashAnchor={flashAnchor}
             >
               {renderItems(bilanData.bilan.actifs.actifs_non_courants)}
             </SectionCard>
             <SectionCard
               title="Actifs Courants"
               total={bilanData.totals.actif.actifs_courants}
+              anchorId="bilan-section-actifs_courants"
+              flashAnchor={flashAnchor}
             >
               {renderItems(bilanData.bilan.actifs.actifs_courants)}
             </SectionCard>
@@ -503,6 +545,8 @@ export default function BilanPage() {
             <TotalFooter
               label="Total Actif"
               value={bilanData.totals.actif.total_actif}
+              anchorId="bilan-section-total_actif"
+              flashAnchor={flashAnchor}
             />
           </div>
 
@@ -512,6 +556,8 @@ export default function BilanPage() {
             <SectionCard
               title="Capitaux Propres"
               total={bilanData.totals.passif.capitaux_propres}
+              anchorId="bilan-section-capitaux_propres"
+              flashAnchor={flashAnchor}
             >
               {renderItems(
                 bilanData.bilan["capitaux propres et passifs"]["capitaux propres"]
@@ -520,6 +566,8 @@ export default function BilanPage() {
             <SectionCard
               title="Passifs Non-Courants"
               total={bilanData.totals.passif.passifs_non_courants}
+              anchorId="bilan-section-passifs_non_courants"
+              flashAnchor={flashAnchor}
             >
               {renderItems(
                 bilanData.bilan["capitaux propres et passifs"].passifs[
@@ -530,6 +578,8 @@ export default function BilanPage() {
             <SectionCard
               title="Passifs Courants"
               total={bilanData.totals.passif.passifs_courants}
+              anchorId="bilan-section-passifs_courants"
+              flashAnchor={flashAnchor}
             >
               {renderItems(
                 bilanData.bilan["capitaux propres et passifs"].passifs[
@@ -541,6 +591,8 @@ export default function BilanPage() {
             <TotalFooter
               label="Total Passif"
               value={bilanData.totals.passif.total_passif}
+              anchorId="bilan-section-total_passif"
+              flashAnchor={flashAnchor}
             />
           </div>
         </div>
@@ -548,6 +600,14 @@ export default function BilanPage() {
         <StructureView bilanData={bilanData} />
       )}
     </div>
+  );
+}
+
+export default function BilanPage() {
+  return (
+    <Suspense>
+      <BilanPageInner />
+    </Suspense>
   );
 }
 
@@ -810,11 +870,18 @@ interface SectionCardProps {
   title: string;
   total: number;
   children: React.ReactNode;
+  anchorId?: string;
+  flashAnchor?: string | null;
 }
 
-function SectionCard({ title, total, children }: SectionCardProps) {
+function SectionCard({ title, total, children, anchorId, flashAnchor }: SectionCardProps) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden">
+    <div
+      id={anchorId}
+      className={`rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden${
+        anchorId && anchorId === flashAnchor ? " source-flash" : ""
+      }`}
+    >
       <div className="px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
           {title}
@@ -830,9 +897,24 @@ function SectionCard({ title, total, children }: SectionCardProps) {
   );
 }
 
-function TotalFooter({ label, value }: { label: string; value: number }) {
+function TotalFooter({
+  label,
+  value,
+  anchorId,
+  flashAnchor,
+}: {
+  label: string;
+  value: number;
+  anchorId?: string;
+  flashAnchor?: string | null;
+}) {
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-5 py-3 flex justify-between items-center">
+    <div
+      id={anchorId}
+      className={`rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-5 py-3 flex justify-between items-center${
+        anchorId && anchorId === flashAnchor ? " source-flash" : ""
+      }`}
+    >
       <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide text-xs">
         {label}
       </span>
@@ -850,6 +932,10 @@ interface ExpandableRowProps {
   expanded: boolean;
   onToggle: () => void;
   reconMap: ReconMap;
+  /** DOM id used as a scroll/highlight anchor for source deep-links. */
+  anchorId?: string;
+  /** Briefly highlighted after arriving via a source deep-link. */
+  flash?: boolean;
 }
 
 function ExpandableRow({
@@ -859,6 +945,8 @@ function ExpandableRow({
   expanded,
   onToggle,
   reconMap,
+  anchorId,
+  flash,
 }: ExpandableRowProps) {
   // Check if any account in this section has a reconciliation flag
   const sectionFlags = breakdown
@@ -869,8 +957,11 @@ function ExpandableRow({
   return (
     <React.Fragment>
       <button
+        id={anchorId}
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group"
+        className={`w-full flex items-center justify-between px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group${
+          flash ? " source-flash" : ""
+        }`}
       >
         <div className="flex items-center gap-2.5 min-w-0">
           <svg
