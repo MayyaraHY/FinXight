@@ -9,10 +9,8 @@ import { useSidebar } from "@/context/SidebarContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import ComponentCard from "@/components/common/ComponentCard";
 import Alert from "@/components/ui/alert/Alert";
-import { Company, TimelinePeriod, TimelineComparison } from "@/models/Company";
-import { getCompany, getTimeline, compareTimeline } from "@/services/companyService";
-import { periodLabel } from "@/lib/periodLabel";
-import Badge from "@/components/ui/badge/Badge";
+import { Company, SyntheseResponse } from "@/models/Company";
+import { getCompany, getTimeline, getSynthese } from "@/services/companyService";
 import ExecutiveSummary from "@/components/companies/ExecutiveSummary";
 
 export default function CompanySynthesePage() {
@@ -28,8 +26,7 @@ export default function CompanySynthesePage() {
     : "lg:ml-[90px]";
 
   const [company, setCompany] = useState<Company | null>(null);
-  const [timeline, setTimeline] = useState<TimelinePeriod[]>([]);
-  const [comparison, setComparison] = useState<TimelineComparison | null>(null);
+  const [synthese, setSynthese] = useState<SyntheseResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,31 +38,16 @@ export default function CompanySynthesePage() {
           getTimeline(companyId),
         ]);
         setCompany(comp);
-        setTimeline(tlRes.periods);
 
         const periods = tlRes.periods;
-        const prev = periods[periods.length - 2];
         const latest = periods[periods.length - 1];
-        if (periods.length >= 2 && prev?.period_year && latest?.period_year) {
-          try {
-            setComparison(
-              await compareTimeline(
-                companyId,
-                prev.period_year,
-                latest.period_year,
-                prev.period_month ?? undefined,
-                latest.period_month ?? undefined
-              )
-            );
-          } catch {
-            setComparison(null);
-          }
-        } else {
-          setComparison(null);
+        if (latest?.period_year) {
+          const data = await getSynthese(companyId, latest.period_year);
+          setSynthese(data);
         }
         setError(null);
       } catch {
-        setError("Failed to load company data");
+        setError("Failed to load synthèse data");
       } finally {
         setLoading(false);
       }
@@ -73,13 +55,12 @@ export default function CompanySynthesePage() {
     fetchAll();
   }, [companyId]);
 
-  const latestPeriod = timeline.length > 0 ? timeline[timeline.length - 1] : null;
-
   const navTabs = [
     { label: "Dashboard", href: `/companies/${companyId}` },
     { label: "États financiers", href: `/companies/${companyId}/statements` },
-    { label: "Périodes", href: `/companies/${companyId}/period` },
+    { label: "Comparaison des périodes", href: `/companies/${companyId}/period` },
     { label: "Synthèse", href: `/companies/${companyId}/synthese` },
+    { label: "Fichiers", href: `/companies/${companyId}/fichiers` },
   ];
 
   return (
@@ -87,29 +68,13 @@ export default function CompanySynthesePage() {
       <div className="min-h-screen xl:flex">
         <AppSidebar />
         <Backdrop />
-        <div
-          className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
-        >
+        <div className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}>
           <AppHeader />
           <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-            <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {company?.name ?? "…"}
-                  </h1>
-                  {latestPeriod && (
-                    <Badge color="light" size="sm">
-                      Dernière période :{" "}
-                      {periodLabel(
-                        latestPeriod.period_year,
-                        latestPeriod.period_month,
-                        latestPeriod.display_filename
-                      )}
-                    </Badge>
-                  )}
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                {company?.name ?? "…"}
+              </h1>
             </div>
 
             {/* Nav tabs */}
@@ -136,12 +101,15 @@ export default function CompanySynthesePage() {
             )}
 
             {loading ? (
-              <div className="space-y-6">
-                <div className="h-80 animate-pulse rounded-2xl bg-gray-100 dark:bg-white/5" />
-              </div>
-            ) : latestPeriod ? (
+              <div className="h-80 animate-pulse rounded-2xl bg-gray-100 dark:bg-white/5" />
+            ) : synthese ? (
               <ComponentCard title="Synthèse">
-                <ExecutiveSummary latest={latestPeriod} comparison={comparison} />
+                <ExecutiveSummary
+                  year={synthese.year}
+                  year_prev={synthese.year_prev}
+                  health={synthese.health}
+                  keyPoints={synthese.key_points}
+                />
               </ComponentCard>
             ) : (
               <ComponentCard title="Synthèse">

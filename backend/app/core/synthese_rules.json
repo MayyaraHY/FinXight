@@ -1,0 +1,60 @@
+{
+  "_source": "NC 01 / PCGT / professional practice",
+  "dimensions": [
+    {
+      "key": "liquidite",
+      "label": "Liquidité",
+      "formula": "actifs_courants / passifs_courants",
+      "formula_label": "actifs courants / passifs courants",
+      "note": "Ratio de liquidité générale (current ratio). NC 01 recommends ≥1. Threshold ≥1.5 is standard practice for manufacturing; ≥1.0 is the minimum solvency floor.",
+      "bands": [
+        { "min": 1.5,  "max": null, "label": "Saine",    "level": "good" },
+        { "min": 1.0,  "max": 1.5,  "label": "Correcte", "level": "warning" },
+        { "min": null, "max": 1.0,  "label": "Tendue",   "level": "bad" }
+      ]
+    },
+    {
+      "key": "endettement",
+      "label": "Endettement",
+      "formula": "dettes / total_passif",
+      "formula_label": "dettes / total passif",
+      "note": "Taux d'endettement global: dettes financières (PNC+PC) rapportées au total passif. Range 0–1. Definition chosen: dettes/total_passif (not D/E) to avoid division by negative equity. Judgment call: ≤0.50 = maîtrisé, 0.50–0.70 = modéré, >0.70 = élevé.",
+      "bands": [
+        { "min": null, "max": 0.50, "label": "Maîtrisé", "level": "good" },
+        { "min": 0.50, "max": 0.70, "label": "Modéré",   "level": "warning" },
+        { "min": 0.70, "max": null, "label": "Élevé",    "level": "bad" }
+      ]
+    },
+    {
+      "key": "autonomie_financiere",
+      "label": "Autonomie financière",
+      "formula": "capitaux_propres / total_passif",
+      "formula_label": "capitaux propres / total passif",
+      "note": "Ratio d'autonomie financière (equity ratio). Judgment call: ≥0.40 considered strong per Tunisian SME practice. Negative equity is a distress signal and overrides band matching.",
+      "bands": [
+        { "min": 0.40, "max": null, "label": "Forte",    "level": "good" },
+        { "min": 0.30, "max": 0.40, "label": "Correcte", "level": "warning" },
+        { "min": null, "max": 0.30, "label": "Faible",   "level": "bad" }
+      ]
+    },
+    {
+      "key": "profitabilite",
+      "label": "Profitabilité",
+      "formula": "resultat_net / produits_exploitation",
+      "formula_label": "résultat net / produits d'exploitation",
+      "note": "Marge nette. Requires has_cr=true. Do NOT conflate with growth. Judgment call: ≥0.10 = bonne, 0.05–0.10 = correcte, <0.05 (including negative) = faible.",
+      "bands": [
+        { "min": 0.10, "max": null, "label": "Bonne",    "level": "good" },
+        { "min": 0.05, "max": 0.10, "label": "Correcte", "level": "warning" },
+        { "min": null, "max": 0.05, "label": "Faible",   "level": "bad" }
+      ]
+    }
+  ],
+  "key_point_noise_pct": 1.0,
+  "key_point_metrics": [
+    { "key": "resultat_net",     "higher_better": true  },
+    { "key": "total_actif",      "higher_better": true  },
+    { "key": "capitaux_propres", "higher_better": true  },
+    { "key": "dettes",           "higher_better": false }
+  ]
+}

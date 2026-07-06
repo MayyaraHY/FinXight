@@ -77,8 +77,9 @@ export default function StatementsPage() {
               {[
                 { label: "Dashboard", href: `/companies/${companyId}` },
                 { label: "États financiers", href: `/companies/${companyId}/statements` },
-                { label: "Périodes", href: `/companies/${companyId}/period` },
+                { label: "Comparaison des périodes", href: `/companies/${companyId}/period` },
                 { label: "Synthèse", href: `/companies/${companyId}/synthese` },
+                { label: "Fichiers", href: `/companies/${companyId}/fichiers` },
               ].map((tab) => (
                 <button
                   key={tab.href}

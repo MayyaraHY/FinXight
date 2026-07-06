@@ -101,6 +101,29 @@ export type CashFlowResponse = {
   warnings: string[];
 };
 
+export type SyntheseHealthEntry = {
+  value: number | null;
+  label: string;
+  level: "good" | "warning" | "bad" | null;
+  formula_label: string;
+};
+
+export type SyntheseKeyPoint = {
+  metric: string;
+  delta_pct: number | null;
+  direction: "up" | "down" | null;
+  sentiment: "positive" | "negative" | "neutral" | null;
+  basis: string;
+};
+
+export type SyntheseResponse = {
+  year: number;
+  year_prev: number | null;
+  health: Record<string, SyntheseHealthEntry>;
+  key_points: SyntheseKeyPoint[];
+  narration: string | null;
+};
+
 export type TimelineComparison = {
   period_a: TimelinePeriod;
   period_b: TimelinePeriod;

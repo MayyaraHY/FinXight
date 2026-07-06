@@ -1,156 +1,122 @@
 "use client";
 
 import Badge from "@/components/ui/badge/Badge";
-import { TimelinePeriod, TimelineComparison } from "@/models/Company";
+import { SyntheseHealthEntry, SyntheseKeyPoint } from "@/models/Company";
 
-type Status = "success" | "warning" | "error" | "neutral";
-
-function safeRatio(num: number | null, den: number | null): number | null {
-  if (num == null || den == null || den === 0) return null;
-  return num / den;
-}
-
-function debtOf(p: TimelinePeriod): number | null {
-  if (p.passifs_non_courants == null && p.passifs_courants == null) return null;
-  return (p.passifs_non_courants ?? 0) + (p.passifs_courants ?? 0);
-}
-
-const STATUS_STYLE: Record<Status, { dot: string; badge: "success" | "warning" | "error" | "light" }> = {
-  success: { dot: "bg-success-500", badge: "success" },
-  warning: { dot: "bg-warning-500", badge: "warning" },
-  error: { dot: "bg-error-500", badge: "error" },
-  neutral: { dot: "bg-gray-300 dark:bg-gray-600", badge: "light" },
+const METRIC_LABELS: Record<string, string> = {
+  resultat_net: "Résultat net",
+  total_actif: "Total actif",
+  capitaux_propres: "Capitaux propres",
+  dettes: "Dettes",
 };
 
-interface Props {
-  latest: TimelinePeriod;
-  comparison: TimelineComparison | null;
+const LEVEL_BADGE: Record<string, "success" | "warning" | "error" | "light"> = {
+  good: "success",
+  warning: "warning",
+  bad: "error",
+};
+
+const DIMENSION_ORDER = ["liquidite", "endettement", "autonomie_financiere", "profitabilite"];
+
+const DIMENSION_LABELS: Record<string, string> = {
+  liquidite: "Liquidité",
+  endettement: "Endettement",
+  autonomie_financiere: "Autonomie financière",
+  profitabilite: "Profitabilité",
+};
+
+function fmtValue(v: number | null): string {
+  if (v == null) return "—";
+  if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`;
+  if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
+  return v.toFixed(2);
 }
 
-/**
- * Executive summary: health indicators + auto-generated highlights, derived
- * purely from the timeline/compare data already on the page (no backend).
- * Revenue / Net cash indicators are intentionally omitted (data not exposed).
- */
-export default function ExecutiveSummary({ latest, comparison }: Props) {
-  // --- Health indicators ---
-  const netPct = comparison?.comparison.resultat_net.pct ?? null;
-  const profitability: { status: Status; text: string } = (() => {
-    if (netPct != null) {
-      if (netPct > 2) return { status: "success", text: "En croissance" };
-      if (netPct < -2) return { status: "error", text: "En baisse" };
-      return { status: "warning", text: "Stable" };
-    }
-    if (latest.resultat_net == null) return { status: "neutral", text: "—" };
-    return latest.resultat_net >= 0
-      ? { status: "success", text: "Positif" }
-      : { status: "error", text: "Négatif" };
-  })();
+function fmtPct(v: number | null): string {
+  if (v == null) return "—";
+  return `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
+}
 
-  const cr = safeRatio(latest.actifs_courants, latest.passifs_courants);
-  const liquidity: { status: Status; text: string } =
-    cr == null
-      ? { status: "neutral", text: "—" }
-      : cr >= 1.5
-      ? { status: "success", text: "Saine" }
-      : cr >= 1
-      ? { status: "warning", text: "Correcte" }
-      : { status: "error", text: "Tendue" };
+interface Props {
+  year: number;
+  year_prev: number | null;
+  health: Record<string, SyntheseHealthEntry>;
+  keyPoints: SyntheseKeyPoint[];
+}
 
-  const de = safeRatio(debtOf(latest), latest.capitaux_propres);
-  const debtLevel: { status: Status; text: string } =
-    de == null
-      ? { status: "neutral", text: "—" }
-      : de <= 1
-      ? { status: "success", text: "Maîtrisé" }
-      : de <= 2
-      ? { status: "warning", text: "Modéré" }
-      : { status: "error", text: "Élevé" };
-
-  const au = safeRatio(latest.capitaux_propres, latest.total_passif);
-  const autonomy: { status: Status; text: string } =
-    au == null
-      ? { status: "neutral", text: "—" }
-      : au >= 0.4
-      ? { status: "success", text: "Forte" }
-      : au >= 0.3
-      ? { status: "warning", text: "Correcte" }
-      : { status: "error", text: "Faible" };
-
-  const indicators = [
-    { label: "Profitabilité", ...profitability },
-    { label: "Liquidité", ...liquidity },
-    { label: "Endettement", ...debtLevel },
-    { label: "Autonomie financière", ...autonomy },
-  ];
-
-  // --- Key highlights (only when we have a comparison) ---
-  type Highlight = { label: string; pct: number; good: boolean };
-  const highlights: Highlight[] = [];
-  if (comparison) {
-    const c = comparison.comparison;
-    const push = (label: string, pct: number | null, upIsGood: boolean) => {
-      if (pct != null && Number.isFinite(pct) && pct !== 0)
-        highlights.push({ label, pct, good: pct > 0 === upIsGood });
-    };
-    push("Résultat net", c.resultat_net.pct, true);
-    push("Total actif", c.total_actif.pct, true);
-    push("Capitaux propres", c.capitaux_propres.pct, true);
-
-    const dA = debtOf(comparison.period_a);
-    const dB = debtOf(comparison.period_b);
-    if (dA != null && dB != null && dA !== 0) {
-      push("Dettes", ((dB - dA) / Math.abs(dA)) * 100, false);
-    }
-  }
-
+export default function ExecutiveSummary({ year, year_prev, health, keyPoints }: Props) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* Health indicators */}
       <div>
         <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
-          Santé financière
+          Santé financière — {year}
         </p>
         <div className="grid grid-cols-2 gap-3">
-          {indicators.map((ind) => (
-            <div
-              key={ind.label}
-              className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 p-3 dark:border-gray-800"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${STATUS_STYLE[ind.status].dot}`} />
-                <span className="truncate text-sm text-gray-600 dark:text-gray-300">{ind.label}</span>
+          {DIMENSION_ORDER.map((key) => {
+            const entry: SyntheseHealthEntry | undefined = health[key];
+            if (!entry) return null;
+            const badgeColor = entry.level ? LEVEL_BADGE[entry.level] ?? "light" : "light";
+            const tooltip = entry.value != null
+              ? `${entry.formula_label} = ${fmtValue(entry.value)}`
+              : entry.formula_label;
+            return (
+              <div
+                key={key}
+                title={tooltip}
+                className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 p-3 dark:border-gray-800 cursor-help"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${
+                    entry.level === "good" ? "bg-success-500"
+                    : entry.level === "warning" ? "bg-warning-500"
+                    : entry.level === "bad" ? "bg-error-500"
+                    : "bg-gray-300 dark:bg-gray-600"
+                  }`} />
+                  <span className="truncate text-sm text-gray-600 dark:text-gray-300">
+                    {DIMENSION_LABELS[key] ?? key}
+                  </span>
+                </div>
+                <Badge color={badgeColor} size="sm">
+                  {entry.label}
+                </Badge>
               </div>
-              <Badge color={STATUS_STYLE[ind.status].badge} size="sm">
-                {ind.text}
-              </Badge>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Key highlights */}
+      {/* Key points */}
       <div>
         <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
-          Points clés
+          Points clés{year_prev ? ` — vs ${year_prev}` : ""}
         </p>
-        {highlights.length === 0 ? (
+        {keyPoints.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Ajoutez une 2ᵉ période pour générer les variations clés.
           </p>
         ) : (
           <ul className="space-y-2">
-            {highlights.map((h) => (
-              <li key={h.label} className="flex items-center gap-2 text-sm">
-                <span className={h.good ? "text-success-600 dark:text-success-500" : "text-error-600 dark:text-error-500"}>
-                  {h.pct > 0 ? "▲" : "▼"}
-                </span>
-                <span className="text-gray-700 dark:text-gray-300">
-                  {h.label} {h.pct > 0 ? "en hausse" : "en baisse"} de{" "}
-                  {Math.abs(h.pct).toFixed(1)}%
-                </span>
-              </li>
-            ))}
+            {keyPoints.map((kp) => {
+              const arrowGlyph = kp.direction === "up" ? "▲" : kp.direction === "down" ? "▼" : "→";
+              const sentimentColor =
+                kp.sentiment === "positive" ? "text-success-600 dark:text-success-500"
+                : kp.sentiment === "negative" ? "text-error-600 dark:text-error-500"
+                : "text-gray-500 dark:text-gray-400";
+              return (
+                <li key={kp.metric} className="flex items-center gap-2 text-sm">
+                  <span className={`flex-shrink-0 font-medium ${sentimentColor}`}>
+                    {arrowGlyph}
+                  </span>
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {METRIC_LABELS[kp.metric] ?? kp.metric}{" "}
+                    {kp.direction === "up" ? "en hausse" : kp.direction === "down" ? "en baisse" : "stable"}{" "}
+                    de <span className={`font-medium ${sentimentColor}`}>{fmtPct(kp.delta_pct)}</span>
+                    {kp.basis ? ` (${kp.basis})` : ""}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
