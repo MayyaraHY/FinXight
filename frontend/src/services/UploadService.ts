@@ -186,7 +186,12 @@ export async function getPreviewCSV(uploadId: number, rows: number = 20) {
 
 export async function patchUploadMetadata(
   uploadId: number,
-  data: { company_id?: number | null; period_year?: number | null; period_month?: number | null }
+  data: {
+    display_filename?: string | null;
+    company_id?: number | null;
+    period_year?: number | null;
+    period_month?: number | null;
+  }
 ) {
   const res = await fetchAuthed(`${API_URL}/${uploadId}/metadata`, {
     method: "PATCH",

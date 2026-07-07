@@ -7,6 +7,7 @@ from app.controllers.account_controller import router as account_router
 from app.controllers.bilan_controller import router as bilan_router
 from app.controllers.compte_resultat_controller import router as cr_router
 from app.controllers.ai_controller import router as ai_router
+from app.controllers.anomaly_controller import router as anomaly_router
 from app.controllers.company_controller import router as company_router
 from app.controllers.export_controller import router as export_router
 from app.controllers.validation_controller import router as validation_router
@@ -17,6 +18,8 @@ from app.controllers.custom_metric_controller import router as custom_metric_rou
 from app.controllers.metric_controller import router as metric_router
 from app.cors.cors_config import setup_cors
 from app.db.cnx import Base, engine
+import app.models.correction_log  # noqa: F401 — ensures table is created on startup
+import app.models.anomaly_status  # noqa: F401 — ensures table is created on startup
 
 
 logger = logging.getLogger(__name__)
@@ -45,6 +48,7 @@ app.include_router(upload_router)
 app.include_router(account_router)
 app.include_router(bilan_router)
 app.include_router(ai_router)
+app.include_router(anomaly_router)
 app.include_router(cr_router)
 app.include_router(company_router)
 app.include_router(timeline_router)

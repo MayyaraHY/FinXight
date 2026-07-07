@@ -8,6 +8,24 @@ export type ExportContent = "bilan" | "cr" | "both";
  * The workbook is streamed from the backend and saved to disk via a temporary
  * anchor click — no third-party Excel library needed on the frontend.
  */
+export async function downloadAnomaliesPdf(uploadId: number): Promise<void> {
+  const res = await fetchAuthed(`${BACKEND_URL}/ai/anomalies/${uploadId}/pdf`);
+  if (res.status === 404) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail ?? "Aucune anomalie disponible pour l'export.");
+  }
+  if (!res.ok) throw new Error(`Erreur lors de l'export PDF (HTTP ${res.status}).`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `anomalies_${uploadId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function exportStatements(
   uploadId: number,
   content: ExportContent,

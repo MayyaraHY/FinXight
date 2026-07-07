@@ -101,6 +101,7 @@ def patch_metadata(
     upload_id: int,
     user_id: PyUUID,
     *,
+    display_filename=_MISSING,
     company_id=_MISSING,
     period_year=_MISSING,
     period_month=_MISSING,
@@ -109,6 +110,8 @@ def patch_metadata(
     upload = get_upload_by_id(db, upload_id, user_id=user_id)
     if not upload:
         return None
+    if display_filename is not _MISSING:
+        upload.display_filename = display_filename
     if company_id is not _MISSING:
         upload.company_id = company_id
     if period_year is not _MISSING:

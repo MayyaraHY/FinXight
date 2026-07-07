@@ -248,7 +248,7 @@ class BilanService:
     # Tolerance (in currency units) under which actif/passif are considered balanced.
     BALANCE_TOLERANCE = 1.0
 
-    def compute_totals(self, result: Dict, cr_net_result: Optional[float] = None) -> Dict:
+    def compute_totals(self, result: Dict) -> Dict:
         def sum_leaf_nodes(node: Dict) -> float:
             total = 0.0
             for v in node.values():
@@ -274,10 +274,6 @@ class BilanService:
 
         passif_root          = require(result, "capitaux propres et passifs", "root")
         capitaux_propres     = sum_leaf_nodes(require(passif_root, "capitaux propres", "passif_root"))
-
-        if cr_net_result is not None:
-            capitaux_propres += cr_net_result
-            logger.info(f"CR net result {cr_net_result:,.2f} injected into capitaux propres.")
 
         passifs              = require(passif_root, "passifs", "passif_root")
         passifs_non_courants = sum_leaf_nodes(require(passifs, "passifs non courant", "passifs"))
@@ -362,8 +358,10 @@ class BilanService:
             self._log_account_collisions(result)
 
             # 5. Compute section totals.
-            # Fallback: if 131/135 are absent (pre-closure), use CR L21 as résultat de l'exercice.
-            cr_net_result = None
+            # Fallback: if 131/135 are absent (pre-closure), use CR L21 as résultat de
+            # l'exercice. The value is written straight into the tree node so the front
+            # end (which renders each leaf's own `amount`) shows the line, and the section
+            # total — summed from the leaves — stays consistent with it.
             try:
                 resultat_node = (
                     result
@@ -371,7 +369,7 @@ class BilanService:
                     .get("capitaux propres", {})
                     .get("resultat_de_l_exercice", {})
                 )
-                if abs(resultat_node.get("amount", 0.0)) < self.BALANCE_TOLERANCE:
+                if resultat_node and abs(resultat_node.get("amount", 0.0)) < self.BALANCE_TOLERANCE:
                     cr = CompteResultatRepository(self.db).get_by_upload_id(upload_id)
                     if cr and cr.data:
                         cr_net_result = cr.data.get("totals", {}).get("resultat_net")
@@ -379,10 +377,23 @@ class BilanService:
                             logger.info(
                                 f"131/135 absent — using CR résultat net {cr_net_result:,.2f} as fallback."
                             )
+                            resultat_node["amount"] = float(cr_net_result)
+                            details = resultat_node.setdefault("amount_details", {})
+                            details["brut"] = float(cr_net_result)
+                            details["amortissement"] = 0.0
+                            details["net"] = float(cr_net_result)
+                            details.setdefault("breakdown", []).append({
+                                "phase": "net",
+                                "account": "131/135",
+                                "label": "Résultat net (report du compte de résultat)",
+                                "raw_amount": float(cr_net_result),
+                                "signed_amount": float(cr_net_result),
+                                "rule_prefix": "131/135",
+                            })
             except Exception:
                 logger.warning("Could not load CR fallback for résultat de l'exercice.", exc_info=True)
 
-            totals = self.compute_totals(result, cr_net_result=cr_net_result)
+            totals = self.compute_totals(result)
 
             # 5b. Deterministic validation — runs before LLM, always present in response.
             from app.core.bilan_validator import run_all_checks

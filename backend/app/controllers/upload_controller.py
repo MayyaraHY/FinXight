@@ -170,6 +170,7 @@ def delete_all_uploads(
 
 # 🔹 PATCH METADATA (company_id, period_year, period_month — any subset)
 class UploadMetadataPatch(BaseModel):
+    display_filename: Optional[str] = None
     company_id: Optional[int] = None
     period_year: Optional[int] = None
     period_month: Optional[int] = None
@@ -188,6 +189,8 @@ def patch_upload_metadata(
 
     kwargs: dict = {}
     fields_set = body.model_fields_set
+    if "display_filename" in fields_set:
+        kwargs["display_filename"] = body.display_filename
     if "company_id" in fields_set:
         kwargs["company_id"] = body.company_id
     if "period_year" in fields_set:
@@ -211,6 +214,7 @@ def patch_upload_metadata(
         "success": True,
         "data": {
             "id": upload.id,
+            "display_filename": upload.display_filename,
             "company_id": upload.company_id,
             "period_year": upload.period_year,
             "period_month": upload.period_month,

@@ -8,6 +8,7 @@ import {
   uploadFile,
   uploadAndParseWithProgress,
   parseUpload,
+  patchUploadMetadata,
   UploadMetadata,
 } from "@/services/UploadService";
 import { Upload } from "@/models/Upload";
@@ -104,6 +105,19 @@ export function useUploads() {
     }
   };
 
+  const patch = async (
+    id: number,
+    data: {
+      display_filename?: string | null;
+      company_id?: number | null;
+      period_year?: number | null;
+      period_month?: number | null;
+    }
+  ) => {
+    await patchUploadMetadata(id, data);
+    await fetchUploads();
+  };
+
   const remove = async (id: number) => {
     await deleteUpload(id);
     await fetchUploads();
@@ -124,6 +138,7 @@ export function useUploads() {
     upload,
     uploadParse,
     parse,
+    patch,
     remove,
     removeAll,
   };

@@ -6,10 +6,10 @@ import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
+  BuildingIcon,
   CalenderIcon,
   ChevronDownIcon,
   FileIcon,
-  FolderIcon,
   GridIcon,
   HorizontaLDots,
   ListIcon,
@@ -36,17 +36,17 @@ const navItems: NavItem[] = [
   },
   {
     icon: <FileIcon />,
-    name: "My documents",
+    name: "Mes documents",
     path: "/uploads",
   },
   {
-    icon: <FolderIcon />,
-    name: "Companies",
+    icon: <BuildingIcon />,
+    name: "Sociétés",
     path: "/companies",
   },
   {
     icon: <PieChartIcon />,
-    name: "KPI & Ratios",
+    name: "KPIs & Ratios",
     path: "/metrics",
   },
   {
@@ -56,7 +56,7 @@ const navItems: NavItem[] = [
   },
   {
     icon: <UserCircleIcon />,
-    name: "User Profile",
+    name: "Mon Profile",
     path: "/profile",
   },
 
@@ -274,9 +274,7 @@ const AppSidebar: React.FC = () => {
     });
 
     // If no submenu item matches, close the open submenu
-    if (!submenuMatched) {
-      setOpenSubmenu(null);
-    }
+   
   }, [pathname,isActive]);
 
   useEffect(() => {

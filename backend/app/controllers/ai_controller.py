@@ -9,7 +9,6 @@ from app.db.cnx import get_db
 from app.ai.ai_service_client import chat as ai_chat
 from app.models.account import Account
 from app.repositories.bilan_repository import BilanRepository
-from app.repositories.anomaly_repository import get_anomalies
 
 logger = logging.getLogger(__name__)
 
@@ -87,21 +86,3 @@ def chat(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/anomalies/{upload_id}")
-def get_upload_anomalies(
-    upload_id: int,
-    db: Session = Depends(get_db),
-    user: CurrentUser = Depends(current_user),
-):
-    """
-    Return anomalies detected by the background task for a given upload.
-    Returns an empty list if detection has not run yet or found nothing.
-    """
-    assert_upload_owned(db, upload_id, user)
-    anomalies = get_anomalies(db, upload_id)
-    return {
-        "success": True,
-        "upload_id": upload_id,
-        "count": len(anomalies),
-        "anomalies": anomalies,
-    }

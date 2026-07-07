@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.account import Account
 import logging
 from app.models.bilan import Bilan
+from app.models.compte_resultat import CompteResultat
 from typing import Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -118,6 +119,23 @@ def is_bilan_calculated(db: Session, upload_id: int) -> bool:
     return bilan is not None
  
  
+# ===== CR RECALCULATION =====
+def trigger_cr_recalculation(db: Session, upload_id: int) -> Dict:
+    """Recalculate CR if it exists, preserving the original inventory_method."""
+    cr = db.query(CompteResultat).filter(CompteResultat.upload_id == upload_id).first()
+    if not cr:
+        return {"cr_recalculated": False, "reason": "No CR found for this upload"}
+    try:
+        inventory_method = (cr.data or {}).get("meta", {}).get("inventory_method", "permanent")
+        from app.services.compte_resultat_service import CompteResultatService
+        result = CompteResultatService(db, inventory_method).calculate_and_save(upload_id)
+        logger.info(f"CR recalculated for upload {upload_id}")
+        return {"cr_recalculated": True, "totals": result.get("totals")}
+    except Exception as e:
+        logger.error(f"Error recalculating CR: {str(e)}")
+        return {"cr_recalculated": False, "error": str(e)}
+
+
 # ===== BILAN RECALCULATION =====
 def trigger_bilan_recalculation(db: Session, upload_id: int) -> Dict:
     """Recalculate bilan if it exists"""
@@ -231,14 +249,18 @@ def update_account_with_bilan(
     
     # Step 3: Auto-recalculate bilan if it exists
     bilan_status = trigger_bilan_recalculation(db, upload_id)
-    
-    # Step 4: Return complete response
+
+    # Step 4: Auto-recalculate CR if it exists
+    cr_status = trigger_cr_recalculation(db, upload_id)
+
+    # Step 5: Return complete response
     return {
         "status": "success",
         "account_id": account.id,
         "account_code": account.account_code,
         "message": "Account updated successfully",
-        "bilan": bilan_status
+        "bilan": bilan_status,
+        "cr": cr_status,
     }
  
  
