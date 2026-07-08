@@ -30,16 +30,23 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/userservice
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
-      FRONTEND_URL: http://localhost:3000
-      BASE_URL: http://localhost:8080
-      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      # Single-origin LAN deployment: everything is served from the Caddy
+      # origin (http://<SERVER_LAN_IP>). Email links point at that origin;
+      # picture URLs live under the /api/user proxy prefix.
+      FRONTEND_URL: ${PUBLIC_ORIGIN:-http://SERVER_LAN_IP}
+      BASE_URL: ${PUBLIC_ORIGIN:-http://SERVER_LAN_IP}/api/user
+      CORS_ALLOWED_ORIGINS: ${PUBLIC_ORIGIN:-http://SERVER_LAN_IP}
+      # LAN deploy: create accounts already-verified, skip the SMTP verification email.
+      AUTH_REQUIRE_EMAIL_VERIFICATION: "false"
       # Mail (override with your own SMTP creds in .env if needed)
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
-    ports:
-      - "8080:8080"
+    # No host port published — only Caddy is exposed (reaches this over the
+    # internal network). Uncomment to hit user-service directly for debugging.
+    # ports:
+    #   - "8080:8080"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/v3/api-docs >/dev/null 2>&1 || exit 1"]
       interval: 10s
@@ -63,8 +70,16 @@ services:
       USER_SERVICE_URL: http://user-service:8080
       AI_SERVICE_URL: http://ai-service:8001
       GROQ_API_KEY: ${GROQ_API_KEY:-}
-    ports:
-      - "8000:8000"
+    # No host port published — reached via Caddy on the internal network.
+    # ports:
+    #   - "8000:8000"
+    healthcheck:
+      # python:3.12-slim has no curl; use the stdlib.
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/test').status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   ai-service:
     build:
@@ -78,24 +93,68 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:?set GEMINI_API_KEY in .env}
       GEMINI_MODEL_NAME: ${GEMINI_MODEL_NAME:-gemini-flash-lite-latest}
       GEMINI_FALLBACK_MODELS: ${GEMINI_FALLBACK_MODELS:-gemini-2.5-flash-lite,gemini-flash-latest,gemini-2.5-flash}
-    ports:
-      - "8001:8001"
+    # No host port published — reached via Caddy on the internal network.
+    # ports:
+    #   - "8001:8001"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health').status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   frontend:
     build:
       context: ./frontend
       args:
-        # Baked into the browser bundle at build time → must be host-reachable.
-        NEXT_PUBLIC_USER_SERVICE_URL: http://localhost:8080
-        NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
-        NEXT_PUBLIC_AI_SERVICE_URL: http://localhost:8001
+        # Relative path prefixes → the browser bundle is origin-agnostic:
+        # `fetch("/api/backend/...")` resolves against whatever LAN address
+        # the employee used. Caddy fronts all four on a single origin, so no
+        # rebuild is needed if the server IP changes.
+        NEXT_PUBLIC_USER_SERVICE_URL: /api/user
+        NEXT_PUBLIC_BACKEND_URL: /api/backend
+        NEXT_PUBLIC_AI_SERVICE_URL: /api/ai
     restart: unless-stopped
     depends_on:
-      - backend
-      - ai-service
-      - user-service
+      backend:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+    # No host port published — reached via Caddy on the internal network.
+    # ports:
+    #   - "3000:3000"
+    healthcheck:
+      # node:20-alpine ships busybox wget. Use 127.0.0.1 (not localhost):
+      # alpine resolves localhost to ::1 first, but Next binds IPv4 only.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  # ── Front door: single origin on port 80 for the whole LAN ───────────
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      user-service:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     ports:
-      - "3000:3000"
+      - "80:80"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
 
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:

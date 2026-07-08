@@ -194,10 +194,9 @@ export default function ValidationPage() {
       {phase === "done" && summary && (
         <div className="space-y-4">
           {/* Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <SummaryStat label="Comptes vérifiés" value={summary.total} tone="neutral" />
             <SummaryStat label="Valides" value={summary.valid} tone="ok" />
-            <SummaryStat label="Avertissements" value={summary.warnings} tone="warn" />
             <SummaryStat label="Erreurs" value={summary.errors} tone="error" />
           </div>
 
@@ -209,14 +208,14 @@ export default function ValidationPage() {
               un code erroné peut fausser silencieusement les états financiers.
             </div>
           )}
-          {summary.errors === 0 && summary.warnings === 0 && (
+          {summary.errors === 0 && (
             <div className="rounded-xl border border-success-300 bg-success-50 dark:border-success-500/30 dark:bg-success-500/10 px-4 py-3 text-sm text-success-700 dark:text-success-400">
               {summary.total} comptes vérifiés, tous valides.
             </div>
           )}
 
           {/* Filter */}
-          {(summary.warnings > 0 || summary.errors > 0) && (
+          {summary.errors > 0 && (
             <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <input
                 type="checkbox"

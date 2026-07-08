@@ -2,6 +2,7 @@ package tn.esprit.userservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +65,13 @@ public class AuthService {
     private final AuditService auditService;
     private final PictureStorageService pictureStorageService;
 
+    // When false (set for the Docker LAN deploy via AUTH_REQUIRE_EMAIL_VERIFICATION),
+    // accounts are created already-verified and no verification email is sent —
+    // so registration does not depend on outbound SMTP. Defaults to true so
+    // production behaviour is unchanged.
+    @Value("${app.auth.require-email-verification:true}")
+    private boolean requireEmailVerification;
+
     // ================================================================
     //  REGISTER
     // ================================================================
@@ -86,6 +94,10 @@ public class AuthService {
         user.setLastName(req.lastName());
         user.setHashedPassword(passwordEncoder.encode(req.password()));
         user.setPictureUrl(pictureUrl); // null if no picture — that's fine
+        // Skip the email round-trip when verification is disabled (Docker LAN).
+        if (!requireEmailVerification) {
+            user.setVerified(true);
+        }
         userRepository.save(user);
 
         // Assign default ACCOUNTANT role
@@ -98,15 +110,17 @@ public class AuthService {
         userRole.setRole(accountantRole);
         userRoleRepository.save(userRole);
 
-        // Email verification token
-        String rawVerifyToken = UUID.randomUUID().toString();
-        EmailVerificationToken verifyToken = new EmailVerificationToken();
-        verifyToken.setUser(user);
-        verifyToken.setTokenHash(TokenService.sha256(rawVerifyToken));
-        verifyToken.setExpiresAt(OffsetDateTime.now().plusHours(VERIFY_TOKEN_EXPIRY_HOURS));
-        emailVerificationTokenRepository.save(verifyToken);
+        // Email verification token + email — only when verification is required.
+        if (requireEmailVerification) {
+            String rawVerifyToken = UUID.randomUUID().toString();
+            EmailVerificationToken verifyToken = new EmailVerificationToken();
+            verifyToken.setUser(user);
+            verifyToken.setTokenHash(TokenService.sha256(rawVerifyToken));
+            verifyToken.setExpiresAt(OffsetDateTime.now().plusHours(VERIFY_TOKEN_EXPIRY_HOURS));
+            emailVerificationTokenRepository.save(verifyToken);
 
-        emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), rawVerifyToken);
+            emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), rawVerifyToken);
+        }
 
         auditService.log(AuditEventType.REGISTER, user, ipAddress, userAgent,
                 "{\"email\":\"" + user.getEmail() + "\"}");

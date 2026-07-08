@@ -49,7 +49,9 @@ export default function TimelineChart({ timeline }: Props) {
 
   const series = activeSeries.map((s) => ({
     name: s.label,
-    data: timeline.map((p) => p[s.key]),
+    // Coerce undefined → null so ApexCharts' (number | null)[] is satisfied
+    // while preserving gaps in the line where a period lacks the metric.
+    data: timeline.map((p) => p[s.key] ?? null),
   }));
 
   const options: ApexOptions = {

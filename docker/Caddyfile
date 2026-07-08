@@ -1,0 +1,44 @@
+# ─────────────────────────────────────────────────────────────────────
+#  Caddy — single-origin front door for the LAN deployment.
+#
+#  Employees reach the whole app at  http://<SERVER_LAN_IP>/  (port 80).
+#  Everything is served from ONE origin, so there is no cross-origin/CORS
+#  friction and the HttpOnly refresh cookie stays same-site.
+#
+#  Routing (prefix is stripped before proxying, except the frontend):
+#    /api/user/*     → user-service:8080
+#    /api/backend/*  → backend:8000
+#    /api/ai/*       → ai-service:8001
+#    everything else → frontend:3000
+#
+#  Refresh-cookie note: user-service sets the refresh cookie with
+#  Path=/auth (AuthController.addRefreshTokenCookie). Because we strip the
+#  /api/user prefix, the browser sees the request path as
+#  /api/user/auth/refresh, which would NOT match Path=/auth → cookie never
+#  sent. We rewrite the cookie path on the way out so the browser stores
+#  Path=/api/user/auth and resends it. Tomcat emits the literal token
+#  "Path=/auth", so this substring replace is safe (verify with:
+#    curl -i -X POST http://localhost/api/user/auth/login ).
+# ─────────────────────────────────────────────────────────────────────
+
+:80 {
+	encode gzip
+
+	handle_path /api/user/* {
+		reverse_proxy user-service:8080 {
+			header_down Set-Cookie "Path=/auth" "Path=/api/user/auth"
+		}
+	}
+
+	handle_path /api/backend/* {
+		reverse_proxy backend:8000
+	}
+
+	handle_path /api/ai/* {
+		reverse_proxy ai-service:8001
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}
