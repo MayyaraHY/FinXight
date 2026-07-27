@@ -5,6 +5,19 @@ export type Company = {
   upload_count: number;
 };
 
+/** Portfolio status summary for one company, from GET /companies/{id}/status. */
+export type CompanyStatus = {
+  company_id: number;
+  upload_id: number | null;
+  last_upload_at: string | null;
+  period_label: string | null;
+  validation_errors: number;
+  validation_warnings: number;
+  balanced: boolean;
+  open_anomalies: number;
+  has_data: boolean;
+};
+
 export type TimelinePeriod = {
   upload_id: number;
   period_year: number | null;

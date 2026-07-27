@@ -35,7 +35,7 @@ export function useUploads() {
       setUploads(sortByNewest(data));
       setError(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to fetch uploads";
+      const message = err instanceof Error ? err.message : "Échec du chargement des fichiers";
       setError(message);
     }
   };
@@ -57,7 +57,7 @@ export function useUploads() {
         if (err instanceof Error && err.name === "AbortError") {
           return;
         }
-        const message = err instanceof Error ? err.message : "Failed to fetch uploads";
+        const message = err instanceof Error ? err.message : "Échec du chargement des fichiers";
         if (!controller.signal.aborted) {
           setError(message);
         }

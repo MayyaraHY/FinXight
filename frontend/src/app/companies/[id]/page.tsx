@@ -31,6 +31,7 @@ import RatioTrend from "@/components/companies/RatioTrend";
 import CashFlowSummaryChart from "@/components/companies/CashFlowSummaryChart";
 import { KPI_CATALOG, KPI_KEYS } from "@/components/companies/kpiCatalog";
 import { useDashboardKpis } from "@/hooks/useDashboardKpis";
+import { useLastCompany } from "@/hooks/useLastCompany";
 import { useMetricLibrary } from "@/hooks/useMetricLibrary";
 import { generateMetric } from "@/services/metricLibraryService";
 import CustomMetricModal from "@/components/companies/CustomMetricModal";
@@ -42,18 +43,18 @@ import { getComponents, ComponentLine } from "@/lib/metricComponents";
 import { KPI_DRILL_MAP } from "@/lib/kpiDrillMap";
 
 const MONTHS_FULL = [
-  { value: 1, label: "January" },
-  { value: 2, label: "February" },
-  { value: 3, label: "March" },
-  { value: 4, label: "April" },
-  { value: 5, label: "May" },
-  { value: 6, label: "June" },
-  { value: 7, label: "July" },
-  { value: 8, label: "August" },
-  { value: 9, label: "September" },
-  { value: 10, label: "October" },
-  { value: 11, label: "November" },
-  { value: 12, label: "December" },
+  { value: 1, label: "Janvier" },
+  { value: 2, label: "Février" },
+  { value: 3, label: "Mars" },
+  { value: 4, label: "Avril" },
+  { value: 5, label: "Mai" },
+  { value: 6, label: "Juin" },
+  { value: 7, label: "Juillet" },
+  { value: 8, label: "Août" },
+  { value: 9, label: "Septembre" },
+  { value: 10, label: "Octobre" },
+  { value: 11, label: "Novembre" },
+  { value: 12, label: "Décembre" },
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -80,6 +81,7 @@ export default function CompanyDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [comparison, setComparison] = useState<TimelineComparison | null>(null);
   const kpis = useDashboardKpis(companyId);
+  const { set: setLastCompany } = useLastCompany();
   const customMetrics = useMetricLibrary();
   const [editingKpis, setEditingKpis] = useState(false);
   const [addKpiOpen, setAddKpiOpen] = useState(false);
@@ -145,6 +147,8 @@ export default function CompanyDetailPage() {
         getUploads(),
       ]);
       setCompany(comp);
+      // Remember this as the last-opened company so `/` can reopen it next time.
+      setLastCompany(companyId);
       setTimeline(tlRes.periods);
       setTimelineWarnings(tlRes.warnings);
       setUploads(allUploads.filter((u: Upload) => u.company_id === companyId));
@@ -173,7 +177,7 @@ export default function CompanyDetailPage() {
         setComparison(null);
       }
     } catch {
-      setError("Failed to load company data");
+      setError("Échec du chargement des données de la société");
     } finally {
       setLoading(false);
     }
@@ -218,7 +222,7 @@ export default function CompanyDetailPage() {
       setAddModal((prev) => ({
         ...prev,
         file: null,
-        error: `Invalid file type "${file.name}". Please upload only CSV or Excel files (.csv, .xls, .xlsx).`,
+        error: `Type de fichier invalide « ${file.name} ». Veuillez téléverser uniquement des fichiers CSV ou Excel (.csv, .xls, .xlsx).`,
       }));
       return;
     }
@@ -229,7 +233,7 @@ export default function CompanyDetailPage() {
     if (!addModal.file) return;
     const displayName = addModal.displayName.trim() || undefined;
     try {
-      await uploadAndParseWithProgress(
+      const result = await uploadAndParseWithProgress(
         addModal.file,
         {
           displayName,
@@ -240,12 +244,13 @@ export default function CompanyDetailPage() {
         (progress) => setAddModal((prev) => ({ ...prev, progress }))
       );
       setAddModal((prev) => ({ ...prev, isOpen: false, progress: 0 }));
-      await fetchAll();
+      // Take the user straight to the parsed accounts of the new upload.
+      router.push(`/uploads/${result.upload_id}/accounts`);
     } catch (err) {
       setAddModal((prev) => ({
         ...prev,
         progress: 0,
-        error: err instanceof Error ? err.message : "Upload failed",
+        error: err instanceof Error ? err.message : "Échec du téléversement",
       }));
     }
   };
@@ -330,7 +335,7 @@ export default function CompanyDetailPage() {
       setEditDrawer((prev) => ({ ...prev, isOpen: false, saving: false }));
       await fetchAll();
     } catch {
-      setError("Failed to save metadata");
+      setError("Échec de l'enregistrement des métadonnées");
       setEditDrawer((prev) => ({ ...prev, saving: false }));
     }
   };
@@ -368,7 +373,7 @@ export default function CompanyDetailPage() {
             {/* Nav tabs */}
             <div className="flex items-center gap-1 mb-6 border-b border-gray-200 dark:border-gray-700">
               {[
-                { label: "Dashboard", href: `/companies/${companyId}` },
+                { label: "Tableau de bord", href: `/companies/${companyId}` },
                 { label: "États financiers", href: `/companies/${companyId}/statements` },
                 { label: "Comparaison des périodes", href: `/companies/${companyId}/period` },
                 { label: "Synthèse", href: `/companies/${companyId}/synthese` },
@@ -390,7 +395,7 @@ export default function CompanyDetailPage() {
 
             {error && (
               <div className="mb-4">
-                <Alert variant="error" title="Error" message={error} showLink={false} />
+                <Alert variant="error" title="Erreur" message={error} showLink={false} />
               </div>
             )}
 
@@ -674,14 +679,14 @@ export default function CompanyDetailPage() {
       >
         <div className="p-6 pt-8">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Upload File
+            Téléverser un fichier
           </h3>
 
           <div className="space-y-4">
             {addModal.error && (
               <Alert
                 variant="error"
-                title="Invalid File Type"
+                title="Type de fichier invalide"
                 message={addModal.error}
                 showLink={false}
               />
@@ -691,11 +696,11 @@ export default function CompanyDetailPage() {
             {addModal.file ? (
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm text-gray-600 dark:text-gray-400 min-w-0">
-                  <span className="font-medium">Original filename:</span>{" "}
+                  <span className="font-medium">Nom du fichier d&apos;origine :</span>{" "}
                   <span className="break-all">{addModal.file.name}</span>
                 </p>
                 <label className="flex-shrink-0 text-xs text-brand-500 hover:text-brand-600 cursor-pointer underline">
-                  Change
+                  Changer
                   <input
                     type="file"
                     accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -707,7 +712,7 @@ export default function CompanyDetailPage() {
             ) : (
               <label className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-xl cursor-pointer hover:border-brand-500 transition text-center">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Drag &amp; drop a CSV or Excel file (.csv, .xls, .xlsx) or click to upload
+                  Glissez-déposez un fichier CSV ou Excel (.csv, .xls, .xlsx) ou cliquez pour téléverser
                 </span>
                 <input
                   type="file"
@@ -720,7 +725,7 @@ export default function CompanyDetailPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Display Name (Optional)
+                Nom affiché (facultatif)
               </label>
               <input
                 type="text"
@@ -732,14 +737,14 @@ export default function CompanyDetailPage() {
                   if (e.key === "Enter" && addModal.file && addModal.progress === 0)
                     handleConfirmAdd();
                 }}
-                placeholder="Leave empty to use original filename"
+                placeholder="Laisser vide pour utiliser le nom d'origine"
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Company (Optional)
+                Société (facultatif)
               </label>
               <select
                 value={addModal.companyId ?? ""}
@@ -751,7 +756,7 @@ export default function CompanyDetailPage() {
                 }
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               >
-                <option value="">— No company —</option>
+                <option value="">— Aucune société —</option>
                 {companies.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -761,7 +766,7 @@ export default function CompanyDetailPage() {
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Year (Optional)
+                  Année (facultatif)
                 </label>
                 <select
                   value={addModal.periodYear ?? ""}
@@ -773,7 +778,7 @@ export default function CompanyDetailPage() {
                   }
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 >
-                  <option value="">— Year —</option>
+                  <option value="">— Année —</option>
                   {YEARS.map((y) => (
                     <option key={y} value={y}>{y}</option>
                   ))}
@@ -781,7 +786,7 @@ export default function CompanyDetailPage() {
               </div>
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Month (Optional)
+                  Mois (facultatif)
                 </label>
                 <select
                   value={addModal.periodMonth ?? ""}
@@ -793,7 +798,7 @@ export default function CompanyDetailPage() {
                   }
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 >
-                  <option value="">— Month —</option>
+                  <option value="">— Mois —</option>
                   {MONTHS_FULL.map((m) => (
                     <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
@@ -807,14 +812,14 @@ export default function CompanyDetailPage() {
                 disabled={addModal.progress > 0}
                 className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Cancel
+                Annuler
               </button>
               <button
                 onClick={handleConfirmAdd}
                 disabled={!addModal.file || addModal.progress > 0}
                 className="flex-1 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {addModal.progress > 0 ? `Uploading... ${addModal.progress}%` : "Upload"}
+                {addModal.progress > 0 ? `Téléversement... ${addModal.progress}%` : "Téléverser"}
               </button>
             </div>
           </div>
@@ -830,7 +835,7 @@ export default function CompanyDetailPage() {
       >
         <div className="p-6 pt-8">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-            Edit period metadata
+            Modifier les métadonnées de la période
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             {editDrawer.upload?.display_filename || editDrawer.upload?.filename}
@@ -840,7 +845,7 @@ export default function CompanyDetailPage() {
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Year
+                  Année
                 </label>
                 <select
                   value={editDrawer.periodYear ?? ""}
@@ -852,7 +857,7 @@ export default function CompanyDetailPage() {
                   }
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 >
-                  <option value="">— Year —</option>
+                  <option value="">— Année —</option>
                   {YEARS.map((y) => (
                     <option key={y} value={y}>{y}</option>
                   ))}
@@ -860,7 +865,7 @@ export default function CompanyDetailPage() {
               </div>
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Month
+                  Mois
                 </label>
                 <select
                   value={editDrawer.periodMonth ?? ""}
@@ -872,7 +877,7 @@ export default function CompanyDetailPage() {
                   }
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 >
-                  <option value="">— Month —</option>
+                  <option value="">— Mois —</option>
                   {MONTHS_FULL.map((m) => (
                     <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
@@ -886,14 +891,14 @@ export default function CompanyDetailPage() {
                 disabled={editDrawer.saving}
                 className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
               >
-                Cancel
+                Annuler
               </button>
               <button
                 onClick={handleSaveMetadata}
                 disabled={editDrawer.saving}
                 className="flex-1 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition disabled:opacity-50"
               >
-                {editDrawer.saving ? "Saving…" : "Save"}
+                {editDrawer.saving ? "Enregistrement…" : "Enregistrer"}
               </button>
             </div>
           </div>

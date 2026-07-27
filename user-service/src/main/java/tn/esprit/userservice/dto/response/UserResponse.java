@@ -21,6 +21,7 @@ public record UserResponse(
         String pictureUrl,
         boolean active,
         boolean verified,
+        boolean firstLogin,
         List<String> roles,
         OffsetDateTime createdAt
 ) {
@@ -41,6 +42,7 @@ public record UserResponse(
                 user.getPictureUrl(),
                 user.isActive(),
                 user.isVerified(),
+                user.isFirstLogin(),
                 roleNames,
                 user.getCreatedAt()
         );

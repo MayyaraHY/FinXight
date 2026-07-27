@@ -35,11 +35,11 @@ export default function SignUpForm() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setError("Please select an image file.");
+      setError("Veuillez sélectionner un fichier image.");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be smaller than 5 MB.");
+      setError("L'image doit faire moins de 5 Mo.");
       return;
     }
 
@@ -59,10 +59,10 @@ export default function SignUpForm() {
     e.preventDefault();
 
     // Client-side validation
-    if (!firstName.trim()) { setError("First name is required.");                    return; }
-    if (!email.trim())     { setError("Email is required.");                         return; }
-    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
-    if (!isChecked)        { setError("You must agree to the Terms and Conditions."); return; }
+    if (!firstName.trim()) { setError("Le prénom est requis.");                             return; }
+    if (!email.trim())     { setError("L'e-mail est requis.");                              return; }
+    if (password.length < 8) { setError("Le mot de passe doit contenir au moins 8 caractères."); return; }
+    if (!isChecked)        { setError("Vous devez accepter les conditions générales.");     return; }
 
     setError(null);
     setSuccess(null);
@@ -97,14 +97,14 @@ export default function SignUpForm() {
         const body = await resp.json().catch(() => ({}));
         throw new Error(
           (body as Record<string, string>).message ??
-          `Registration failed (HTTP ${resp.status})`
+          `Échec de l'inscription (HTTP ${resp.status})`
         );
       }
 
-      setSuccess("Account created! Check your email to verify, then sign in.");
+      setSuccess("Compte créé ! Vérifiez votre e-mail pour confirmer, puis connectez-vous.");
       setTimeout(() => router.push("/signin"), 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      setError(err instanceof Error ? err.message : "Échec de l'inscription");
     } finally {
       setSubmitting(false);
     }
@@ -114,9 +114,9 @@ export default function SignUpForm() {
     <>
       {/* ── Header ── */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Sign Up</h1>
+        <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Inscription</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Create your account to get started.
+          Créez votre compte pour commencer.
         </p>
       </div>
 
@@ -126,8 +126,8 @@ export default function SignUpForm() {
           {/* ── Profile Picture ── */}
           <div>
             <Label>
-              Profile Picture{" "}
-              <span className="text-xs text-gray-400">(optional)</span>
+              Photo de profil{" "}
+              <span className="text-xs text-gray-400">(facultatif)</span>
             </Label>
             <div className="flex items-center gap-4 mt-1">
 
@@ -150,7 +150,7 @@ export default function SignUpForm() {
                   onClick={() => fileInputRef.current?.click()}
                   className="px-3 py-1.5 text-xs font-medium text-brand-600 border border-brand-300 rounded-lg hover:bg-brand-50 dark:text-brand-400 dark:border-brand-700 dark:hover:bg-brand-900/20 transition"
                 >
-                  {pictureFile ? "Change photo" : "Upload photo"}
+                  {pictureFile ? "Changer la photo" : "Téléverser une photo"}
                 </button>
                 {pictureFile && (
                   <button
@@ -158,10 +158,10 @@ export default function SignUpForm() {
                     onClick={removePicture}
                     className="px-3 py-1.5 text-xs font-medium text-error-600 border border-error-300 rounded-lg hover:bg-error-50 dark:text-error-400 dark:border-error-700 transition"
                   >
-                    Remove
+                    Supprimer
                   </button>
                 )}
-                <p className="text-xs text-gray-400">JPG, PNG, WEBP · max 5 MB</p>
+                <p className="text-xs text-gray-400">JPG, PNG, WEBP · max 5 Mo</p>
               </div>
             </div>
 
@@ -178,19 +178,19 @@ export default function SignUpForm() {
           {/* ── Name row ── */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>First Name <span className="text-error-500">*</span></Label>
+              <Label>Prénom <span className="text-error-500">*</span></Label>
               <Input
                 type="text"
-                placeholder="John"
+                placeholder="Jean"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
               />
             </div>
             <div>
-              <Label>Last Name</Label>
+              <Label>Nom</Label>
               <Input
                 type="text"
-                placeholder="Doe"
+                placeholder="Dupont"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
               />
@@ -199,10 +199,10 @@ export default function SignUpForm() {
 
           {/* ── Email ── */}
           <div>
-            <Label>Email <span className="text-error-500">*</span></Label>
+            <Label>E-mail <span className="text-error-500">*</span></Label>
             <Input
               type="email"
-              placeholder="john@example.com"
+              placeholder="jean@exemple.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -210,11 +210,11 @@ export default function SignUpForm() {
 
           {/* ── Password ── */}
           <div>
-            <Label>Password <span className="text-error-500">*</span></Label>
+            <Label>Mot de passe <span className="text-error-500">*</span></Label>
             <div className="relative">
               <Input
                 type={showPassword ? "text" : "password"}
-                placeholder="Min. 8 characters"
+                placeholder="Min. 8 caractères"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -233,10 +233,10 @@ export default function SignUpForm() {
           <div className="flex items-start gap-3">
             <Checkbox className="w-5 h-5 mt-0.5" checked={isChecked} onChange={setIsChecked} />
             <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
-              By creating an account you agree to the{" "}
-              <span className="text-gray-800 dark:text-white/90">Terms and Conditions</span>{" "}
-              and our{" "}
-              <span className="text-gray-800 dark:text-white">Privacy Policy</span>
+              En créant un compte, vous acceptez les{" "}
+              <span className="text-gray-800 dark:text-white/90">conditions générales</span>{" "}
+              et notre{" "}
+              <span className="text-gray-800 dark:text-white">politique de confidentialité</span>
             </p>
           </div>
 
@@ -250,7 +250,7 @@ export default function SignUpForm() {
             disabled={submitting}
             className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-60"
           >
-            {submitting ? "Creating account…" : "Sign Up"}
+            {submitting ? "Création du compte…" : "S'inscrire"}
           </button>
 
         </div>
@@ -258,9 +258,9 @@ export default function SignUpForm() {
 
       {/* ── Footer ── */}
       <p className="mt-5 text-sm text-center text-gray-700 dark:text-gray-400">
-        Already have an account?{" "}
+        Vous avez déjà un compte ?{" "}
         <Link href="/signin" className="text-brand-500 hover:text-brand-600 dark:text-brand-400">
-          Sign In
+          Se connecter
         </Link>
       </p>
     </>

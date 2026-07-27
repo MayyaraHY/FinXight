@@ -235,7 +235,7 @@ function BilanPageInner() {
         setBilanData(res.data);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load bilan");
+      setError(err instanceof Error ? err.message : "Échec du chargement du bilan");
     } finally {
       setLoading(false);
     }
@@ -249,11 +249,11 @@ function BilanPageInner() {
         setBilanData(res.data);
         setError(null);
       } else {
-        setError(res.message || "Failed to regenerate bilan");
+        setError(res.message || "Échec de la régénération du bilan");
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to regenerate bilan"
+        err instanceof Error ? err.message : "Échec de la régénération du bilan"
       );
     } finally {
       setRegenerating(false);

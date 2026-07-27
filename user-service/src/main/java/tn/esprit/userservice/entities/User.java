@@ -66,6 +66,10 @@ public class User {
     @Column(name = "is_verified", nullable = false)
     private boolean verified = false;
 
+    /** True until the user finishes onboarding (creates their first company). Drives post-login routing. */
+    @Column(name = "is_first_login", nullable = false)
+    private boolean firstLogin = true;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "auth_provider", nullable = false, length = 20)
     private AuthProvider authProvider = AuthProvider.LOCAL;

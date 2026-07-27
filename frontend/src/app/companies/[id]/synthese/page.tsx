@@ -47,7 +47,7 @@ export default function CompanySynthesePage() {
         }
         setError(null);
       } catch {
-        setError("Failed to load synthèse data");
+        setError("Échec du chargement des données de synthèse");
       } finally {
         setLoading(false);
       }
@@ -56,7 +56,7 @@ export default function CompanySynthesePage() {
   }, [companyId]);
 
   const navTabs = [
-    { label: "Dashboard", href: `/companies/${companyId}` },
+    { label: "Tableau de bord", href: `/companies/${companyId}` },
     { label: "États financiers", href: `/companies/${companyId}/statements` },
     { label: "Comparaison des périodes", href: `/companies/${companyId}/period` },
     { label: "Synthèse", href: `/companies/${companyId}/synthese` },
@@ -96,7 +96,7 @@ export default function CompanySynthesePage() {
 
             {error && (
               <div className="mb-4">
-                <Alert variant="error" title="Error" message={error} showLink={false} />
+                <Alert variant="error" title="Erreur" message={error} showLink={false} />
               </div>
             )}
 

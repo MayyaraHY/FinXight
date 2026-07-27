@@ -11,16 +11,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import tn.esprit.userservice.dto.request.ChangePasswordRequest;
 import tn.esprit.userservice.dto.request.UpdateProfileRequest;
+import tn.esprit.userservice.dto.response.ActivityResponse;
 import tn.esprit.userservice.dto.response.UserResponse;
 import tn.esprit.userservice.service.UserService;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -67,6 +71,36 @@ public class UserController {
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody UpdateProfileRequest req) {
         return ResponseEntity.ok(userService.updateProfile(extractUserId(jwt), req));
+    }
+
+    // ----------------------------------------------------------------
+
+    @Operation(summary = "Complete onboarding",
+               description = "Clears the first-login flag once the user has finished onboarding " +
+                             "(created their first company). Idempotent: safe to call more than once.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Onboarding marked complete (or already was)"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
+    @PatchMapping("/me/complete-onboarding")
+    public ResponseEntity<UserResponse> completeOnboarding(@AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(userService.completeOnboarding(extractUserId(jwt)));
+    }
+
+    // ----------------------------------------------------------------
+
+    @Operation(summary = "My recent activity",
+               description = "Returns the most recent audit events (login, logout, etc.) for the " +
+                             "current user, newest first.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Recent activity returned"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
+    @GetMapping("/me/activity")
+    public ResponseEntity<List<ActivityResponse>> getRecentActivity(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity.ok(userService.getRecentActivity(extractUserId(jwt), limit));
     }
 
     // ----------------------------------------------------------------

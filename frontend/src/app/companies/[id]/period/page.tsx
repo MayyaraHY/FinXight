@@ -45,7 +45,7 @@ export default function CompanyPeriodPage() {
         setTimeline(tlRes.periods);
         setError(null);
       } catch {
-        setError("Failed to load company data");
+        setError("Échec du chargement des données de la société");
       } finally {
         setLoading(false);
       }
@@ -56,7 +56,7 @@ export default function CompanyPeriodPage() {
   const latestPeriod = timeline.length > 0 ? timeline[timeline.length - 1] : null;
 
   const navTabs = [
-    { label: "Dashboard", href: `/companies/${companyId}` },
+    { label: "Tableau de bord", href: `/companies/${companyId}` },
     { label: "États financiers", href: `/companies/${companyId}/statements` },
     { label: "Comparaison des périodes", href: `/companies/${companyId}/period` },
     { label: "Synthèse", href: `/companies/${companyId}/synthese` },
@@ -106,7 +106,7 @@ export default function CompanyPeriodPage() {
 
             {error && (
               <div className="mb-4">
-                <Alert variant="error" title="Error" message={error} showLink={false} />
+                <Alert variant="error" title="Erreur" message={error} showLink={false} />
               </div>
             )}
 

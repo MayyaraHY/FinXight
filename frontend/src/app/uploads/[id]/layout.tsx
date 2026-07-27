@@ -24,7 +24,7 @@ const UPLOAD_TABS = [
 ];
 
 const COMPANY_TABS = [
-  { label: "Dashboard", segment: "" },
+  { label: "Tableau de bord", segment: "" },
   { label: "États financiers", segment: "statements" },
   { label: "Comparaison des périodes", segment: "period" },
   { label: "Synthèse", segment: "synthese" },

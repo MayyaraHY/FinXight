@@ -16,11 +16,16 @@ import {
   createCompany,
   deleteCompany,
   getCompanies,
+  getCompanyStatus,
 } from "@/services/companyService";
+import { useLastCompany } from "@/hooks/useLastCompany";
+import { issueCount, type StatusState } from "@/lib/companyStatus";
+import StatusBadge from "@/components/companies/StatusBadge";
 
 export default function CompaniesPage() {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const router = useRouter();
+  const { clear: clearLastCompany, get: getLastCompany } = useLastCompany();
 
   const mainContentMargin = isMobileOpen
     ? "ml-0"
@@ -29,6 +34,7 @@ export default function CompaniesPage() {
     : "lg:ml-[90px]";
 
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [statuses, setStatuses] = useState<Record<number, StatusState>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,13 +48,25 @@ export default function CompaniesPage() {
   }>({ isOpen: false, company: null });
   const [deleting, setDeleting] = useState(false);
 
+  const loadStatuses = (list: Company[]) => {
+    // Mark all as loading, then resolve each independently so one slow/failed
+    // company never blocks the rest of the grid.
+    setStatuses(Object.fromEntries(list.map((c) => [c.id, undefined])));
+    list.forEach((c) => {
+      getCompanyStatus(c.id)
+        .then((s) => setStatuses((prev) => ({ ...prev, [c.id]: s })))
+        .catch(() => setStatuses((prev) => ({ ...prev, [c.id]: null })));
+    });
+  };
+
   const fetchCompanies = async () => {
     try {
       const data = await getCompanies();
       setCompanies(data);
       setError(null);
+      loadStatuses(data);
     } catch {
-      setError("Failed to load companies");
+      setError("Échec du chargement des sociétés");
     } finally {
       setLoading(false);
     }
@@ -68,7 +86,7 @@ export default function CompaniesPage() {
       setNewModal(false);
       await fetchCompanies();
     } catch {
-      setError("Failed to create company");
+      setError("Échec de la création de la société");
     } finally {
       setCreating(false);
     }
@@ -76,17 +94,27 @@ export default function CompaniesPage() {
 
   const handleDelete = async () => {
     if (!deleteConfirm.company) return;
+    const deletedId = deleteConfirm.company.id;
     setDeleting(true);
     try {
-      await deleteCompany(deleteConfirm.company.id);
+      await deleteCompany(deletedId);
+      // If the deleted company was the "last opened" one, forget it so the
+      // landing router doesn't try to reopen a company that no longer exists.
+      if (getLastCompany() === deletedId) clearLastCompany();
       setDeleteConfirm({ isOpen: false, company: null });
       await fetchCompanies();
     } catch {
-      setError("Failed to delete company");
+      setError("Échec de la suppression de la société");
     } finally {
       setDeleting(false);
     }
   };
+
+  // Companies with unresolved issues, for the notification strip.
+  const flagged = companies.filter((c) => {
+    const s = statuses[c.id];
+    return s && issueCount(s) > 0;
+  });
 
   return (
     <AuthGuard>
@@ -98,28 +126,47 @@ export default function CompaniesPage() {
         >
           <AppHeader />
           <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-            <PageBreadcrumb pageTitle="Companies" />
+            <PageBreadcrumb pageTitle="Sociétés" />
+
+            {/* Notification strip */}
+            {!loading && flagged.length > 0 && (
+              <div className="mb-4">
+                <Alert
+                  variant="warning"
+                  title="Attention requise"
+                  message={`${flagged.length} société${flagged.length !== 1 ? "s ont" : " a"} des problèmes non résolus.`}
+                  showLink={false}
+                />
+              </div>
+            )}
 
             <div className="space-y-6">
               <ComponentCard
-                title="Companies"
+                title="Sociétés"
                 headerAction={
                   <button
                     onClick={() => setNewModal(true)}
                     className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm rounded-lg transition"
                   >
-                    + New company
+                    + Nouvelle société
                   </button>
                 }
               >
                 {error && (
                   <div className="mb-4">
-                    <Alert variant="error" title="Error" message={error} showLink={false} />
+                    <Alert variant="error" title="Erreur" message={error} showLink={false} />
                   </div>
                 )}
 
                 {loading ? (
-                  <p className="text-gray-500 dark:text-gray-400 py-8 text-center">Loading…</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="h-28 animate-pulse rounded-lg bg-gray-100 dark:bg-white/5"
+                      />
+                    ))}
+                  </div>
                 ) : companies.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <svg
@@ -136,7 +183,7 @@ export default function CompaniesPage() {
                       />
                     </svg>
                     <p className="text-gray-500 dark:text-gray-400">
-                      No companies yet. Create one to start organizing your uploads.
+                      Aucune société pour l&apos;instant. Créez-en une pour organiser vos fichiers.
                     </p>
                   </div>
                 ) : (
@@ -153,7 +200,7 @@ export default function CompaniesPage() {
                               {c.name}
                             </h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                              {c.upload_count} upload{c.upload_count !== 1 ? "s" : ""}
+                              {c.upload_count} fichier{c.upload_count !== 1 ? "s" : ""}
                             </p>
                           </div>
                           <button
@@ -167,6 +214,9 @@ export default function CompaniesPage() {
                               <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-9l-1 1H5v2h14V4z" />
                             </svg>
                           </button>
+                        </div>
+                        <div className="mt-3">
+                          <StatusBadge status={statuses[c.id]} />
                         </div>
                       </div>
                     ))}
@@ -182,7 +232,7 @@ export default function CompaniesPage() {
       <Modal isOpen={newModal} onClose={() => setNewModal(false)} className="max-w-md">
         <div className="p-6 pt-8">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            New Company
+            Nouvelle société
           </h3>
           <input
             type="text"
@@ -192,7 +242,7 @@ export default function CompaniesPage() {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !creating) handleCreate();
             }}
-            placeholder="Company name"
+            placeholder="Nom de la société"
             className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white mb-4"
           />
           <div className="flex gap-3">
@@ -201,14 +251,14 @@ export default function CompaniesPage() {
               disabled={creating}
               className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
             >
-              Cancel
+              Annuler
             </button>
             <button
               onClick={handleCreate}
               disabled={creating || !newName.trim()}
               className="flex-1 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition disabled:opacity-50"
             >
-              {creating ? "Creating…" : "Create"}
+              {creating ? "Création…" : "Créer"}
             </button>
           </div>
         </div>
@@ -224,10 +274,10 @@ export default function CompaniesPage() {
         <div className="p-4">
           <Alert
             variant="error"
-            title="Delete company?"
-            message={`"${deleteConfirm.company?.name}" has ${deleteConfirm.company?.upload_count} upload${
+            title="Supprimer la société ?"
+            message={`« ${deleteConfirm.company?.name} » contient ${deleteConfirm.company?.upload_count} fichier${
               deleteConfirm.company?.upload_count !== 1 ? "s" : ""
-            } that will also be permanently deleted.`}
+            } qui seront également supprimés définitivement.`}
             showLink={false}
           />
           <div className="mt-4 flex gap-2 justify-end">
@@ -236,14 +286,14 @@ export default function CompaniesPage() {
               disabled={deleting}
               className="px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
             >
-              Cancel
+              Annuler
             </button>
             <button
               onClick={handleDelete}
               disabled={deleting}
               className="px-4 py-2 bg-error-500 hover:bg-error-600 text-white rounded-lg transition disabled:opacity-50"
             >
-              {deleting ? "Deleting…" : "Delete"}
+              {deleting ? "Suppression…" : "Supprimer"}
             </button>
           </div>
         </div>

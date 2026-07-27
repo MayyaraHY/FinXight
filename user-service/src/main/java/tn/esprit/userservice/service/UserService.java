@@ -1,16 +1,20 @@
 package tn.esprit.userservice.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.userservice.dto.request.ChangePasswordRequest;
 import tn.esprit.userservice.dto.request.UpdateProfileRequest;
+import tn.esprit.userservice.dto.response.ActivityResponse;
 import tn.esprit.userservice.dto.response.UserResponse;
 import tn.esprit.userservice.entities.User;
 import tn.esprit.userservice.exceptions.UserNotFoundException;
+import tn.esprit.userservice.repository.AuditLogRepository;
 import tn.esprit.userservice.repository.UserRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -22,6 +26,7 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final AuditLogRepository auditLogRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
 
@@ -68,6 +73,32 @@ public class UserService {
     @Transactional
     public void logoutAll(UUID userId) {
         tokenService.revokeAllUserTokens(userId);
+    }
+
+    /**
+     * Marks onboarding as complete by clearing the first-login flag.
+     * Idempotent — calling it when the flag is already false simply returns the
+     * current profile without touching the row.
+     */
+    @Transactional
+    public UserResponse completeOnboarding(UUID userId) {
+        User user = loadUser(userId);
+        if (user.isFirstLogin()) {
+            user.setFirstLogin(false);
+            user = userRepository.save(user);
+        }
+        return UserResponse.from(user);
+    }
+
+    /** Returns the user's most recent audit-log entries (auth events) for the dashboard feed. */
+    @Transactional(readOnly = true)
+    public List<ActivityResponse> getRecentActivity(UUID userId, int limit) {
+        int capped = Math.min(Math.max(limit, 1), 50);
+        return auditLogRepository
+                .findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, capped))
+                .stream()
+                .map(ActivityResponse::from)
+                .toList();
     }
 
     // ----------------------------------------------------------------

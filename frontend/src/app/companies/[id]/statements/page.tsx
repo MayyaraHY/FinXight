@@ -42,7 +42,7 @@ export default function StatementsPage() {
         setTimeline(tlRes.periods);
         setError(null);
       } catch {
-        setError("Failed to load company data");
+        setError("Échec du chargement des données de la société");
       } finally {
         setLoading(false);
       }
@@ -75,7 +75,7 @@ export default function StatementsPage() {
             {/* Nav tabs */}
             <div className="flex items-center gap-1 mb-6 border-b border-gray-200 dark:border-gray-700">
               {[
-                { label: "Dashboard", href: `/companies/${companyId}` },
+                { label: "Tableau de bord", href: `/companies/${companyId}` },
                 { label: "États financiers", href: `/companies/${companyId}/statements` },
                 { label: "Comparaison des périodes", href: `/companies/${companyId}/period` },
                 { label: "Synthèse", href: `/companies/${companyId}/synthese` },
@@ -97,7 +97,7 @@ export default function StatementsPage() {
 
             {error && (
               <div className="mb-4">
-                <Alert variant="error" title="Error" message={error} showLink={false} />
+                <Alert variant="error" title="Erreur" message={error} showLink={false} />
               </div>
             )}
 

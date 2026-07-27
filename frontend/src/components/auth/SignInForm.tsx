@@ -28,7 +28,7 @@ export default function SignInForm() {
       await login(email, password);
       router.push("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : "Échec de la connexion");
     } finally {
       setSubmitting(false);
     }
@@ -39,10 +39,10 @@ export default function SignInForm() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
-          Sign In
+          Connexion
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Enter your email and password to sign in.
+          Saisissez votre e-mail et votre mot de passe pour vous connecter.
         </p>
       </div>
 
@@ -64,12 +64,12 @@ export default function SignInForm() {
 
           <div>
             <Label>
-              Password <span className="text-error-500">*</span>
+              Mot de passe <span className="text-error-500">*</span>
             </Label>
             <div className="relative">
               <Input
                 type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
+                placeholder="Saisissez votre mot de passe"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -91,14 +91,14 @@ export default function SignInForm() {
             <div className="flex items-center gap-3">
               <Checkbox checked={isChecked} onChange={setIsChecked} />
               <span className="text-sm font-normal text-gray-700 dark:text-gray-400">
-                Keep me logged in
+                Rester connecté
               </span>
             </div>
             <Link
               href="/reset-password"
               className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
             >
-              Forgot password?
+              Mot de passe oublié ?
             </Link>
           </div>
 
@@ -109,19 +109,19 @@ export default function SignInForm() {
           )}
 
           <Button className="w-full" size="sm" disabled={submitting}>
-            {submitting ? "Signing in…" : "Sign in"}
+            {submitting ? "Connexion…" : "Se connecter"}
           </Button>
         </div>
       </form>
 
       {/* Footer link */}
       <p className="mt-5 text-sm text-center text-gray-700 dark:text-gray-400">
-        Don&apos;t have an account?{" "}
+        Vous n&apos;avez pas de compte ?{" "}
         <Link
           href="/signup"
           className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
         >
-          Sign Up
+          S&apos;inscrire
         </Link>
       </p>
     </>

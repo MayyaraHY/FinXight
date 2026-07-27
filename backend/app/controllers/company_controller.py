@@ -67,6 +67,21 @@ def get_company(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.get("/{company_id}/status")
+def get_company_status(
+    company_id: int,
+    db: Session = Depends(get_db),
+    user: CurrentUser = Depends(current_user),
+):
+    """Portfolio status badge data (latest upload's validation/balance/anomalies)."""
+    try:
+        service = CompanyService(db)
+        data = service.get_company_status(company_id=company_id, user_id=user.id)
+        return {"success": True, "data": data}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.put("/{company_id}")
 def rename_company(
     company_id: int,

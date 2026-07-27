@@ -47,6 +47,17 @@ export interface UploadMetadata {
   periodMonth?: number | null;
 }
 
+/** Response shape of POST /upload/upload_and_parse (see upload_service.upload_and_parse_document). */
+export interface UploadParseResult {
+  status: string;
+  upload_id: number;
+  filename: string;
+  display_filename: string;
+  accounts_inserted: number;
+  detected_columns: string[];
+  message: string;
+}
+
 /**
  * Upload + parse with simulated progress reporting via fetch.
  *
@@ -61,7 +72,7 @@ export async function uploadAndParseWithProgress(
   file: File,
   metadata?: UploadMetadata,
   onProgress?: (progress: number) => void
-): Promise<Upload> {
+): Promise<UploadParseResult> {
   const formData = new FormData();
   formData.append("file", file);
   if (metadata?.displayName) {

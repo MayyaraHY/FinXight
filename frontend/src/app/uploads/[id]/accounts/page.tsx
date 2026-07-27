@@ -194,7 +194,7 @@ export default function UploadDetailsPage() {
         // Try to load PCGT validation report (non-blocking — may still be pending)
         loadValidation(uploadId);
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to load data";
+        const message = err instanceof Error ? err.message : "Échec du chargement des données";
         setError(message);
       } finally {
         setLoading(false);
@@ -287,7 +287,7 @@ export default function UploadDetailsPage() {
       setEditingCell(null);
       setEditValue("");
     } catch (err) {
-      alert("Failed to update account: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert("Échec de la mise à jour du compte : " + (err instanceof Error ? err.message : "Erreur inconnue"));
     }
   };
 
@@ -299,7 +299,7 @@ export default function UploadDetailsPage() {
       setDeleteConfirm(null);
       setContextMenu(null);
     } catch (err) {
-      alert("Failed to delete account: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert("Échec de la suppression du compte : " + (err instanceof Error ? err.message : "Erreur inconnue"));
     }
   };
 
@@ -312,7 +312,7 @@ export default function UploadDetailsPage() {
   return (
     <div>
       <ComponentCard
-        title={`Accounts — ${upload?.display_filename || upload?.filename || "Loading…"}`}
+        title={`Comptes — ${upload?.display_filename || upload?.filename || "Chargement…"}`}
         headerAction={
           <button
             onClick={() => loadValidation(uploadId, true)}
@@ -347,7 +347,7 @@ export default function UploadDetailsPage() {
           </div>
         )}
 
-        {error && <Alert variant="error" title="Error" message={error} showLink={false} />}
+        {error && <Alert variant="error" title="Erreur" message={error} showLink={false} />}
 
         {!loading && !error && (
           <div className="space-y-4">

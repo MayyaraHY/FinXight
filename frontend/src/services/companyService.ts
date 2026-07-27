@@ -1,11 +1,16 @@
 import { BACKEND_URL } from "@/lib/apiUrls";
 import { apiClient } from "@/lib/apiClient";
-import { Company, TimelineComparison, TimelineResponse, SyntheseResponse } from "@/models/Company";
+import { Company, CompanyStatus, TimelineComparison, TimelineResponse, SyntheseResponse } from "@/models/Company";
 
 const BASE = `${BACKEND_URL}/companies`;
 
 export async function getCompanies(): Promise<Company[]> {
   const res = await apiClient.get<{ success: boolean; data: Company[] }>(BASE + "/");
+  return res.data;
+}
+
+export async function getCompanyStatus(id: number): Promise<CompanyStatus> {
+  const res = await apiClient.get<{ success: boolean; data: CompanyStatus }>(`${BASE}/${id}/status`);
   return res.data;
 }
 

@@ -9,6 +9,8 @@ export interface User {
   pictureUrl?: string;
   active: boolean;
   verified: boolean;
+  /** True until the user finishes onboarding (creates their first company). Drives post-login routing. */
+  firstLogin: boolean;
   roles: string[];
   createdAt: string;
 }

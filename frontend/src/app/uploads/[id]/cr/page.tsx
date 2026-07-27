@@ -101,7 +101,7 @@ function CompteResultatPageInner() {
         setCRData(res.data);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load compte de résultat");
+      setError(err instanceof Error ? err.message : "Échec du chargement du compte de résultat");
     } finally {
       setLoading(false);
     }
@@ -116,10 +116,10 @@ function CompteResultatPageInner() {
         setCRData(res.data);
         setError(null);
       } else {
-        setError(res.message ?? "Failed to regenerate");
+        setError(res.message ?? "Échec de la régénération");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to regenerate compte de résultat");
+      setError(err instanceof Error ? err.message : "Échec de la régénération du compte de résultat");
     } finally {
       setRegenerating(false);
     }

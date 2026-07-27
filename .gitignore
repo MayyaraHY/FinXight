@@ -41,7 +41,7 @@ venv_ai/
 # ── Data & uploads (user-generated, never commit) ────────────────────
 data/
 app/uploads/
-
+docs/
 # ── Project-specific exclusions ──────────────────────────────────────
 .claude/
 blueprints/
